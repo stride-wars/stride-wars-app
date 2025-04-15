@@ -8,7 +8,7 @@ on:
 
 jobs:
     backend:
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-latest
 
         defaults:
             run:
@@ -28,7 +28,7 @@ jobs:
             - name: Run tests
               run: go test ./..     # runs all tests recursively
     frontend:
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-latest
 
         defaults:
             run:
