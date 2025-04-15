@@ -1,0 +1,50 @@
+name: CI basic pipeline
+
+on:
+    push:
+        branches: [main,front-react-native]
+    pull_request:
+        branches: [main]
+
+jobs:
+    backend:
+        runs-on: ubuntu-20.04
+
+        defaults:
+            run:
+                working-directory: ./backend
+        steps:
+            - name: Checkout commits
+              uses: actions/checkout@v3
+
+            - name: Golang setup
+              uses: actions/setup-go@v4
+              with:
+                go-version: 1.21
+            
+            - name: Install dependencies
+              run: go mod tidy
+            
+            - name: Run tests
+              run: go test ./..     # runs all tests recursively
+    frontend:
+        runs-on: ubuntu-20.04
+
+        defaults:
+            run:
+                working-directory: ./frontend/StrideWarsFrontend
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                node-version: 18
+            
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint
+              run: npm run lint
