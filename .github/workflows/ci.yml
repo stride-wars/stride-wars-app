@@ -26,7 +26,7 @@ jobs:
               run: go mod tidy
             
             - name: Run tests
-              run: go test ./     # runs all tests recursively
+              run: go test ./ -v    # runs all tests recursively
     frontend:
         runs-on: ubuntu-latest
 
