@@ -2,7 +2,7 @@ name: CI basic pipeline
 
 on:
     push:
-        branches: [main,front-react-native]
+        branches: [main,frontend]
     pull_request:
         branches: [main]
 jobs:
