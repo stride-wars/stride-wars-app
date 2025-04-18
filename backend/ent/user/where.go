@@ -55,14 +55,54 @@ func IDLTE(id uuid.UUID) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
 }
 
+// ExternalUser applies equality check predicate on the "external_user" field. It's identical to ExternalUserEQ.
+func ExternalUser(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldExternalUser, v))
+}
+
 // Username applies equality check predicate on the "username" field. It's identical to UsernameEQ.
 func Username(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldUsername, v))
 }
 
-// ExternalUser applies equality check predicate on the "external_user" field. It's identical to ExternalUserEQ.
-func ExternalUser(v uuid.UUID) predicate.User {
+// ExternalUserEQ applies the EQ predicate on the "external_user" field.
+func ExternalUserEQ(v uuid.UUID) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldExternalUser, v))
+}
+
+// ExternalUserNEQ applies the NEQ predicate on the "external_user" field.
+func ExternalUserNEQ(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldExternalUser, v))
+}
+
+// ExternalUserIn applies the In predicate on the "external_user" field.
+func ExternalUserIn(vs ...uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldIn(FieldExternalUser, vs...))
+}
+
+// ExternalUserNotIn applies the NotIn predicate on the "external_user" field.
+func ExternalUserNotIn(vs ...uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldExternalUser, vs...))
+}
+
+// ExternalUserGT applies the GT predicate on the "external_user" field.
+func ExternalUserGT(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldGT(FieldExternalUser, v))
+}
+
+// ExternalUserGTE applies the GTE predicate on the "external_user" field.
+func ExternalUserGTE(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldExternalUser, v))
+}
+
+// ExternalUserLT applies the LT predicate on the "external_user" field.
+func ExternalUserLT(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldLT(FieldExternalUser, v))
+}
+
+// ExternalUserLTE applies the LTE predicate on the "external_user" field.
+func ExternalUserLTE(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldExternalUser, v))
 }
 
 // UsernameEQ applies the EQ predicate on the "username" field.
@@ -128,46 +168,6 @@ func UsernameEqualFold(v string) predicate.User {
 // UsernameContainsFold applies the ContainsFold predicate on the "username" field.
 func UsernameContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldUsername, v))
-}
-
-// ExternalUserEQ applies the EQ predicate on the "external_user" field.
-func ExternalUserEQ(v uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldExternalUser, v))
-}
-
-// ExternalUserNEQ applies the NEQ predicate on the "external_user" field.
-func ExternalUserNEQ(v uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldExternalUser, v))
-}
-
-// ExternalUserIn applies the In predicate on the "external_user" field.
-func ExternalUserIn(vs ...uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldIn(FieldExternalUser, vs...))
-}
-
-// ExternalUserNotIn applies the NotIn predicate on the "external_user" field.
-func ExternalUserNotIn(vs ...uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldExternalUser, vs...))
-}
-
-// ExternalUserGT applies the GT predicate on the "external_user" field.
-func ExternalUserGT(v uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldGT(FieldExternalUser, v))
-}
-
-// ExternalUserGTE applies the GTE predicate on the "external_user" field.
-func ExternalUserGTE(v uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldExternalUser, v))
-}
-
-// ExternalUserLT applies the LT predicate on the "external_user" field.
-func ExternalUserLT(v uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldLT(FieldExternalUser, v))
-}
-
-// ExternalUserLTE applies the LTE predicate on the "external_user" field.
-func ExternalUserLTE(v uuid.UUID) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldExternalUser, v))
 }
 
 // HasActivity applies the HasEdge predicate on the "activity" edge.

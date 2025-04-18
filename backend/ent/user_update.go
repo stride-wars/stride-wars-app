@@ -31,20 +31,6 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
-// SetUsername sets the "username" field.
-func (uu *UserUpdate) SetUsername(s string) *UserUpdate {
-	uu.mutation.SetUsername(s)
-	return uu
-}
-
-// SetNillableUsername sets the "username" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableUsername(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetUsername(*s)
-	}
-	return uu
-}
-
 // SetExternalUser sets the "external_user" field.
 func (uu *UserUpdate) SetExternalUser(u uuid.UUID) *UserUpdate {
 	uu.mutation.SetExternalUser(u)
@@ -55,6 +41,20 @@ func (uu *UserUpdate) SetExternalUser(u uuid.UUID) *UserUpdate {
 func (uu *UserUpdate) SetNillableExternalUser(u *uuid.UUID) *UserUpdate {
 	if u != nil {
 		uu.SetExternalUser(*u)
+	}
+	return uu
+}
+
+// SetUsername sets the "username" field.
+func (uu *UserUpdate) SetUsername(s string) *UserUpdate {
+	uu.mutation.SetUsername(s)
+	return uu
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableUsername(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetUsername(*s)
 	}
 	return uu
 }
@@ -208,11 +208,11 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := uu.mutation.Username(); ok {
-		_spec.SetField(user.FieldUsername, field.TypeString, value)
-	}
 	if value, ok := uu.mutation.ExternalUser(); ok {
 		_spec.SetField(user.FieldExternalUser, field.TypeUUID, value)
+	}
+	if value, ok := uu.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
 	if uu.mutation.ActivityCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -369,20 +369,6 @@ type UserUpdateOne struct {
 	mutation *UserMutation
 }
 
-// SetUsername sets the "username" field.
-func (uuo *UserUpdateOne) SetUsername(s string) *UserUpdateOne {
-	uuo.mutation.SetUsername(s)
-	return uuo
-}
-
-// SetNillableUsername sets the "username" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableUsername(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetUsername(*s)
-	}
-	return uuo
-}
-
 // SetExternalUser sets the "external_user" field.
 func (uuo *UserUpdateOne) SetExternalUser(u uuid.UUID) *UserUpdateOne {
 	uuo.mutation.SetExternalUser(u)
@@ -393,6 +379,20 @@ func (uuo *UserUpdateOne) SetExternalUser(u uuid.UUID) *UserUpdateOne {
 func (uuo *UserUpdateOne) SetNillableExternalUser(u *uuid.UUID) *UserUpdateOne {
 	if u != nil {
 		uuo.SetExternalUser(*u)
+	}
+	return uuo
+}
+
+// SetUsername sets the "username" field.
+func (uuo *UserUpdateOne) SetUsername(s string) *UserUpdateOne {
+	uuo.mutation.SetUsername(s)
+	return uuo
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableUsername(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetUsername(*s)
 	}
 	return uuo
 }
@@ -576,11 +576,11 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			}
 		}
 	}
-	if value, ok := uuo.mutation.Username(); ok {
-		_spec.SetField(user.FieldUsername, field.TypeString, value)
-	}
 	if value, ok := uuo.mutation.ExternalUser(); ok {
 		_spec.SetField(user.FieldExternalUser, field.TypeUUID, value)
+	}
+	if value, ok := uuo.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
 	if uuo.mutation.ActivityCleared() {
 		edge := &sqlgraph.EdgeSpec{

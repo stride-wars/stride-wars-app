@@ -45,38 +45,24 @@ func (au *ActivityUpdate) SetNillableUserID(u *uuid.UUID) *ActivityUpdate {
 	return au
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (au *ActivityUpdate) SetTimestamp(t time.Time) *ActivityUpdate {
-	au.mutation.SetTimestamp(t)
-	return au
-}
-
-// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (au *ActivityUpdate) SetNillableTimestamp(t *time.Time) *ActivityUpdate {
-	if t != nil {
-		au.SetTimestamp(*t)
-	}
-	return au
-}
-
 // SetDurationSeconds sets the "duration_seconds" field.
-func (au *ActivityUpdate) SetDurationSeconds(i int) *ActivityUpdate {
+func (au *ActivityUpdate) SetDurationSeconds(f float64) *ActivityUpdate {
 	au.mutation.ResetDurationSeconds()
-	au.mutation.SetDurationSeconds(i)
+	au.mutation.SetDurationSeconds(f)
 	return au
 }
 
 // SetNillableDurationSeconds sets the "duration_seconds" field if the given value is not nil.
-func (au *ActivityUpdate) SetNillableDurationSeconds(i *int) *ActivityUpdate {
-	if i != nil {
-		au.SetDurationSeconds(*i)
+func (au *ActivityUpdate) SetNillableDurationSeconds(f *float64) *ActivityUpdate {
+	if f != nil {
+		au.SetDurationSeconds(*f)
 	}
 	return au
 }
 
-// AddDurationSeconds adds i to the "duration_seconds" field.
-func (au *ActivityUpdate) AddDurationSeconds(i int) *ActivityUpdate {
-	au.mutation.AddDurationSeconds(i)
+// AddDurationSeconds adds f to the "duration_seconds" field.
+func (au *ActivityUpdate) AddDurationSeconds(f float64) *ActivityUpdate {
+	au.mutation.AddDurationSeconds(f)
 	return au
 }
 
@@ -196,14 +182,11 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := au.mutation.Timestamp(); ok {
-		_spec.SetField(activity.FieldTimestamp, field.TypeTime, value)
-	}
 	if value, ok := au.mutation.DurationSeconds(); ok {
-		_spec.SetField(activity.FieldDurationSeconds, field.TypeInt, value)
+		_spec.SetField(activity.FieldDurationSeconds, field.TypeFloat64, value)
 	}
 	if value, ok := au.mutation.AddedDurationSeconds(); ok {
-		_spec.AddField(activity.FieldDurationSeconds, field.TypeInt, value)
+		_spec.AddField(activity.FieldDurationSeconds, field.TypeFloat64, value)
 	}
 	if value, ok := au.mutation.DistanceMeters(); ok {
 		_spec.SetField(activity.FieldDistanceMeters, field.TypeFloat64, value)
@@ -285,38 +268,24 @@ func (auo *ActivityUpdateOne) SetNillableUserID(u *uuid.UUID) *ActivityUpdateOne
 	return auo
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (auo *ActivityUpdateOne) SetTimestamp(t time.Time) *ActivityUpdateOne {
-	auo.mutation.SetTimestamp(t)
-	return auo
-}
-
-// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (auo *ActivityUpdateOne) SetNillableTimestamp(t *time.Time) *ActivityUpdateOne {
-	if t != nil {
-		auo.SetTimestamp(*t)
-	}
-	return auo
-}
-
 // SetDurationSeconds sets the "duration_seconds" field.
-func (auo *ActivityUpdateOne) SetDurationSeconds(i int) *ActivityUpdateOne {
+func (auo *ActivityUpdateOne) SetDurationSeconds(f float64) *ActivityUpdateOne {
 	auo.mutation.ResetDurationSeconds()
-	auo.mutation.SetDurationSeconds(i)
+	auo.mutation.SetDurationSeconds(f)
 	return auo
 }
 
 // SetNillableDurationSeconds sets the "duration_seconds" field if the given value is not nil.
-func (auo *ActivityUpdateOne) SetNillableDurationSeconds(i *int) *ActivityUpdateOne {
-	if i != nil {
-		auo.SetDurationSeconds(*i)
+func (auo *ActivityUpdateOne) SetNillableDurationSeconds(f *float64) *ActivityUpdateOne {
+	if f != nil {
+		auo.SetDurationSeconds(*f)
 	}
 	return auo
 }
 
-// AddDurationSeconds adds i to the "duration_seconds" field.
-func (auo *ActivityUpdateOne) AddDurationSeconds(i int) *ActivityUpdateOne {
-	auo.mutation.AddDurationSeconds(i)
+// AddDurationSeconds adds f to the "duration_seconds" field.
+func (auo *ActivityUpdateOne) AddDurationSeconds(f float64) *ActivityUpdateOne {
+	auo.mutation.AddDurationSeconds(f)
 	return auo
 }
 
@@ -466,14 +435,11 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			}
 		}
 	}
-	if value, ok := auo.mutation.Timestamp(); ok {
-		_spec.SetField(activity.FieldTimestamp, field.TypeTime, value)
-	}
 	if value, ok := auo.mutation.DurationSeconds(); ok {
-		_spec.SetField(activity.FieldDurationSeconds, field.TypeInt, value)
+		_spec.SetField(activity.FieldDurationSeconds, field.TypeFloat64, value)
 	}
 	if value, ok := auo.mutation.AddedDurationSeconds(); ok {
-		_spec.AddField(activity.FieldDurationSeconds, field.TypeInt, value)
+		_spec.AddField(activity.FieldDurationSeconds, field.TypeFloat64, value)
 	}
 	if value, ok := auo.mutation.DistanceMeters(); ok {
 		_spec.SetField(activity.FieldDistanceMeters, field.TypeFloat64, value)

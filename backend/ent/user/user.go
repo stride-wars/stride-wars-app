@@ -13,10 +13,10 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldUsername holds the string denoting the username field in the database.
-	FieldUsername = "username"
 	// FieldExternalUser holds the string denoting the external_user field in the database.
 	FieldExternalUser = "external_user"
+	// FieldUsername holds the string denoting the username field in the database.
+	FieldUsername = "username"
 	// EdgeActivity holds the string denoting the activity edge name in mutations.
 	EdgeActivity = "activity"
 	// EdgeFriendship holds the string denoting the friendship edge name in mutations.
@@ -51,8 +51,8 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
-	FieldUsername,
 	FieldExternalUser,
+	FieldUsername,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -78,14 +78,14 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByUsername orders the results by the username field.
-func ByUsername(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUsername, opts...).ToFunc()
-}
-
 // ByExternalUser orders the results by the external_user field.
 func ByExternalUser(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExternalUser, opts...).ToFunc()
+}
+
+// ByUsername orders the results by the username field.
+func ByUsername(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUsername, opts...).ToFunc()
 }
 
 // ByActivityCount orders the results by activity count.

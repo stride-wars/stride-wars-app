@@ -11,8 +11,7 @@ var (
 	// ActivitiesColumns holds the columns for the "activities" table.
 	ActivitiesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
-		{Name: "timestamp", Type: field.TypeTime},
-		{Name: "duration_seconds", Type: field.TypeInt},
+		{Name: "duration_seconds", Type: field.TypeFloat64},
 		{Name: "distance_meters", Type: field.TypeFloat64},
 		{Name: "h3_indexes", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
@@ -26,7 +25,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "activities_users_users",
-				Columns:    []*schema.Column{ActivitiesColumns[6]},
+				Columns:    []*schema.Column{ActivitiesColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -120,8 +119,8 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
-		{Name: "username", Type: field.TypeString},
 		{Name: "external_user", Type: field.TypeUUID},
+		{Name: "username", Type: field.TypeString},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{

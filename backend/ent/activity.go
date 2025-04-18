@@ -22,10 +22,8 @@ type Activity struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// UserID holds the value of the "user_id" field.
 	UserID uuid.UUID `json:"user_id,omitempty"`
-	// Timestamp holds the value of the "timestamp" field.
-	Timestamp time.Time `json:"timestamp,omitempty"`
 	// DurationSeconds holds the value of the "duration_seconds" field.
-	DurationSeconds int `json:"duration_seconds,omitempty"`
+	DurationSeconds float64 `json:"duration_seconds,omitempty"`
 	// DistanceMeters holds the value of the "distance_meters" field.
 	DistanceMeters float64 `json:"distance_meters,omitempty"`
 	// H3Indexes holds the value of the "h3_indexes" field.
@@ -65,11 +63,9 @@ func (*Activity) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case activity.FieldH3Indexes:
 			values[i] = new([]byte)
-		case activity.FieldDistanceMeters:
+		case activity.FieldDurationSeconds, activity.FieldDistanceMeters:
 			values[i] = new(sql.NullFloat64)
-		case activity.FieldDurationSeconds:
-			values[i] = new(sql.NullInt64)
-		case activity.FieldTimestamp, activity.FieldCreatedAt:
+		case activity.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case activity.FieldID, activity.FieldUserID:
 			values[i] = new(uuid.UUID)
@@ -100,17 +96,11 @@ func (a *Activity) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				a.UserID = *value
 			}
-		case activity.FieldTimestamp:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field timestamp", values[i])
-			} else if value.Valid {
-				a.Timestamp = value.Time
-			}
 		case activity.FieldDurationSeconds:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field duration_seconds", values[i])
 			} else if value.Valid {
-				a.DurationSeconds = int(value.Int64)
+				a.DurationSeconds = value.Float64
 			}
 		case activity.FieldDistanceMeters:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -175,9 +165,6 @@ func (a *Activity) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", a.ID))
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", a.UserID))
-	builder.WriteString(", ")
-	builder.WriteString("timestamp=")
-	builder.WriteString(a.Timestamp.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("duration_seconds=")
 	builder.WriteString(fmt.Sprintf("%v", a.DurationSeconds))

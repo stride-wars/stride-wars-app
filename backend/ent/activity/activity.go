@@ -15,8 +15,6 @@ const (
 	FieldID = "id"
 	// FieldUserID holds the string denoting the user_id field in the database.
 	FieldUserID = "user_id"
-	// FieldTimestamp holds the string denoting the timestamp field in the database.
-	FieldTimestamp = "timestamp"
 	// FieldDurationSeconds holds the string denoting the duration_seconds field in the database.
 	FieldDurationSeconds = "duration_seconds"
 	// FieldDistanceMeters holds the string denoting the distance_meters field in the database.
@@ -42,7 +40,6 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldUserID,
-	FieldTimestamp,
 	FieldDurationSeconds,
 	FieldDistanceMeters,
 	FieldH3Indexes,
@@ -75,11 +72,6 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByUserID orders the results by the user_id field.
 func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserID, opts...).ToFunc()
-}
-
-// ByTimestamp orders the results by the timestamp field.
-func ByTimestamp(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTimestamp, opts...).ToFunc()
 }
 
 // ByDurationSeconds orders the results by the duration_seconds field.

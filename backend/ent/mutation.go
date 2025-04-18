@@ -44,9 +44,8 @@ type ActivityMutation struct {
 	op                  Op
 	typ                 string
 	id                  *uuid.UUID
-	timestamp           *time.Time
-	duration_seconds    *int
-	addduration_seconds *int
+	duration_seconds    *float64
+	addduration_seconds *float64
 	distance_meters     *float64
 	adddistance_meters  *float64
 	h3_indexes          *[]string
@@ -200,50 +199,14 @@ func (m *ActivityMutation) ResetUserID() {
 	m.users = nil
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (m *ActivityMutation) SetTimestamp(t time.Time) {
-	m.timestamp = &t
-}
-
-// Timestamp returns the value of the "timestamp" field in the mutation.
-func (m *ActivityMutation) Timestamp() (r time.Time, exists bool) {
-	v := m.timestamp
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTimestamp returns the old "timestamp" field's value of the Activity entity.
-// If the Activity object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ActivityMutation) OldTimestamp(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTimestamp is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTimestamp requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTimestamp: %w", err)
-	}
-	return oldValue.Timestamp, nil
-}
-
-// ResetTimestamp resets all changes to the "timestamp" field.
-func (m *ActivityMutation) ResetTimestamp() {
-	m.timestamp = nil
-}
-
 // SetDurationSeconds sets the "duration_seconds" field.
-func (m *ActivityMutation) SetDurationSeconds(i int) {
-	m.duration_seconds = &i
+func (m *ActivityMutation) SetDurationSeconds(f float64) {
+	m.duration_seconds = &f
 	m.addduration_seconds = nil
 }
 
 // DurationSeconds returns the value of the "duration_seconds" field in the mutation.
-func (m *ActivityMutation) DurationSeconds() (r int, exists bool) {
+func (m *ActivityMutation) DurationSeconds() (r float64, exists bool) {
 	v := m.duration_seconds
 	if v == nil {
 		return
@@ -254,7 +217,7 @@ func (m *ActivityMutation) DurationSeconds() (r int, exists bool) {
 // OldDurationSeconds returns the old "duration_seconds" field's value of the Activity entity.
 // If the Activity object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ActivityMutation) OldDurationSeconds(ctx context.Context) (v int, err error) {
+func (m *ActivityMutation) OldDurationSeconds(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDurationSeconds is only allowed on UpdateOne operations")
 	}
@@ -268,17 +231,17 @@ func (m *ActivityMutation) OldDurationSeconds(ctx context.Context) (v int, err e
 	return oldValue.DurationSeconds, nil
 }
 
-// AddDurationSeconds adds i to the "duration_seconds" field.
-func (m *ActivityMutation) AddDurationSeconds(i int) {
+// AddDurationSeconds adds f to the "duration_seconds" field.
+func (m *ActivityMutation) AddDurationSeconds(f float64) {
 	if m.addduration_seconds != nil {
-		*m.addduration_seconds += i
+		*m.addduration_seconds += f
 	} else {
-		m.addduration_seconds = &i
+		m.addduration_seconds = &f
 	}
 }
 
 // AddedDurationSeconds returns the value that was added to the "duration_seconds" field in this mutation.
-func (m *ActivityMutation) AddedDurationSeconds() (r int, exists bool) {
+func (m *ActivityMutation) AddedDurationSeconds() (r float64, exists bool) {
 	v := m.addduration_seconds
 	if v == nil {
 		return
@@ -509,12 +472,9 @@ func (m *ActivityMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ActivityMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m.users != nil {
 		fields = append(fields, activity.FieldUserID)
-	}
-	if m.timestamp != nil {
-		fields = append(fields, activity.FieldTimestamp)
 	}
 	if m.duration_seconds != nil {
 		fields = append(fields, activity.FieldDurationSeconds)
@@ -538,8 +498,6 @@ func (m *ActivityMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case activity.FieldUserID:
 		return m.UserID()
-	case activity.FieldTimestamp:
-		return m.Timestamp()
 	case activity.FieldDurationSeconds:
 		return m.DurationSeconds()
 	case activity.FieldDistanceMeters:
@@ -559,8 +517,6 @@ func (m *ActivityMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case activity.FieldUserID:
 		return m.OldUserID(ctx)
-	case activity.FieldTimestamp:
-		return m.OldTimestamp(ctx)
 	case activity.FieldDurationSeconds:
 		return m.OldDurationSeconds(ctx)
 	case activity.FieldDistanceMeters:
@@ -585,15 +541,8 @@ func (m *ActivityMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUserID(v)
 		return nil
-	case activity.FieldTimestamp:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTimestamp(v)
-		return nil
 	case activity.FieldDurationSeconds:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -656,7 +605,7 @@ func (m *ActivityMutation) AddedField(name string) (ent.Value, bool) {
 func (m *ActivityMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case activity.FieldDurationSeconds:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -698,9 +647,6 @@ func (m *ActivityMutation) ResetField(name string) error {
 	switch name {
 	case activity.FieldUserID:
 		m.ResetUserID()
-		return nil
-	case activity.FieldTimestamp:
-		m.ResetTimestamp()
 		return nil
 	case activity.FieldDurationSeconds:
 		m.ResetDurationSeconds()
@@ -2907,8 +2853,8 @@ type UserMutation struct {
 	op                  Op
 	typ                 string
 	id                  *uuid.UUID
-	username            *string
 	external_user       *uuid.UUID
+	username            *string
 	clearedFields       map[string]struct{}
 	activity            map[uuid.UUID]struct{}
 	removedactivity     map[uuid.UUID]struct{}
@@ -3028,42 +2974,6 @@ func (m *UserMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	}
 }
 
-// SetUsername sets the "username" field.
-func (m *UserMutation) SetUsername(s string) {
-	m.username = &s
-}
-
-// Username returns the value of the "username" field in the mutation.
-func (m *UserMutation) Username() (r string, exists bool) {
-	v := m.username
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUsername returns the old "username" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldUsername(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUsername requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
-	}
-	return oldValue.Username, nil
-}
-
-// ResetUsername resets all changes to the "username" field.
-func (m *UserMutation) ResetUsername() {
-	m.username = nil
-}
-
 // SetExternalUser sets the "external_user" field.
 func (m *UserMutation) SetExternalUser(u uuid.UUID) {
 	m.external_user = &u
@@ -3098,6 +3008,42 @@ func (m *UserMutation) OldExternalUser(ctx context.Context) (v uuid.UUID, err er
 // ResetExternalUser resets all changes to the "external_user" field.
 func (m *UserMutation) ResetExternalUser() {
 	m.external_user = nil
+}
+
+// SetUsername sets the "username" field.
+func (m *UserMutation) SetUsername(s string) {
+	m.username = &s
+}
+
+// Username returns the value of the "username" field in the mutation.
+func (m *UserMutation) Username() (r string, exists bool) {
+	v := m.username
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsername returns the old "username" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldUsername(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsername requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
+	}
+	return oldValue.Username, nil
+}
+
+// ResetUsername resets all changes to the "username" field.
+func (m *UserMutation) ResetUsername() {
+	m.username = nil
 }
 
 // AddActivityIDs adds the "activity" edge to the Activity entity by ids.
@@ -3297,11 +3243,11 @@ func (m *UserMutation) Type() string {
 // AddedFields().
 func (m *UserMutation) Fields() []string {
 	fields := make([]string, 0, 2)
-	if m.username != nil {
-		fields = append(fields, user.FieldUsername)
-	}
 	if m.external_user != nil {
 		fields = append(fields, user.FieldExternalUser)
+	}
+	if m.username != nil {
+		fields = append(fields, user.FieldUsername)
 	}
 	return fields
 }
@@ -3311,10 +3257,10 @@ func (m *UserMutation) Fields() []string {
 // schema.
 func (m *UserMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case user.FieldUsername:
-		return m.Username()
 	case user.FieldExternalUser:
 		return m.ExternalUser()
+	case user.FieldUsername:
+		return m.Username()
 	}
 	return nil, false
 }
@@ -3324,10 +3270,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case user.FieldUsername:
-		return m.OldUsername(ctx)
 	case user.FieldExternalUser:
 		return m.OldExternalUser(ctx)
+	case user.FieldUsername:
+		return m.OldUsername(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -3337,19 +3283,19 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *UserMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case user.FieldUsername:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUsername(v)
-		return nil
 	case user.FieldExternalUser:
 		v, ok := value.(uuid.UUID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExternalUser(v)
+		return nil
+	case user.FieldUsername:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsername(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -3400,11 +3346,11 @@ func (m *UserMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *UserMutation) ResetField(name string) error {
 	switch name {
-	case user.FieldUsername:
-		m.ResetUsername()
-		return nil
 	case user.FieldExternalUser:
 		m.ResetExternalUser()
+		return nil
+	case user.FieldUsername:
+		m.ResetUsername()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

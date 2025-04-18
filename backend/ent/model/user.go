@@ -9,14 +9,17 @@ import (
 )
 
 type User struct {
+	ID           uuid.UUID
+	ExternalUser uuid.UUID
+	Username     string
 	ent.Schema
 }
 
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
-		field.String("username"),
 		field.UUID("external_user", uuid.UUID{}),
+		field.String("username"),
 	}
 }
 

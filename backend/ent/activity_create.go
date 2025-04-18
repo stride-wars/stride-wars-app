@@ -28,15 +28,9 @@ func (ac *ActivityCreate) SetUserID(u uuid.UUID) *ActivityCreate {
 	return ac
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (ac *ActivityCreate) SetTimestamp(t time.Time) *ActivityCreate {
-	ac.mutation.SetTimestamp(t)
-	return ac
-}
-
 // SetDurationSeconds sets the "duration_seconds" field.
-func (ac *ActivityCreate) SetDurationSeconds(i int) *ActivityCreate {
-	ac.mutation.SetDurationSeconds(i)
+func (ac *ActivityCreate) SetDurationSeconds(f float64) *ActivityCreate {
+	ac.mutation.SetDurationSeconds(f)
 	return ac
 }
 
@@ -129,9 +123,6 @@ func (ac *ActivityCreate) check() error {
 	if _, ok := ac.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Activity.user_id"`)}
 	}
-	if _, ok := ac.mutation.Timestamp(); !ok {
-		return &ValidationError{Name: "timestamp", err: errors.New(`ent: missing required field "Activity.timestamp"`)}
-	}
 	if _, ok := ac.mutation.DurationSeconds(); !ok {
 		return &ValidationError{Name: "duration_seconds", err: errors.New(`ent: missing required field "Activity.duration_seconds"`)}
 	}
@@ -182,12 +173,8 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := ac.mutation.Timestamp(); ok {
-		_spec.SetField(activity.FieldTimestamp, field.TypeTime, value)
-		_node.Timestamp = value
-	}
 	if value, ok := ac.mutation.DurationSeconds(); ok {
-		_spec.SetField(activity.FieldDurationSeconds, field.TypeInt, value)
+		_spec.SetField(activity.FieldDurationSeconds, field.TypeFloat64, value)
 		_node.DurationSeconds = value
 	}
 	if value, ok := ac.mutation.DistanceMeters(); ok {

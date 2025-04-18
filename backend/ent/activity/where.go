@@ -61,13 +61,8 @@ func UserID(v uuid.UUID) predicate.Activity {
 	return predicate.Activity(sql.FieldEQ(FieldUserID, v))
 }
 
-// Timestamp applies equality check predicate on the "timestamp" field. It's identical to TimestampEQ.
-func Timestamp(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldEQ(FieldTimestamp, v))
-}
-
 // DurationSeconds applies equality check predicate on the "duration_seconds" field. It's identical to DurationSecondsEQ.
-func DurationSeconds(v int) predicate.Activity {
+func DurationSeconds(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldEQ(FieldDurationSeconds, v))
 }
 
@@ -101,83 +96,43 @@ func UserIDNotIn(vs ...uuid.UUID) predicate.Activity {
 	return predicate.Activity(sql.FieldNotIn(FieldUserID, vs...))
 }
 
-// TimestampEQ applies the EQ predicate on the "timestamp" field.
-func TimestampEQ(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldEQ(FieldTimestamp, v))
-}
-
-// TimestampNEQ applies the NEQ predicate on the "timestamp" field.
-func TimestampNEQ(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldNEQ(FieldTimestamp, v))
-}
-
-// TimestampIn applies the In predicate on the "timestamp" field.
-func TimestampIn(vs ...time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldIn(FieldTimestamp, vs...))
-}
-
-// TimestampNotIn applies the NotIn predicate on the "timestamp" field.
-func TimestampNotIn(vs ...time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldNotIn(FieldTimestamp, vs...))
-}
-
-// TimestampGT applies the GT predicate on the "timestamp" field.
-func TimestampGT(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldGT(FieldTimestamp, v))
-}
-
-// TimestampGTE applies the GTE predicate on the "timestamp" field.
-func TimestampGTE(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldGTE(FieldTimestamp, v))
-}
-
-// TimestampLT applies the LT predicate on the "timestamp" field.
-func TimestampLT(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldLT(FieldTimestamp, v))
-}
-
-// TimestampLTE applies the LTE predicate on the "timestamp" field.
-func TimestampLTE(v time.Time) predicate.Activity {
-	return predicate.Activity(sql.FieldLTE(FieldTimestamp, v))
-}
-
 // DurationSecondsEQ applies the EQ predicate on the "duration_seconds" field.
-func DurationSecondsEQ(v int) predicate.Activity {
+func DurationSecondsEQ(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldEQ(FieldDurationSeconds, v))
 }
 
 // DurationSecondsNEQ applies the NEQ predicate on the "duration_seconds" field.
-func DurationSecondsNEQ(v int) predicate.Activity {
+func DurationSecondsNEQ(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldNEQ(FieldDurationSeconds, v))
 }
 
 // DurationSecondsIn applies the In predicate on the "duration_seconds" field.
-func DurationSecondsIn(vs ...int) predicate.Activity {
+func DurationSecondsIn(vs ...float64) predicate.Activity {
 	return predicate.Activity(sql.FieldIn(FieldDurationSeconds, vs...))
 }
 
 // DurationSecondsNotIn applies the NotIn predicate on the "duration_seconds" field.
-func DurationSecondsNotIn(vs ...int) predicate.Activity {
+func DurationSecondsNotIn(vs ...float64) predicate.Activity {
 	return predicate.Activity(sql.FieldNotIn(FieldDurationSeconds, vs...))
 }
 
 // DurationSecondsGT applies the GT predicate on the "duration_seconds" field.
-func DurationSecondsGT(v int) predicate.Activity {
+func DurationSecondsGT(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldGT(FieldDurationSeconds, v))
 }
 
 // DurationSecondsGTE applies the GTE predicate on the "duration_seconds" field.
-func DurationSecondsGTE(v int) predicate.Activity {
+func DurationSecondsGTE(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldGTE(FieldDurationSeconds, v))
 }
 
 // DurationSecondsLT applies the LT predicate on the "duration_seconds" field.
-func DurationSecondsLT(v int) predicate.Activity {
+func DurationSecondsLT(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldLT(FieldDurationSeconds, v))
 }
 
 // DurationSecondsLTE applies the LTE predicate on the "duration_seconds" field.
-func DurationSecondsLTE(v int) predicate.Activity {
+func DurationSecondsLTE(v float64) predicate.Activity {
 	return predicate.Activity(sql.FieldLTE(FieldDurationSeconds, v))
 }
 

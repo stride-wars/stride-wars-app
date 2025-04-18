@@ -23,15 +23,15 @@ type UserCreate struct {
 	hooks    []Hook
 }
 
-// SetUsername sets the "username" field.
-func (uc *UserCreate) SetUsername(s string) *UserCreate {
-	uc.mutation.SetUsername(s)
-	return uc
-}
-
 // SetExternalUser sets the "external_user" field.
 func (uc *UserCreate) SetExternalUser(u uuid.UUID) *UserCreate {
 	uc.mutation.SetExternalUser(u)
+	return uc
+}
+
+// SetUsername sets the "username" field.
+func (uc *UserCreate) SetUsername(s string) *UserCreate {
+	uc.mutation.SetUsername(s)
 	return uc
 }
 
@@ -137,11 +137,11 @@ func (uc *UserCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
-	if _, ok := uc.mutation.Username(); !ok {
-		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "User.username"`)}
-	}
 	if _, ok := uc.mutation.ExternalUser(); !ok {
 		return &ValidationError{Name: "external_user", err: errors.New(`ent: missing required field "User.external_user"`)}
+	}
+	if _, ok := uc.mutation.Username(); !ok {
+		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "User.username"`)}
 	}
 	return nil
 }
@@ -178,13 +178,13 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := uc.mutation.Username(); ok {
-		_spec.SetField(user.FieldUsername, field.TypeString, value)
-		_node.Username = value
-	}
 	if value, ok := uc.mutation.ExternalUser(); ok {
 		_spec.SetField(user.FieldExternalUser, field.TypeUUID, value)
 		_node.ExternalUser = value
+	}
+	if value, ok := uc.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
+		_node.Username = value
 	}
 	if nodes := uc.mutation.ActivityIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
