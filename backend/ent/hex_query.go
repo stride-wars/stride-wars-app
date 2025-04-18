@@ -4,9 +4,12 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 	"stride-wars-app/ent/hex"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
 	"stride-wars-app/ent/predicate"
 
 	"entgo.io/ent"
@@ -18,10 +21,12 @@ import (
 // HexQuery is the builder for querying Hex entities.
 type HexQuery struct {
 	config
-	ctx        *QueryContext
-	order      []hex.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Hex
+	ctx                 *QueryContext
+	order               []hex.OrderOption
+	inters              []Interceptor
+	predicates          []predicate.Hex
+	withHexinfluences   *HexInfluenceQuery
+	withHexleaderboards *HexLeaderboardQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +63,50 @@ func (hq *HexQuery) Order(o ...hex.OrderOption) *HexQuery {
 	return hq
 }
 
+// QueryHexinfluences chains the current query on the "hexinfluences" edge.
+func (hq *HexQuery) QueryHexinfluences() *HexInfluenceQuery {
+	query := (&HexInfluenceClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hex.Table, hex.FieldID, selector),
+			sqlgraph.To(hexinfluence.Table, hexinfluence.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, hex.HexinfluencesTable, hex.HexinfluencesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryHexleaderboards chains the current query on the "hexleaderboards" edge.
+func (hq *HexQuery) QueryHexleaderboards() *HexLeaderboardQuery {
+	query := (&HexLeaderboardClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hex.Table, hex.FieldID, selector),
+			sqlgraph.To(hexleaderboard.Table, hexleaderboard.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, hex.HexleaderboardsTable, hex.HexleaderboardsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Hex entity from the query.
 // Returns a *NotFoundError when no Hex was found.
 func (hq *HexQuery) First(ctx context.Context) (*Hex, error) {
@@ -82,8 +131,8 @@ func (hq *HexQuery) FirstX(ctx context.Context) *Hex {
 
 // FirstID returns the first Hex ID from the query.
 // Returns a *NotFoundError when no Hex ID was found.
-func (hq *HexQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (hq *HexQuery) FirstID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = hq.Limit(1).IDs(setContextOp(ctx, hq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -95,7 +144,7 @@ func (hq *HexQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hq *HexQuery) FirstIDX(ctx context.Context) int {
+func (hq *HexQuery) FirstIDX(ctx context.Context) string {
 	id, err := hq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,8 +182,8 @@ func (hq *HexQuery) OnlyX(ctx context.Context) *Hex {
 // OnlyID is like Only, but returns the only Hex ID in the query.
 // Returns a *NotSingularError when more than one Hex ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hq *HexQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (hq *HexQuery) OnlyID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = hq.Limit(2).IDs(setContextOp(ctx, hq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -150,7 +199,7 @@ func (hq *HexQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hq *HexQuery) OnlyIDX(ctx context.Context) int {
+func (hq *HexQuery) OnlyIDX(ctx context.Context) string {
 	id, err := hq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -178,7 +227,7 @@ func (hq *HexQuery) AllX(ctx context.Context) []*Hex {
 }
 
 // IDs executes the query and returns a list of Hex IDs.
-func (hq *HexQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (hq *HexQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if hq.ctx.Unique == nil && hq.path != nil {
 		hq.Unique(true)
 	}
@@ -190,7 +239,7 @@ func (hq *HexQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hq *HexQuery) IDsX(ctx context.Context) []int {
+func (hq *HexQuery) IDsX(ctx context.Context) []string {
 	ids, err := hq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -245,31 +294,43 @@ func (hq *HexQuery) Clone() *HexQuery {
 		return nil
 	}
 	return &HexQuery{
-		config:     hq.config,
-		ctx:        hq.ctx.Clone(),
-		order:      append([]hex.OrderOption{}, hq.order...),
-		inters:     append([]Interceptor{}, hq.inters...),
-		predicates: append([]predicate.Hex{}, hq.predicates...),
+		config:              hq.config,
+		ctx:                 hq.ctx.Clone(),
+		order:               append([]hex.OrderOption{}, hq.order...),
+		inters:              append([]Interceptor{}, hq.inters...),
+		predicates:          append([]predicate.Hex{}, hq.predicates...),
+		withHexinfluences:   hq.withHexinfluences.Clone(),
+		withHexleaderboards: hq.withHexleaderboards.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
 	}
 }
 
+// WithHexinfluences tells the query-builder to eager-load the nodes that are connected to
+// the "hexinfluences" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HexQuery) WithHexinfluences(opts ...func(*HexInfluenceQuery)) *HexQuery {
+	query := (&HexInfluenceClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withHexinfluences = query
+	return hq
+}
+
+// WithHexleaderboards tells the query-builder to eager-load the nodes that are connected to
+// the "hexleaderboards" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HexQuery) WithHexleaderboards(opts ...func(*HexLeaderboardQuery)) *HexQuery {
+	query := (&HexLeaderboardClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withHexleaderboards = query
+	return hq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
-//
-// Example:
-//
-//	var v []struct {
-//		HexOwner int64 `json:"hex_owner,omitempty"`
-//		Count int `json:"count,omitempty"`
-//	}
-//
-//	client.Hex.Query().
-//		GroupBy(hex.FieldHexOwner).
-//		Aggregate(ent.Count()).
-//		Scan(ctx, &v)
 func (hq *HexQuery) GroupBy(field string, fields ...string) *HexGroupBy {
 	hq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &HexGroupBy{build: hq}
@@ -281,16 +342,6 @@ func (hq *HexQuery) GroupBy(field string, fields ...string) *HexGroupBy {
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
-//
-// Example:
-//
-//	var v []struct {
-//		HexOwner int64 `json:"hex_owner,omitempty"`
-//	}
-//
-//	client.Hex.Query().
-//		Select(hex.FieldHexOwner).
-//		Scan(ctx, &v)
 func (hq *HexQuery) Select(fields ...string) *HexSelect {
 	hq.ctx.Fields = append(hq.ctx.Fields, fields...)
 	sbuild := &HexSelect{HexQuery: hq}
@@ -332,8 +383,12 @@ func (hq *HexQuery) prepareQuery(ctx context.Context) error {
 
 func (hq *HexQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Hex, error) {
 	var (
-		nodes = []*Hex{}
-		_spec = hq.querySpec()
+		nodes       = []*Hex{}
+		_spec       = hq.querySpec()
+		loadedTypes = [2]bool{
+			hq.withHexinfluences != nil,
+			hq.withHexleaderboards != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Hex).scanValues(nil, columns)
@@ -341,6 +396,7 @@ func (hq *HexQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Hex, err
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Hex{config: hq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -352,7 +408,82 @@ func (hq *HexQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Hex, err
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := hq.withHexinfluences; query != nil {
+		if err := hq.loadHexinfluences(ctx, query, nodes,
+			func(n *Hex) { n.Edges.Hexinfluences = []*HexInfluence{} },
+			func(n *Hex, e *HexInfluence) { n.Edges.Hexinfluences = append(n.Edges.Hexinfluences, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hq.withHexleaderboards; query != nil {
+		if err := hq.loadHexleaderboards(ctx, query, nodes,
+			func(n *Hex) { n.Edges.Hexleaderboards = []*HexLeaderboard{} },
+			func(n *Hex, e *HexLeaderboard) { n.Edges.Hexleaderboards = append(n.Edges.Hexleaderboards, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (hq *HexQuery) loadHexinfluences(ctx context.Context, query *HexInfluenceQuery, nodes []*Hex, init func(*Hex), assign func(*Hex, *HexInfluence)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Hex)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(hexinfluence.FieldH3Index)
+	}
+	query.Where(predicate.HexInfluence(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(hex.HexinfluencesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.H3Index
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "h3_index" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (hq *HexQuery) loadHexleaderboards(ctx context.Context, query *HexLeaderboardQuery, nodes []*Hex, init func(*Hex), assign func(*Hex, *HexLeaderboard)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Hex)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(hexleaderboard.FieldH3Index)
+	}
+	query.Where(predicate.HexLeaderboard(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(hex.HexleaderboardsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.H3Index
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "h3_index" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (hq *HexQuery) sqlCount(ctx context.Context) (int, error) {
@@ -365,7 +496,7 @@ func (hq *HexQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (hq *HexQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	_spec.From = hq.sql
 	if unique := hq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

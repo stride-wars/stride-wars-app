@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"stride-wars-app/ent/hex"
 	"strings"
-	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -14,18 +13,42 @@ import (
 
 // Hex is the model entity for the Hex schema.
 type Hex struct {
-	config `json:"-"`
+	config
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
-	// HexOwner holds the value of the "hex_owner" field.
-	HexOwner int64 `json:"hex_owner,omitempty"`
-	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// IsActive holds the value of the "is_active" field.
-	IsActive     bool `json:"is_active,omitempty"`
+	ID string `json:"id,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the HexQuery when eager-loading is set.
+	Edges        HexEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// HexEdges holds the relations/edges for other nodes in the graph.
+type HexEdges struct {
+	// Hexinfluences holds the value of the hexinfluences edge.
+	Hexinfluences []*HexInfluence `json:"hexinfluences,omitempty"`
+	// Hexleaderboards holds the value of the hexleaderboards edge.
+	Hexleaderboards []*HexLeaderboard `json:"hexleaderboards,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// HexinfluencesOrErr returns the Hexinfluences value or an error if the edge
+// was not loaded in eager-loading.
+func (e HexEdges) HexinfluencesOrErr() ([]*HexInfluence, error) {
+	if e.loadedTypes[0] {
+		return e.Hexinfluences, nil
+	}
+	return nil, &NotLoadedError{edge: "hexinfluences"}
+}
+
+// HexleaderboardsOrErr returns the Hexleaderboards value or an error if the edge
+// was not loaded in eager-loading.
+func (e HexEdges) HexleaderboardsOrErr() ([]*HexLeaderboard, error) {
+	if e.loadedTypes[1] {
+		return e.Hexleaderboards, nil
+	}
+	return nil, &NotLoadedError{edge: "hexleaderboards"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -33,12 +56,8 @@ func (*Hex) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case hex.FieldIsActive:
-			values[i] = new(sql.NullBool)
-		case hex.FieldID, hex.FieldHexOwner:
-			values[i] = new(sql.NullInt64)
-		case hex.FieldCreatedAt, hex.FieldUpdatedAt:
-			values[i] = new(sql.NullTime)
+		case hex.FieldID:
+			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -55,34 +74,10 @@ func (h *Hex) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case hex.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
-			}
-			h.ID = int(value.Int64)
-		case hex.FieldHexOwner:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field hex_owner", values[i])
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value.Valid {
-				h.HexOwner = value.Int64
-			}
-		case hex.FieldCreatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field created_at", values[i])
-			} else if value.Valid {
-				h.CreatedAt = value.Time
-			}
-		case hex.FieldUpdatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
-			} else if value.Valid {
-				h.UpdatedAt = value.Time
-			}
-		case hex.FieldIsActive:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_active", values[i])
-			} else if value.Valid {
-				h.IsActive = value.Bool
+				h.ID = value.String
 			}
 		default:
 			h.selectValues.Set(columns[i], values[i])
@@ -95,6 +90,16 @@ func (h *Hex) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (h *Hex) Value(name string) (ent.Value, error) {
 	return h.selectValues.Get(name)
+}
+
+// QueryHexinfluences queries the "hexinfluences" edge of the Hex entity.
+func (h *Hex) QueryHexinfluences() *HexInfluenceQuery {
+	return NewHexClient(h.config).QueryHexinfluences(h)
+}
+
+// QueryHexleaderboards queries the "hexleaderboards" edge of the Hex entity.
+func (h *Hex) QueryHexleaderboards() *HexLeaderboardQuery {
+	return NewHexClient(h.config).QueryHexleaderboards(h)
 }
 
 // Update returns a builder for updating this Hex.
@@ -119,18 +124,7 @@ func (h *Hex) Unwrap() *Hex {
 func (h *Hex) String() string {
 	var builder strings.Builder
 	builder.WriteString("Hex(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", h.ID))
-	builder.WriteString("hex_owner=")
-	builder.WriteString(fmt.Sprintf("%v", h.HexOwner))
-	builder.WriteString(", ")
-	builder.WriteString("created_at=")
-	builder.WriteString(h.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("updated_at=")
-	builder.WriteString(h.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("is_active=")
-	builder.WriteString(fmt.Sprintf("%v", h.IsActive))
+	builder.WriteString(fmt.Sprintf("id=%v", h.ID))
 	builder.WriteByte(')')
 	return builder.String()
 }

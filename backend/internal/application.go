@@ -2,15 +2,17 @@ package internal
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"stride-wars-app/ent"
+	"stride-wars-app/internal/service"
+	"stride-wars-app/pkg/errors"
+
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"github.com/supabase-community/supabase-go"
 	"go.uber.org/zap"
-	"net/http"
-	"os"
-	"stride-wars-app/ent"
-	"stride-wars-app/pkg/errors"
 )
 
 type Application struct {
@@ -18,6 +20,7 @@ type Application struct {
 	SupabaseClient *supabase.Client
 	EntClient      *ent.Client
 	Router         *http.Handler
+	Services       *service.Service
 }
 
 func New() (*Application, error) {
@@ -42,9 +45,16 @@ func (a *Application) Start() error {
 		return err
 	}
 
+	a.initializeServices()
+
 	a.setupMuxRoutes()
 
 	return nil
+}
+
+func (a *Application) initializeServices() {
+	services := service.Provide(a.EntClient, a.SupabaseClient, a.Logger)
+	a.Services = services
 }
 
 func (a *Application) initializeSupabaseClient() error {

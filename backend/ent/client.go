@@ -11,11 +11,18 @@ import (
 
 	"stride-wars-app/ent/migrate"
 
+	"stride-wars-app/ent/activity"
+	"stride-wars-app/ent/friendship"
 	"stride-wars-app/ent/hex"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
+	"stride-wars-app/ent/user"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 // Client is the client that holds all ent builders.
@@ -23,8 +30,18 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Activity is the client for interacting with the Activity builders.
+	Activity *ActivityClient
+	// Friendship is the client for interacting with the Friendship builders.
+	Friendship *FriendshipClient
 	// Hex is the client for interacting with the Hex builders.
 	Hex *HexClient
+	// HexInfluence is the client for interacting with the HexInfluence builders.
+	HexInfluence *HexInfluenceClient
+	// HexLeaderboard is the client for interacting with the HexLeaderboard builders.
+	HexLeaderboard *HexLeaderboardClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -36,7 +53,12 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Activity = NewActivityClient(c.config)
+	c.Friendship = NewFriendshipClient(c.config)
 	c.Hex = NewHexClient(c.config)
+	c.HexInfluence = NewHexInfluenceClient(c.config)
+	c.HexLeaderboard = NewHexLeaderboardClient(c.config)
+	c.User = NewUserClient(c.config)
 }
 
 type (
@@ -127,9 +149,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Hex:    NewHexClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Activity:       NewActivityClient(cfg),
+		Friendship:     NewFriendshipClient(cfg),
+		Hex:            NewHexClient(cfg),
+		HexInfluence:   NewHexInfluenceClient(cfg),
+		HexLeaderboard: NewHexLeaderboardClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
@@ -147,16 +174,21 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Hex:    NewHexClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Activity:       NewActivityClient(cfg),
+		Friendship:     NewFriendshipClient(cfg),
+		Hex:            NewHexClient(cfg),
+		HexInfluence:   NewHexInfluenceClient(cfg),
+		HexLeaderboard: NewHexLeaderboardClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Hex.
+//		Activity.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -178,22 +210,354 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Hex.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.Activity, c.Friendship, c.Hex, c.HexInfluence, c.HexLeaderboard, c.User,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Hex.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.Activity, c.Friendship, c.Hex, c.HexInfluence, c.HexLeaderboard, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *ActivityMutation:
+		return c.Activity.mutate(ctx, m)
+	case *FriendshipMutation:
+		return c.Friendship.mutate(ctx, m)
 	case *HexMutation:
 		return c.Hex.mutate(ctx, m)
+	case *HexInfluenceMutation:
+		return c.HexInfluence.mutate(ctx, m)
+	case *HexLeaderboardMutation:
+		return c.HexLeaderboard.mutate(ctx, m)
+	case *UserMutation:
+		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// ActivityClient is a client for the Activity schema.
+type ActivityClient struct {
+	config
+}
+
+// NewActivityClient returns a client for the Activity from the given config.
+func NewActivityClient(c config) *ActivityClient {
+	return &ActivityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `activity.Hooks(f(g(h())))`.
+func (c *ActivityClient) Use(hooks ...Hook) {
+	c.hooks.Activity = append(c.hooks.Activity, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `activity.Intercept(f(g(h())))`.
+func (c *ActivityClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Activity = append(c.inters.Activity, interceptors...)
+}
+
+// Create returns a builder for creating a Activity entity.
+func (c *ActivityClient) Create() *ActivityCreate {
+	mutation := newActivityMutation(c.config, OpCreate)
+	return &ActivityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Activity entities.
+func (c *ActivityClient) CreateBulk(builders ...*ActivityCreate) *ActivityCreateBulk {
+	return &ActivityCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ActivityClient) MapCreateBulk(slice any, setFunc func(*ActivityCreate, int)) *ActivityCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ActivityCreateBulk{err: fmt.Errorf("calling to ActivityClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ActivityCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ActivityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Activity.
+func (c *ActivityClient) Update() *ActivityUpdate {
+	mutation := newActivityMutation(c.config, OpUpdate)
+	return &ActivityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ActivityClient) UpdateOne(a *Activity) *ActivityUpdateOne {
+	mutation := newActivityMutation(c.config, OpUpdateOne, withActivity(a))
+	return &ActivityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ActivityClient) UpdateOneID(id uuid.UUID) *ActivityUpdateOne {
+	mutation := newActivityMutation(c.config, OpUpdateOne, withActivityID(id))
+	return &ActivityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Activity.
+func (c *ActivityClient) Delete() *ActivityDelete {
+	mutation := newActivityMutation(c.config, OpDelete)
+	return &ActivityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ActivityClient) DeleteOne(a *Activity) *ActivityDeleteOne {
+	return c.DeleteOneID(a.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ActivityClient) DeleteOneID(id uuid.UUID) *ActivityDeleteOne {
+	builder := c.Delete().Where(activity.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ActivityDeleteOne{builder}
+}
+
+// Query returns a query builder for Activity.
+func (c *ActivityClient) Query() *ActivityQuery {
+	return &ActivityQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeActivity},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Activity entity by its id.
+func (c *ActivityClient) Get(ctx context.Context, id uuid.UUID) (*Activity, error) {
+	return c.Query().Where(activity.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ActivityClient) GetX(ctx context.Context, id uuid.UUID) *Activity {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUsers queries the users edge of a Activity.
+func (c *ActivityClient) QueryUsers(a *Activity) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(activity.Table, activity.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, activity.UsersTable, activity.UsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ActivityClient) Hooks() []Hook {
+	return c.hooks.Activity
+}
+
+// Interceptors returns the client interceptors.
+func (c *ActivityClient) Interceptors() []Interceptor {
+	return c.inters.Activity
+}
+
+func (c *ActivityClient) mutate(ctx context.Context, m *ActivityMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ActivityCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ActivityUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ActivityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ActivityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Activity mutation op: %q", m.Op())
+	}
+}
+
+// FriendshipClient is a client for the Friendship schema.
+type FriendshipClient struct {
+	config
+}
+
+// NewFriendshipClient returns a client for the Friendship from the given config.
+func NewFriendshipClient(c config) *FriendshipClient {
+	return &FriendshipClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `friendship.Hooks(f(g(h())))`.
+func (c *FriendshipClient) Use(hooks ...Hook) {
+	c.hooks.Friendship = append(c.hooks.Friendship, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `friendship.Intercept(f(g(h())))`.
+func (c *FriendshipClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Friendship = append(c.inters.Friendship, interceptors...)
+}
+
+// Create returns a builder for creating a Friendship entity.
+func (c *FriendshipClient) Create() *FriendshipCreate {
+	mutation := newFriendshipMutation(c.config, OpCreate)
+	return &FriendshipCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Friendship entities.
+func (c *FriendshipClient) CreateBulk(builders ...*FriendshipCreate) *FriendshipCreateBulk {
+	return &FriendshipCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FriendshipClient) MapCreateBulk(slice any, setFunc func(*FriendshipCreate, int)) *FriendshipCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FriendshipCreateBulk{err: fmt.Errorf("calling to FriendshipClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FriendshipCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FriendshipCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Friendship.
+func (c *FriendshipClient) Update() *FriendshipUpdate {
+	mutation := newFriendshipMutation(c.config, OpUpdate)
+	return &FriendshipUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FriendshipClient) UpdateOne(f *Friendship) *FriendshipUpdateOne {
+	mutation := newFriendshipMutation(c.config, OpUpdateOne, withFriendship(f))
+	return &FriendshipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FriendshipClient) UpdateOneID(id int) *FriendshipUpdateOne {
+	mutation := newFriendshipMutation(c.config, OpUpdateOne, withFriendshipID(id))
+	return &FriendshipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Friendship.
+func (c *FriendshipClient) Delete() *FriendshipDelete {
+	mutation := newFriendshipMutation(c.config, OpDelete)
+	return &FriendshipDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FriendshipClient) DeleteOne(f *Friendship) *FriendshipDeleteOne {
+	return c.DeleteOneID(f.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FriendshipClient) DeleteOneID(id int) *FriendshipDeleteOne {
+	builder := c.Delete().Where(friendship.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FriendshipDeleteOne{builder}
+}
+
+// Query returns a query builder for Friendship.
+func (c *FriendshipClient) Query() *FriendshipQuery {
+	return &FriendshipQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFriendship},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Friendship entity by its id.
+func (c *FriendshipClient) Get(ctx context.Context, id int) (*Friendship, error) {
+	return c.Query().Where(friendship.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FriendshipClient) GetX(ctx context.Context, id int) *Friendship {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUsers queries the users edge of a Friendship.
+func (c *FriendshipClient) QueryUsers(f *Friendship) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(friendship.Table, friendship.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, friendship.UsersTable, friendship.UsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFriends queries the friends edge of a Friendship.
+func (c *FriendshipClient) QueryFriends(f *Friendship) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(friendship.Table, friendship.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, friendship.FriendsTable, friendship.FriendsColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FriendshipClient) Hooks() []Hook {
+	return c.hooks.Friendship
+}
+
+// Interceptors returns the client interceptors.
+func (c *FriendshipClient) Interceptors() []Interceptor {
+	return c.inters.Friendship
+}
+
+func (c *FriendshipClient) mutate(ctx context.Context, m *FriendshipMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FriendshipCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FriendshipUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FriendshipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FriendshipDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Friendship mutation op: %q", m.Op())
 	}
 }
 
@@ -258,7 +622,7 @@ func (c *HexClient) UpdateOne(h *Hex) *HexUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *HexClient) UpdateOneID(id int) *HexUpdateOne {
+func (c *HexClient) UpdateOneID(id string) *HexUpdateOne {
 	mutation := newHexMutation(c.config, OpUpdateOne, withHexID(id))
 	return &HexUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -275,7 +639,7 @@ func (c *HexClient) DeleteOne(h *Hex) *HexDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *HexClient) DeleteOneID(id int) *HexDeleteOne {
+func (c *HexClient) DeleteOneID(id string) *HexDeleteOne {
 	builder := c.Delete().Where(hex.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -292,17 +656,49 @@ func (c *HexClient) Query() *HexQuery {
 }
 
 // Get returns a Hex entity by its id.
-func (c *HexClient) Get(ctx context.Context, id int) (*Hex, error) {
+func (c *HexClient) Get(ctx context.Context, id string) (*Hex, error) {
 	return c.Query().Where(hex.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *HexClient) GetX(ctx context.Context, id int) *Hex {
+func (c *HexClient) GetX(ctx context.Context, id string) *Hex {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryHexinfluences queries the hexinfluences edge of a Hex.
+func (c *HexClient) QueryHexinfluences(h *Hex) *HexInfluenceQuery {
+	query := (&HexInfluenceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hex.Table, hex.FieldID, id),
+			sqlgraph.To(hexinfluence.Table, hexinfluence.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, hex.HexinfluencesTable, hex.HexinfluencesColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryHexleaderboards queries the hexleaderboards edge of a Hex.
+func (c *HexClient) QueryHexleaderboards(h *Hex) *HexLeaderboardQuery {
+	query := (&HexLeaderboardClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hex.Table, hex.FieldID, id),
+			sqlgraph.To(hexleaderboard.Table, hexleaderboard.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, hex.HexleaderboardsTable, hex.HexleaderboardsColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -330,12 +726,507 @@ func (c *HexClient) mutate(ctx context.Context, m *HexMutation) (Value, error) {
 	}
 }
 
+// HexInfluenceClient is a client for the HexInfluence schema.
+type HexInfluenceClient struct {
+	config
+}
+
+// NewHexInfluenceClient returns a client for the HexInfluence from the given config.
+func NewHexInfluenceClient(c config) *HexInfluenceClient {
+	return &HexInfluenceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `hexinfluence.Hooks(f(g(h())))`.
+func (c *HexInfluenceClient) Use(hooks ...Hook) {
+	c.hooks.HexInfluence = append(c.hooks.HexInfluence, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `hexinfluence.Intercept(f(g(h())))`.
+func (c *HexInfluenceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.HexInfluence = append(c.inters.HexInfluence, interceptors...)
+}
+
+// Create returns a builder for creating a HexInfluence entity.
+func (c *HexInfluenceClient) Create() *HexInfluenceCreate {
+	mutation := newHexInfluenceMutation(c.config, OpCreate)
+	return &HexInfluenceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of HexInfluence entities.
+func (c *HexInfluenceClient) CreateBulk(builders ...*HexInfluenceCreate) *HexInfluenceCreateBulk {
+	return &HexInfluenceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HexInfluenceClient) MapCreateBulk(slice any, setFunc func(*HexInfluenceCreate, int)) *HexInfluenceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HexInfluenceCreateBulk{err: fmt.Errorf("calling to HexInfluenceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HexInfluenceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HexInfluenceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for HexInfluence.
+func (c *HexInfluenceClient) Update() *HexInfluenceUpdate {
+	mutation := newHexInfluenceMutation(c.config, OpUpdate)
+	return &HexInfluenceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HexInfluenceClient) UpdateOne(hi *HexInfluence) *HexInfluenceUpdateOne {
+	mutation := newHexInfluenceMutation(c.config, OpUpdateOne, withHexInfluence(hi))
+	return &HexInfluenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HexInfluenceClient) UpdateOneID(id int) *HexInfluenceUpdateOne {
+	mutation := newHexInfluenceMutation(c.config, OpUpdateOne, withHexInfluenceID(id))
+	return &HexInfluenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for HexInfluence.
+func (c *HexInfluenceClient) Delete() *HexInfluenceDelete {
+	mutation := newHexInfluenceMutation(c.config, OpDelete)
+	return &HexInfluenceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HexInfluenceClient) DeleteOne(hi *HexInfluence) *HexInfluenceDeleteOne {
+	return c.DeleteOneID(hi.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HexInfluenceClient) DeleteOneID(id int) *HexInfluenceDeleteOne {
+	builder := c.Delete().Where(hexinfluence.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HexInfluenceDeleteOne{builder}
+}
+
+// Query returns a query builder for HexInfluence.
+func (c *HexInfluenceClient) Query() *HexInfluenceQuery {
+	return &HexInfluenceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHexInfluence},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a HexInfluence entity by its id.
+func (c *HexInfluenceClient) Get(ctx context.Context, id int) (*HexInfluence, error) {
+	return c.Query().Where(hexinfluence.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HexInfluenceClient) GetX(ctx context.Context, id int) *HexInfluence {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryHex queries the hex edge of a HexInfluence.
+func (c *HexInfluenceClient) QueryHex(hi *HexInfluence) *HexQuery {
+	query := (&HexClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hi.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hexinfluence.Table, hexinfluence.FieldID, id),
+			sqlgraph.To(hex.Table, hex.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, hexinfluence.HexTable, hexinfluence.HexColumn),
+		)
+		fromV = sqlgraph.Neighbors(hi.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUsers queries the users edge of a HexInfluence.
+func (c *HexInfluenceClient) QueryUsers(hi *HexInfluence) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hi.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hexinfluence.Table, hexinfluence.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, hexinfluence.UsersTable, hexinfluence.UsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(hi.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HexInfluenceClient) Hooks() []Hook {
+	return c.hooks.HexInfluence
+}
+
+// Interceptors returns the client interceptors.
+func (c *HexInfluenceClient) Interceptors() []Interceptor {
+	return c.inters.HexInfluence
+}
+
+func (c *HexInfluenceClient) mutate(ctx context.Context, m *HexInfluenceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HexInfluenceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HexInfluenceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HexInfluenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HexInfluenceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown HexInfluence mutation op: %q", m.Op())
+	}
+}
+
+// HexLeaderboardClient is a client for the HexLeaderboard schema.
+type HexLeaderboardClient struct {
+	config
+}
+
+// NewHexLeaderboardClient returns a client for the HexLeaderboard from the given config.
+func NewHexLeaderboardClient(c config) *HexLeaderboardClient {
+	return &HexLeaderboardClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `hexleaderboard.Hooks(f(g(h())))`.
+func (c *HexLeaderboardClient) Use(hooks ...Hook) {
+	c.hooks.HexLeaderboard = append(c.hooks.HexLeaderboard, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `hexleaderboard.Intercept(f(g(h())))`.
+func (c *HexLeaderboardClient) Intercept(interceptors ...Interceptor) {
+	c.inters.HexLeaderboard = append(c.inters.HexLeaderboard, interceptors...)
+}
+
+// Create returns a builder for creating a HexLeaderboard entity.
+func (c *HexLeaderboardClient) Create() *HexLeaderboardCreate {
+	mutation := newHexLeaderboardMutation(c.config, OpCreate)
+	return &HexLeaderboardCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of HexLeaderboard entities.
+func (c *HexLeaderboardClient) CreateBulk(builders ...*HexLeaderboardCreate) *HexLeaderboardCreateBulk {
+	return &HexLeaderboardCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HexLeaderboardClient) MapCreateBulk(slice any, setFunc func(*HexLeaderboardCreate, int)) *HexLeaderboardCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HexLeaderboardCreateBulk{err: fmt.Errorf("calling to HexLeaderboardClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HexLeaderboardCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HexLeaderboardCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for HexLeaderboard.
+func (c *HexLeaderboardClient) Update() *HexLeaderboardUpdate {
+	mutation := newHexLeaderboardMutation(c.config, OpUpdate)
+	return &HexLeaderboardUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HexLeaderboardClient) UpdateOne(hl *HexLeaderboard) *HexLeaderboardUpdateOne {
+	mutation := newHexLeaderboardMutation(c.config, OpUpdateOne, withHexLeaderboard(hl))
+	return &HexLeaderboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HexLeaderboardClient) UpdateOneID(id int) *HexLeaderboardUpdateOne {
+	mutation := newHexLeaderboardMutation(c.config, OpUpdateOne, withHexLeaderboardID(id))
+	return &HexLeaderboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for HexLeaderboard.
+func (c *HexLeaderboardClient) Delete() *HexLeaderboardDelete {
+	mutation := newHexLeaderboardMutation(c.config, OpDelete)
+	return &HexLeaderboardDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HexLeaderboardClient) DeleteOne(hl *HexLeaderboard) *HexLeaderboardDeleteOne {
+	return c.DeleteOneID(hl.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HexLeaderboardClient) DeleteOneID(id int) *HexLeaderboardDeleteOne {
+	builder := c.Delete().Where(hexleaderboard.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HexLeaderboardDeleteOne{builder}
+}
+
+// Query returns a query builder for HexLeaderboard.
+func (c *HexLeaderboardClient) Query() *HexLeaderboardQuery {
+	return &HexLeaderboardQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHexLeaderboard},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a HexLeaderboard entity by its id.
+func (c *HexLeaderboardClient) Get(ctx context.Context, id int) (*HexLeaderboard, error) {
+	return c.Query().Where(hexleaderboard.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HexLeaderboardClient) GetX(ctx context.Context, id int) *HexLeaderboard {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryHex queries the hex edge of a HexLeaderboard.
+func (c *HexLeaderboardClient) QueryHex(hl *HexLeaderboard) *HexQuery {
+	query := (&HexClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hl.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hexleaderboard.Table, hexleaderboard.FieldID, id),
+			sqlgraph.To(hex.Table, hex.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, hexleaderboard.HexTable, hexleaderboard.HexColumn),
+		)
+		fromV = sqlgraph.Neighbors(hl.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HexLeaderboardClient) Hooks() []Hook {
+	return c.hooks.HexLeaderboard
+}
+
+// Interceptors returns the client interceptors.
+func (c *HexLeaderboardClient) Interceptors() []Interceptor {
+	return c.inters.HexLeaderboard
+}
+
+func (c *HexLeaderboardClient) mutate(ctx context.Context, m *HexLeaderboardMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HexLeaderboardCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HexLeaderboardUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HexLeaderboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HexLeaderboardDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown HexLeaderboard mutation op: %q", m.Op())
+	}
+}
+
+// UserClient is a client for the User schema.
+type UserClient struct {
+	config
+}
+
+// NewUserClient returns a client for the User from the given config.
+func NewUserClient(c config) *UserClient {
+	return &UserClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `user.Hooks(f(g(h())))`.
+func (c *UserClient) Use(hooks ...Hook) {
+	c.hooks.User = append(c.hooks.User, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `user.Intercept(f(g(h())))`.
+func (c *UserClient) Intercept(interceptors ...Interceptor) {
+	c.inters.User = append(c.inters.User, interceptors...)
+}
+
+// Create returns a builder for creating a User entity.
+func (c *UserClient) Create() *UserCreate {
+	mutation := newUserMutation(c.config, OpCreate)
+	return &UserCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of User entities.
+func (c *UserClient) CreateBulk(builders ...*UserCreate) *UserCreateBulk {
+	return &UserCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserClient) MapCreateBulk(slice any, setFunc func(*UserCreate, int)) *UserCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserCreateBulk{err: fmt.Errorf("calling to UserClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for User.
+func (c *UserClient) Update() *UserUpdate {
+	mutation := newUserMutation(c.config, OpUpdate)
+	return &UserUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserClient) UpdateOne(u *User) *UserUpdateOne {
+	mutation := newUserMutation(c.config, OpUpdateOne, withUser(u))
+	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserClient) UpdateOneID(id uuid.UUID) *UserUpdateOne {
+	mutation := newUserMutation(c.config, OpUpdateOne, withUserID(id))
+	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for User.
+func (c *UserClient) Delete() *UserDelete {
+	mutation := newUserMutation(c.config, OpDelete)
+	return &UserDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserClient) DeleteOne(u *User) *UserDeleteOne {
+	return c.DeleteOneID(u.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserClient) DeleteOneID(id uuid.UUID) *UserDeleteOne {
+	builder := c.Delete().Where(user.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserDeleteOne{builder}
+}
+
+// Query returns a query builder for User.
+func (c *UserClient) Query() *UserQuery {
+	return &UserQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUser},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a User entity by its id.
+func (c *UserClient) Get(ctx context.Context, id uuid.UUID) (*User, error) {
+	return c.Query().Where(user.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryActivity queries the activity edge of a User.
+func (c *UserClient) QueryActivity(u *User) *ActivityQuery {
+	query := (&ActivityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(activity.Table, activity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ActivityTable, user.ActivityColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFriendship queries the friendship edge of a User.
+func (c *UserClient) QueryFriendship(u *User) *FriendshipQuery {
+	query := (&FriendshipClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(friendship.Table, friendship.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.FriendshipTable, user.FriendshipColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryHexinfluence queries the hexinfluence edge of a User.
+func (c *UserClient) QueryHexinfluence(u *User) *HexInfluenceQuery {
+	query := (&HexInfluenceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(hexinfluence.Table, hexinfluence.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.HexinfluenceTable, user.HexinfluenceColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UserClient) Hooks() []Hook {
+	return c.hooks.User
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserClient) Interceptors() []Interceptor {
+	return c.inters.User
+}
+
+func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown User mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Hex []ent.Hook
+		Activity, Friendship, Hex, HexInfluence, HexLeaderboard, User []ent.Hook
 	}
 	inters struct {
-		Hex []ent.Interceptor
+		Activity, Friendship, Hex, HexInfluence, HexLeaderboard, User []ent.Interceptor
 	}
 )

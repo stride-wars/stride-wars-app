@@ -7,7 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"stride-wars-app/ent/activity"
+	"stride-wars-app/ent/friendship"
 	"stride-wars-app/ent/hex"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
+	"stride-wars-app/ent/user"
 	"sync"
 
 	"entgo.io/ent"
@@ -73,7 +78,12 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			hex.Table: hex.ValidColumn,
+			activity.Table:       activity.ValidColumn,
+			friendship.Table:     friendship.ValidColumn,
+			hex.Table:            hex.ValidColumn,
+			hexinfluence.Table:   hexinfluence.ValidColumn,
+			hexleaderboard.Table: hexleaderboard.ValidColumn,
+			user.Table:           user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

@@ -4,6 +4,7 @@ package hex
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -11,25 +12,31 @@ const (
 	Label = "hex"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldHexOwner holds the string denoting the hex_owner field in the database.
-	FieldHexOwner = "hex_owner"
-	// FieldCreatedAt holds the string denoting the created_at field in the database.
-	FieldCreatedAt = "created_at"
-	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
-	FieldUpdatedAt = "updated_at"
-	// FieldIsActive holds the string denoting the is_active field in the database.
-	FieldIsActive = "is_active"
+	// EdgeHexinfluences holds the string denoting the hexinfluences edge name in mutations.
+	EdgeHexinfluences = "hexinfluences"
+	// EdgeHexleaderboards holds the string denoting the hexleaderboards edge name in mutations.
+	EdgeHexleaderboards = "hexleaderboards"
 	// Table holds the table name of the hex in the database.
 	Table = "hexes"
+	// HexinfluencesTable is the table that holds the hexinfluences relation/edge.
+	HexinfluencesTable = "hex_influences"
+	// HexinfluencesInverseTable is the table name for the HexInfluence entity.
+	// It exists in this package in order to avoid circular dependency with the "hexinfluence" package.
+	HexinfluencesInverseTable = "hex_influences"
+	// HexinfluencesColumn is the table column denoting the hexinfluences relation/edge.
+	HexinfluencesColumn = "h3_index"
+	// HexleaderboardsTable is the table that holds the hexleaderboards relation/edge.
+	HexleaderboardsTable = "hex_leaderboards"
+	// HexleaderboardsInverseTable is the table name for the HexLeaderboard entity.
+	// It exists in this package in order to avoid circular dependency with the "hexleaderboard" package.
+	HexleaderboardsInverseTable = "hex_leaderboards"
+	// HexleaderboardsColumn is the table column denoting the hexleaderboards relation/edge.
+	HexleaderboardsColumn = "h3_index"
 )
 
 // Columns holds all SQL columns for hex fields.
 var Columns = []string{
 	FieldID,
-	FieldHexOwner,
-	FieldCreatedAt,
-	FieldUpdatedAt,
-	FieldIsActive,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -50,22 +57,44 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByHexOwner orders the results by the hex_owner field.
-func ByHexOwner(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldHexOwner, opts...).ToFunc()
+// ByHexinfluencesCount orders the results by hexinfluences count.
+func ByHexinfluencesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHexinfluencesStep(), opts...)
+	}
 }
 
-// ByCreatedAt orders the results by the created_at field.
-func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+// ByHexinfluences orders the results by hexinfluences terms.
+func ByHexinfluences(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHexinfluencesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
 }
 
-// ByUpdatedAt orders the results by the updated_at field.
-func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+// ByHexleaderboardsCount orders the results by hexleaderboards count.
+func ByHexleaderboardsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHexleaderboardsStep(), opts...)
+	}
 }
 
-// ByIsActive orders the results by the is_active field.
-func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+// ByHexleaderboards orders the results by hexleaderboards terms.
+func ByHexleaderboards(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHexleaderboardsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newHexinfluencesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HexinfluencesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, HexinfluencesTable, HexinfluencesColumn),
+	)
+}
+func newHexleaderboardsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HexleaderboardsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, HexleaderboardsTable, HexleaderboardsColumn),
+	)
 }

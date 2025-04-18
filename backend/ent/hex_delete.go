@@ -40,7 +40,7 @@ func (hd *HexDelete) ExecX(ctx context.Context) int {
 }
 
 func (hd *HexDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(hex.Table, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(hex.Table, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	if ps := hd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

@@ -1,8 +1,3 @@
-version: 1.64.8
-
-run:
-  timeout: 2m
-
 linters:
   enable:
     - govet
@@ -14,9 +9,11 @@ linters:
     - gocritic
     - gosimple
 
-linters-settings:
-  gofmt:
-    simplify: true
+gofmt:
+  simplify: true
+
+run:
+  timeout: 2m
 
 issues:
   exclude-use-default: false

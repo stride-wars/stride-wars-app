@@ -4,10 +4,10 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"stride-wars-app/ent/hex"
-	"time"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -20,28 +20,40 @@ type HexCreate struct {
 	hooks    []Hook
 }
 
-// SetHexOwner sets the "hex_owner" field.
-func (hc *HexCreate) SetHexOwner(i int64) *HexCreate {
-	hc.mutation.SetHexOwner(i)
+// SetID sets the "id" field.
+func (hc *HexCreate) SetID(s string) *HexCreate {
+	hc.mutation.SetID(s)
 	return hc
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (hc *HexCreate) SetCreatedAt(t time.Time) *HexCreate {
-	hc.mutation.SetCreatedAt(t)
+// AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by IDs.
+func (hc *HexCreate) AddHexinfluenceIDs(ids ...int) *HexCreate {
+	hc.mutation.AddHexinfluenceIDs(ids...)
 	return hc
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (hc *HexCreate) SetUpdatedAt(t time.Time) *HexCreate {
-	hc.mutation.SetUpdatedAt(t)
+// AddHexinfluences adds the "hexinfluences" edges to the HexInfluence entity.
+func (hc *HexCreate) AddHexinfluences(h ...*HexInfluence) *HexCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hc.AddHexinfluenceIDs(ids...)
+}
+
+// AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
+func (hc *HexCreate) AddHexleaderboardIDs(ids ...int) *HexCreate {
+	hc.mutation.AddHexleaderboardIDs(ids...)
 	return hc
 }
 
-// SetIsActive sets the "is_active" field.
-func (hc *HexCreate) SetIsActive(b bool) *HexCreate {
-	hc.mutation.SetIsActive(b)
-	return hc
+// AddHexleaderboards adds the "hexleaderboards" edges to the HexLeaderboard entity.
+func (hc *HexCreate) AddHexleaderboards(h ...*HexLeaderboard) *HexCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hc.AddHexleaderboardIDs(ids...)
 }
 
 // Mutation returns the HexMutation object of the builder.
@@ -78,18 +90,6 @@ func (hc *HexCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (hc *HexCreate) check() error {
-	if _, ok := hc.mutation.HexOwner(); !ok {
-		return &ValidationError{Name: "hex_owner", err: errors.New(`ent: missing required field "Hex.hex_owner"`)}
-	}
-	if _, ok := hc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Hex.created_at"`)}
-	}
-	if _, ok := hc.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Hex.updated_at"`)}
-	}
-	if _, ok := hc.mutation.IsActive(); !ok {
-		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Hex.is_active"`)}
-	}
 	return nil
 }
 
@@ -104,8 +104,13 @@ func (hc *HexCreate) sqlSave(ctx context.Context) (*Hex, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected Hex.ID type: %T", _spec.ID.Value)
+		}
+	}
 	hc.mutation.id = &_node.ID
 	hc.mutation.done = true
 	return _node, nil
@@ -114,23 +119,43 @@ func (hc *HexCreate) sqlSave(ctx context.Context) (*Hex, error) {
 func (hc *HexCreate) createSpec() (*Hex, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Hex{config: hc.config}
-		_spec = sqlgraph.NewCreateSpec(hex.Table, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(hex.Table, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	)
-	if value, ok := hc.mutation.HexOwner(); ok {
-		_spec.SetField(hex.FieldHexOwner, field.TypeInt64, value)
-		_node.HexOwner = value
+	if id, ok := hc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = id
 	}
-	if value, ok := hc.mutation.CreatedAt(); ok {
-		_spec.SetField(hex.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
+	if nodes := hc.mutation.HexinfluencesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if value, ok := hc.mutation.UpdatedAt(); ok {
-		_spec.SetField(hex.FieldUpdatedAt, field.TypeTime, value)
-		_node.UpdatedAt = value
-	}
-	if value, ok := hc.mutation.IsActive(); ok {
-		_spec.SetField(hex.FieldIsActive, field.TypeBool, value)
-		_node.IsActive = value
+	if nodes := hc.mutation.HexleaderboardsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -179,10 +204,6 @@ func (hcb *HexCreateBulk) Save(ctx context.Context) ([]*Hex, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

@@ -8,13 +8,59 @@ import (
 )
 
 var (
+	// ActivitiesColumns holds the columns for the "activities" table.
+	ActivitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "duration_seconds", Type: field.TypeFloat64},
+		{Name: "distance_meters", Type: field.TypeFloat64},
+		{Name: "h3_indexes", Type: field.TypeJSON},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// ActivitiesTable holds the schema information for the "activities" table.
+	ActivitiesTable = &schema.Table{
+		Name:       "activities",
+		Columns:    ActivitiesColumns,
+		PrimaryKey: []*schema.Column{ActivitiesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "activities_users_users",
+				Columns:    []*schema.Column{ActivitiesColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// FriendshipsColumns holds the columns for the "friendships" table.
+	FriendshipsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "friend_id", Type: field.TypeUUID},
+	}
+	// FriendshipsTable holds the schema information for the "friendships" table.
+	FriendshipsTable = &schema.Table{
+		Name:       "friendships",
+		Columns:    FriendshipsColumns,
+		PrimaryKey: []*schema.Column{FriendshipsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "friendships_users_users",
+				Columns:    []*schema.Column{FriendshipsColumns[2]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "friendships_users_friends",
+				Columns:    []*schema.Column{FriendshipsColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// HexesColumns holds the columns for the "hexes" table.
 	HexesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "hex_owner", Type: field.TypeInt64},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "is_active", Type: field.TypeBool},
+		{Name: "id", Type: field.TypeString, Unique: true},
 	}
 	// HexesTable holds the schema information for the "hexes" table.
 	HexesTable = &schema.Table{
@@ -22,11 +68,82 @@ var (
 		Columns:    HexesColumns,
 		PrimaryKey: []*schema.Column{HexesColumns[0]},
 	}
+	// HexInfluencesColumns holds the columns for the "hex_influences" table.
+	HexInfluencesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "score", Type: field.TypeFloat64},
+		{Name: "last_updated", Type: field.TypeTime},
+		{Name: "h3_index", Type: field.TypeString},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// HexInfluencesTable holds the schema information for the "hex_influences" table.
+	HexInfluencesTable = &schema.Table{
+		Name:       "hex_influences",
+		Columns:    HexInfluencesColumns,
+		PrimaryKey: []*schema.Column{HexInfluencesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "hex_influences_hexes_hex",
+				Columns:    []*schema.Column{HexInfluencesColumns[3]},
+				RefColumns: []*schema.Column{HexesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "hex_influences_users_users",
+				Columns:    []*schema.Column{HexInfluencesColumns[4]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// HexLeaderboardsColumns holds the columns for the "hex_leaderboards" table.
+	HexLeaderboardsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "top_users", Type: field.TypeJSON},
+		{Name: "h3_index", Type: field.TypeString},
+	}
+	// HexLeaderboardsTable holds the schema information for the "hex_leaderboards" table.
+	HexLeaderboardsTable = &schema.Table{
+		Name:       "hex_leaderboards",
+		Columns:    HexLeaderboardsColumns,
+		PrimaryKey: []*schema.Column{HexLeaderboardsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "hex_leaderboards_hexes_hex",
+				Columns:    []*schema.Column{HexLeaderboardsColumns[2]},
+				RefColumns: []*schema.Column{HexesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "external_user", Type: field.TypeUUID},
+		{Name: "username", Type: field.TypeString},
+	}
+	// UsersTable holds the schema information for the "users" table.
+	UsersTable = &schema.Table{
+		Name:       "users",
+		Columns:    UsersColumns,
+		PrimaryKey: []*schema.Column{UsersColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ActivitiesTable,
+		FriendshipsTable,
 		HexesTable,
+		HexInfluencesTable,
+		HexLeaderboardsTable,
+		UsersTable,
 	}
 )
 
 func init() {
+	ActivitiesTable.ForeignKeys[0].RefTable = UsersTable
+	FriendshipsTable.ForeignKeys[0].RefTable = UsersTable
+	FriendshipsTable.ForeignKeys[1].RefTable = UsersTable
+	HexInfluencesTable.ForeignKeys[0].RefTable = HexesTable
+	HexInfluencesTable.ForeignKeys[1].RefTable = UsersTable
+	HexLeaderboardsTable.ForeignKeys[0].RefTable = HexesTable
 }

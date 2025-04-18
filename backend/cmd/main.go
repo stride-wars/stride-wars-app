@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
-	"go.uber.org/zap"
 	"log"
 	"os"
 	"os/signal"
 	app "stride-wars-app/internal"
 	"stride-wars-app/pkg/errors"
 	"syscall"
+
+	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 func main() {
