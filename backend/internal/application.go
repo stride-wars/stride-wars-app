@@ -46,14 +46,14 @@ func (a *Application) Start() error {
 	}
 
 	a.initializeServices()
-	
+
 	a.setupMuxRoutes()
 
 	return nil
 }
 
 func (a *Application) initializeServices() {
-	services := service.Provide(a.EntClient, a.Logger)
+	services := service.Provide(a.EntClient, a.SupabaseClient, a.Logger)
 	a.Services = services
 }
 

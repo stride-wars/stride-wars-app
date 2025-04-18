@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type UserService struct {

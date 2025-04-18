@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
+
+	"github.com/google/uuid"
 )
 
 type IUserRepository interface {

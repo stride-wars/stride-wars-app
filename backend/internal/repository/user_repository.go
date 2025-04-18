@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	entUser "stride-wars-app/ent/user"
+
+	"github.com/google/uuid"
 )
 
 type UserRepository struct {

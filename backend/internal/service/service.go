@@ -1,10 +1,11 @@
 package service
 
 import (
-	"github.com/supabase-community/supabase-go"
-	"go.uber.org/zap"
 	"stride-wars-app/ent"
 	"stride-wars-app/internal/repository"
+
+	"github.com/supabase-community/supabase-go"
+	"go.uber.org/zap"
 )
 
 type Service struct {
@@ -18,4 +19,3 @@ func Provide(entClient *ent.Client, supabaseClient *supabase.Client, logger *zap
 		AuthService: NewAuthService(supabaseClient, logger),
 	}
 }
-s

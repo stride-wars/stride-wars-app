@@ -2,7 +2,7 @@ package repository_test
 
 import "testing"
 
-//TODO to properly test this we probably need to set up local postgres container????
+// TODO to properly test this we probably need to set up local postgres container????
 
 func TestUserRepository_FindByUUID(t *testing.T) {
 	t.Parallel()

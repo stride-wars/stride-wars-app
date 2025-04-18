@@ -1,11 +1,12 @@
 package model
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"time"
 )
 
 type Activity struct {

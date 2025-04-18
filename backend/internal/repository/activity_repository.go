@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"stride-wars-app/ent"
 	entActivity "stride-wars-app/ent/activity"
 	"stride-wars-app/ent/model"
+
+	"github.com/google/uuid"
 )
 
 type ActivityRepository struct {
