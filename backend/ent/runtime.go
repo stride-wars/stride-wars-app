@@ -2,8 +2,28 @@
 
 package ent
 
+import (
+	"stride-wars-app/ent/activity"
+	"stride-wars-app/ent/model"
+	"stride-wars-app/ent/user"
+
+	"github.com/google/uuid"
+)
+
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	activityFields := model.Activity{}.Fields()
+	_ = activityFields
+	// activityDescID is the schema descriptor for id field.
+	activityDescID := activityFields[0].Descriptor()
+	// activity.DefaultID holds the default value on creation for the id field.
+	activity.DefaultID = activityDescID.Default.(func() uuid.UUID)
+	userFields := model.User{}.Fields()
+	_ = userFields
+	// userDescID is the schema descriptor for id field.
+	userDescID := userFields[0].Descriptor()
+	// user.DefaultID holds the default value on creation for the id field.
+	user.DefaultID = userDescID.Default.(func() uuid.UUID)
 }

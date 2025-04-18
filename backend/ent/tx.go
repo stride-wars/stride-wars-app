@@ -12,8 +12,18 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Activity is the client for interacting with the Activity builders.
+	Activity *ActivityClient
+	// Friendship is the client for interacting with the Friendship builders.
+	Friendship *FriendshipClient
 	// Hex is the client for interacting with the Hex builders.
 	Hex *HexClient
+	// HexInfluence is the client for interacting with the HexInfluence builders.
+	HexInfluence *HexInfluenceClient
+	// HexLeaderboard is the client for interacting with the HexLeaderboard builders.
+	HexLeaderboard *HexLeaderboardClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 
 	// lazily loaded.
 	client     *Client
@@ -145,7 +155,12 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Activity = NewActivityClient(tx.config)
+	tx.Friendship = NewFriendshipClient(tx.config)
 	tx.Hex = NewHexClient(tx.config)
+	tx.HexInfluence = NewHexInfluenceClient(tx.config)
+	tx.HexLeaderboard = NewHexLeaderboardClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -155,7 +170,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Hex.QueryXXX(), the query will be executed
+// applies a query, for example: Activity.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

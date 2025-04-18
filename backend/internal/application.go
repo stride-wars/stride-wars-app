@@ -2,15 +2,16 @@ package internal
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"stride-wars-app/ent"
+	"stride-wars-app/pkg/errors"
+
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"github.com/supabase-community/supabase-go"
 	"go.uber.org/zap"
-	"net/http"
-	"os"
-	"stride-wars-app/ent"
-	"stride-wars-app/pkg/errors"
 )
 
 type Application struct {

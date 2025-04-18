@@ -7,8 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"stride-wars-app/ent/hex"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
 	"stride-wars-app/ent/predicate"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,72 +29,81 @@ func (hu *HexUpdate) Where(ps ...predicate.Hex) *HexUpdate {
 	return hu
 }
 
-// SetHexOwner sets the "hex_owner" field.
-func (hu *HexUpdate) SetHexOwner(i int64) *HexUpdate {
-	hu.mutation.ResetHexOwner()
-	hu.mutation.SetHexOwner(i)
+// AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by IDs.
+func (hu *HexUpdate) AddHexinfluenceIDs(ids ...int) *HexUpdate {
+	hu.mutation.AddHexinfluenceIDs(ids...)
 	return hu
 }
 
-// SetNillableHexOwner sets the "hex_owner" field if the given value is not nil.
-func (hu *HexUpdate) SetNillableHexOwner(i *int64) *HexUpdate {
-	if i != nil {
-		hu.SetHexOwner(*i)
+// AddHexinfluences adds the "hexinfluences" edges to the HexInfluence entity.
+func (hu *HexUpdate) AddHexinfluences(h ...*HexInfluence) *HexUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
+	return hu.AddHexinfluenceIDs(ids...)
+}
+
+// AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
+func (hu *HexUpdate) AddHexleaderboardIDs(ids ...int) *HexUpdate {
+	hu.mutation.AddHexleaderboardIDs(ids...)
 	return hu
 }
 
-// AddHexOwner adds i to the "hex_owner" field.
-func (hu *HexUpdate) AddHexOwner(i int64) *HexUpdate {
-	hu.mutation.AddHexOwner(i)
-	return hu
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (hu *HexUpdate) SetCreatedAt(t time.Time) *HexUpdate {
-	hu.mutation.SetCreatedAt(t)
-	return hu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (hu *HexUpdate) SetNillableCreatedAt(t *time.Time) *HexUpdate {
-	if t != nil {
-		hu.SetCreatedAt(*t)
+// AddHexleaderboards adds the "hexleaderboards" edges to the HexLeaderboard entity.
+func (hu *HexUpdate) AddHexleaderboards(h ...*HexLeaderboard) *HexUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
-	return hu
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (hu *HexUpdate) SetUpdatedAt(t time.Time) *HexUpdate {
-	hu.mutation.SetUpdatedAt(t)
-	return hu
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (hu *HexUpdate) SetNillableUpdatedAt(t *time.Time) *HexUpdate {
-	if t != nil {
-		hu.SetUpdatedAt(*t)
-	}
-	return hu
-}
-
-// SetIsActive sets the "is_active" field.
-func (hu *HexUpdate) SetIsActive(b bool) *HexUpdate {
-	hu.mutation.SetIsActive(b)
-	return hu
-}
-
-// SetNillableIsActive sets the "is_active" field if the given value is not nil.
-func (hu *HexUpdate) SetNillableIsActive(b *bool) *HexUpdate {
-	if b != nil {
-		hu.SetIsActive(*b)
-	}
-	return hu
+	return hu.AddHexleaderboardIDs(ids...)
 }
 
 // Mutation returns the HexMutation object of the builder.
 func (hu *HexUpdate) Mutation() *HexMutation {
 	return hu.mutation
+}
+
+// ClearHexinfluences clears all "hexinfluences" edges to the HexInfluence entity.
+func (hu *HexUpdate) ClearHexinfluences() *HexUpdate {
+	hu.mutation.ClearHexinfluences()
+	return hu
+}
+
+// RemoveHexinfluenceIDs removes the "hexinfluences" edge to HexInfluence entities by IDs.
+func (hu *HexUpdate) RemoveHexinfluenceIDs(ids ...int) *HexUpdate {
+	hu.mutation.RemoveHexinfluenceIDs(ids...)
+	return hu
+}
+
+// RemoveHexinfluences removes "hexinfluences" edges to HexInfluence entities.
+func (hu *HexUpdate) RemoveHexinfluences(h ...*HexInfluence) *HexUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hu.RemoveHexinfluenceIDs(ids...)
+}
+
+// ClearHexleaderboards clears all "hexleaderboards" edges to the HexLeaderboard entity.
+func (hu *HexUpdate) ClearHexleaderboards() *HexUpdate {
+	hu.mutation.ClearHexleaderboards()
+	return hu
+}
+
+// RemoveHexleaderboardIDs removes the "hexleaderboards" edge to HexLeaderboard entities by IDs.
+func (hu *HexUpdate) RemoveHexleaderboardIDs(ids ...int) *HexUpdate {
+	hu.mutation.RemoveHexleaderboardIDs(ids...)
+	return hu
+}
+
+// RemoveHexleaderboards removes "hexleaderboards" edges to HexLeaderboard entities.
+func (hu *HexUpdate) RemoveHexleaderboards(h ...*HexLeaderboard) *HexUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hu.RemoveHexleaderboardIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -124,7 +134,7 @@ func (hu *HexUpdate) ExecX(ctx context.Context) {
 }
 
 func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	if ps := hu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -132,20 +142,95 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := hu.mutation.HexOwner(); ok {
-		_spec.SetField(hex.FieldHexOwner, field.TypeInt64, value)
+	if hu.mutation.HexinfluencesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := hu.mutation.AddedHexOwner(); ok {
-		_spec.AddField(hex.FieldHexOwner, field.TypeInt64, value)
+	if nodes := hu.mutation.RemovedHexinfluencesIDs(); len(nodes) > 0 && !hu.mutation.HexinfluencesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := hu.mutation.CreatedAt(); ok {
-		_spec.SetField(hex.FieldCreatedAt, field.TypeTime, value)
+	if nodes := hu.mutation.HexinfluencesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if value, ok := hu.mutation.UpdatedAt(); ok {
-		_spec.SetField(hex.FieldUpdatedAt, field.TypeTime, value)
+	if hu.mutation.HexleaderboardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := hu.mutation.IsActive(); ok {
-		_spec.SetField(hex.FieldIsActive, field.TypeBool, value)
+	if nodes := hu.mutation.RemovedHexleaderboardsIDs(); len(nodes) > 0 && !hu.mutation.HexleaderboardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.HexleaderboardsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -167,72 +252,81 @@ type HexUpdateOne struct {
 	mutation *HexMutation
 }
 
-// SetHexOwner sets the "hex_owner" field.
-func (huo *HexUpdateOne) SetHexOwner(i int64) *HexUpdateOne {
-	huo.mutation.ResetHexOwner()
-	huo.mutation.SetHexOwner(i)
+// AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by IDs.
+func (huo *HexUpdateOne) AddHexinfluenceIDs(ids ...int) *HexUpdateOne {
+	huo.mutation.AddHexinfluenceIDs(ids...)
 	return huo
 }
 
-// SetNillableHexOwner sets the "hex_owner" field if the given value is not nil.
-func (huo *HexUpdateOne) SetNillableHexOwner(i *int64) *HexUpdateOne {
-	if i != nil {
-		huo.SetHexOwner(*i)
+// AddHexinfluences adds the "hexinfluences" edges to the HexInfluence entity.
+func (huo *HexUpdateOne) AddHexinfluences(h ...*HexInfluence) *HexUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
+	return huo.AddHexinfluenceIDs(ids...)
+}
+
+// AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
+func (huo *HexUpdateOne) AddHexleaderboardIDs(ids ...int) *HexUpdateOne {
+	huo.mutation.AddHexleaderboardIDs(ids...)
 	return huo
 }
 
-// AddHexOwner adds i to the "hex_owner" field.
-func (huo *HexUpdateOne) AddHexOwner(i int64) *HexUpdateOne {
-	huo.mutation.AddHexOwner(i)
-	return huo
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (huo *HexUpdateOne) SetCreatedAt(t time.Time) *HexUpdateOne {
-	huo.mutation.SetCreatedAt(t)
-	return huo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (huo *HexUpdateOne) SetNillableCreatedAt(t *time.Time) *HexUpdateOne {
-	if t != nil {
-		huo.SetCreatedAt(*t)
+// AddHexleaderboards adds the "hexleaderboards" edges to the HexLeaderboard entity.
+func (huo *HexUpdateOne) AddHexleaderboards(h ...*HexLeaderboard) *HexUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
 	}
-	return huo
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (huo *HexUpdateOne) SetUpdatedAt(t time.Time) *HexUpdateOne {
-	huo.mutation.SetUpdatedAt(t)
-	return huo
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (huo *HexUpdateOne) SetNillableUpdatedAt(t *time.Time) *HexUpdateOne {
-	if t != nil {
-		huo.SetUpdatedAt(*t)
-	}
-	return huo
-}
-
-// SetIsActive sets the "is_active" field.
-func (huo *HexUpdateOne) SetIsActive(b bool) *HexUpdateOne {
-	huo.mutation.SetIsActive(b)
-	return huo
-}
-
-// SetNillableIsActive sets the "is_active" field if the given value is not nil.
-func (huo *HexUpdateOne) SetNillableIsActive(b *bool) *HexUpdateOne {
-	if b != nil {
-		huo.SetIsActive(*b)
-	}
-	return huo
+	return huo.AddHexleaderboardIDs(ids...)
 }
 
 // Mutation returns the HexMutation object of the builder.
 func (huo *HexUpdateOne) Mutation() *HexMutation {
 	return huo.mutation
+}
+
+// ClearHexinfluences clears all "hexinfluences" edges to the HexInfluence entity.
+func (huo *HexUpdateOne) ClearHexinfluences() *HexUpdateOne {
+	huo.mutation.ClearHexinfluences()
+	return huo
+}
+
+// RemoveHexinfluenceIDs removes the "hexinfluences" edge to HexInfluence entities by IDs.
+func (huo *HexUpdateOne) RemoveHexinfluenceIDs(ids ...int) *HexUpdateOne {
+	huo.mutation.RemoveHexinfluenceIDs(ids...)
+	return huo
+}
+
+// RemoveHexinfluences removes "hexinfluences" edges to HexInfluence entities.
+func (huo *HexUpdateOne) RemoveHexinfluences(h ...*HexInfluence) *HexUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return huo.RemoveHexinfluenceIDs(ids...)
+}
+
+// ClearHexleaderboards clears all "hexleaderboards" edges to the HexLeaderboard entity.
+func (huo *HexUpdateOne) ClearHexleaderboards() *HexUpdateOne {
+	huo.mutation.ClearHexleaderboards()
+	return huo
+}
+
+// RemoveHexleaderboardIDs removes the "hexleaderboards" edge to HexLeaderboard entities by IDs.
+func (huo *HexUpdateOne) RemoveHexleaderboardIDs(ids ...int) *HexUpdateOne {
+	huo.mutation.RemoveHexleaderboardIDs(ids...)
+	return huo
+}
+
+// RemoveHexleaderboards removes "hexleaderboards" edges to HexLeaderboard entities.
+func (huo *HexUpdateOne) RemoveHexleaderboards(h ...*HexLeaderboard) *HexUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return huo.RemoveHexleaderboardIDs(ids...)
 }
 
 // Where appends a list predicates to the HexUpdate builder.
@@ -276,7 +370,7 @@ func (huo *HexUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
-	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	id, ok := huo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Hex.id" for update`)}
@@ -301,20 +395,95 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			}
 		}
 	}
-	if value, ok := huo.mutation.HexOwner(); ok {
-		_spec.SetField(hex.FieldHexOwner, field.TypeInt64, value)
+	if huo.mutation.HexinfluencesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := huo.mutation.AddedHexOwner(); ok {
-		_spec.AddField(hex.FieldHexOwner, field.TypeInt64, value)
+	if nodes := huo.mutation.RemovedHexinfluencesIDs(); len(nodes) > 0 && !huo.mutation.HexinfluencesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := huo.mutation.CreatedAt(); ok {
-		_spec.SetField(hex.FieldCreatedAt, field.TypeTime, value)
+	if nodes := huo.mutation.HexinfluencesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexinfluencesTable,
+			Columns: []string{hex.HexinfluencesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if value, ok := huo.mutation.UpdatedAt(); ok {
-		_spec.SetField(hex.FieldUpdatedAt, field.TypeTime, value)
+	if huo.mutation.HexleaderboardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := huo.mutation.IsActive(); ok {
-		_spec.SetField(hex.FieldIsActive, field.TypeBool, value)
+	if nodes := huo.mutation.RemovedHexleaderboardsIDs(); len(nodes) > 0 && !huo.mutation.HexleaderboardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.HexleaderboardsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hex.HexleaderboardsTable,
+			Columns: []string{hex.HexleaderboardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Hex{config: huo.config}
 	_spec.Assign = _node.assignValues

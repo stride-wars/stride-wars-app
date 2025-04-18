@@ -8,6 +8,30 @@ import (
 	"stride-wars-app/ent"
 )
 
+// The ActivityFunc type is an adapter to allow the use of ordinary
+// function as Activity mutator.
+type ActivityFunc func(context.Context, *ent.ActivityMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ActivityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ActivityMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivityMutation", m)
+}
+
+// The FriendshipFunc type is an adapter to allow the use of ordinary
+// function as Friendship mutator.
+type FriendshipFunc func(context.Context, *ent.FriendshipMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FriendshipFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FriendshipMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FriendshipMutation", m)
+}
+
 // The HexFunc type is an adapter to allow the use of ordinary
 // function as Hex mutator.
 type HexFunc func(context.Context, *ent.HexMutation) (ent.Value, error)
@@ -18,6 +42,42 @@ func (f HexFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) 
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HexMutation", m)
+}
+
+// The HexInfluenceFunc type is an adapter to allow the use of ordinary
+// function as HexInfluence mutator.
+type HexInfluenceFunc func(context.Context, *ent.HexInfluenceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f HexInfluenceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.HexInfluenceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HexInfluenceMutation", m)
+}
+
+// The HexLeaderboardFunc type is an adapter to allow the use of ordinary
+// function as HexLeaderboard mutator.
+type HexLeaderboardFunc func(context.Context, *ent.HexLeaderboardMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f HexLeaderboardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.HexLeaderboardMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HexLeaderboardMutation", m)
+}
+
+// The UserFunc type is an adapter to allow the use of ordinary
+// function as User mutator.
+type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 }
 
 // Condition is a hook condition function.

@@ -6,13 +6,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"stride-wars-app/ent/activity"
+	"stride-wars-app/ent/friendship"
 	"stride-wars-app/ent/hex"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
 	"stride-wars-app/ent/predicate"
+	"stride-wars-app/ent/user"
 	"sync"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 const (
@@ -24,24 +30,1350 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeHex = "Hex"
+	TypeActivity       = "Activity"
+	TypeFriendship     = "Friendship"
+	TypeHex            = "Hex"
+	TypeHexInfluence   = "HexInfluence"
+	TypeHexLeaderboard = "HexLeaderboard"
+	TypeUser           = "User"
 )
+
+// ActivityMutation represents an operation that mutates the Activity nodes in the graph.
+type ActivityMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	timestamp           *time.Time
+	duration_seconds    *int
+	addduration_seconds *int
+	distance_meters     *float64
+	adddistance_meters  *float64
+	h3_indexes          *[]string
+	appendh3_indexes    []string
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	users               *uuid.UUID
+	clearedusers        bool
+	done                bool
+	oldValue            func(context.Context) (*Activity, error)
+	predicates          []predicate.Activity
+}
+
+var _ ent.Mutation = (*ActivityMutation)(nil)
+
+// activityOption allows management of the mutation configuration using functional options.
+type activityOption func(*ActivityMutation)
+
+// newActivityMutation creates new mutation for the Activity entity.
+func newActivityMutation(c config, op Op, opts ...activityOption) *ActivityMutation {
+	m := &ActivityMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeActivity,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withActivityID sets the ID field of the mutation.
+func withActivityID(id uuid.UUID) activityOption {
+	return func(m *ActivityMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Activity
+		)
+		m.oldValue = func(ctx context.Context) (*Activity, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Activity.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withActivity sets the old Activity of the mutation.
+func withActivity(node *Activity) activityOption {
+	return func(m *ActivityMutation) {
+		m.oldValue = func(context.Context) (*Activity, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ActivityMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ActivityMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Activity entities.
+func (m *ActivityMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ActivityMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ActivityMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Activity.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUserID sets the "user_id" field.
+func (m *ActivityMutation) SetUserID(u uuid.UUID) {
+	m.users = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *ActivityMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.users
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the Activity entity.
+// If the Activity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ActivityMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *ActivityMutation) ResetUserID() {
+	m.users = nil
+}
+
+// SetTimestamp sets the "timestamp" field.
+func (m *ActivityMutation) SetTimestamp(t time.Time) {
+	m.timestamp = &t
+}
+
+// Timestamp returns the value of the "timestamp" field in the mutation.
+func (m *ActivityMutation) Timestamp() (r time.Time, exists bool) {
+	v := m.timestamp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimestamp returns the old "timestamp" field's value of the Activity entity.
+// If the Activity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ActivityMutation) OldTimestamp(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimestamp is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimestamp requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimestamp: %w", err)
+	}
+	return oldValue.Timestamp, nil
+}
+
+// ResetTimestamp resets all changes to the "timestamp" field.
+func (m *ActivityMutation) ResetTimestamp() {
+	m.timestamp = nil
+}
+
+// SetDurationSeconds sets the "duration_seconds" field.
+func (m *ActivityMutation) SetDurationSeconds(i int) {
+	m.duration_seconds = &i
+	m.addduration_seconds = nil
+}
+
+// DurationSeconds returns the value of the "duration_seconds" field in the mutation.
+func (m *ActivityMutation) DurationSeconds() (r int, exists bool) {
+	v := m.duration_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDurationSeconds returns the old "duration_seconds" field's value of the Activity entity.
+// If the Activity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ActivityMutation) OldDurationSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDurationSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDurationSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDurationSeconds: %w", err)
+	}
+	return oldValue.DurationSeconds, nil
+}
+
+// AddDurationSeconds adds i to the "duration_seconds" field.
+func (m *ActivityMutation) AddDurationSeconds(i int) {
+	if m.addduration_seconds != nil {
+		*m.addduration_seconds += i
+	} else {
+		m.addduration_seconds = &i
+	}
+}
+
+// AddedDurationSeconds returns the value that was added to the "duration_seconds" field in this mutation.
+func (m *ActivityMutation) AddedDurationSeconds() (r int, exists bool) {
+	v := m.addduration_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDurationSeconds resets all changes to the "duration_seconds" field.
+func (m *ActivityMutation) ResetDurationSeconds() {
+	m.duration_seconds = nil
+	m.addduration_seconds = nil
+}
+
+// SetDistanceMeters sets the "distance_meters" field.
+func (m *ActivityMutation) SetDistanceMeters(f float64) {
+	m.distance_meters = &f
+	m.adddistance_meters = nil
+}
+
+// DistanceMeters returns the value of the "distance_meters" field in the mutation.
+func (m *ActivityMutation) DistanceMeters() (r float64, exists bool) {
+	v := m.distance_meters
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDistanceMeters returns the old "distance_meters" field's value of the Activity entity.
+// If the Activity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ActivityMutation) OldDistanceMeters(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDistanceMeters is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDistanceMeters requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDistanceMeters: %w", err)
+	}
+	return oldValue.DistanceMeters, nil
+}
+
+// AddDistanceMeters adds f to the "distance_meters" field.
+func (m *ActivityMutation) AddDistanceMeters(f float64) {
+	if m.adddistance_meters != nil {
+		*m.adddistance_meters += f
+	} else {
+		m.adddistance_meters = &f
+	}
+}
+
+// AddedDistanceMeters returns the value that was added to the "distance_meters" field in this mutation.
+func (m *ActivityMutation) AddedDistanceMeters() (r float64, exists bool) {
+	v := m.adddistance_meters
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDistanceMeters resets all changes to the "distance_meters" field.
+func (m *ActivityMutation) ResetDistanceMeters() {
+	m.distance_meters = nil
+	m.adddistance_meters = nil
+}
+
+// SetH3Indexes sets the "h3_indexes" field.
+func (m *ActivityMutation) SetH3Indexes(s []string) {
+	m.h3_indexes = &s
+	m.appendh3_indexes = nil
+}
+
+// H3Indexes returns the value of the "h3_indexes" field in the mutation.
+func (m *ActivityMutation) H3Indexes() (r []string, exists bool) {
+	v := m.h3_indexes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldH3Indexes returns the old "h3_indexes" field's value of the Activity entity.
+// If the Activity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldH3Indexes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldH3Indexes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldH3Indexes: %w", err)
+	}
+	return oldValue.H3Indexes, nil
+}
+
+// AppendH3Indexes adds s to the "h3_indexes" field.
+func (m *ActivityMutation) AppendH3Indexes(s []string) {
+	m.appendh3_indexes = append(m.appendh3_indexes, s...)
+}
+
+// AppendedH3Indexes returns the list of values that were appended to the "h3_indexes" field in this mutation.
+func (m *ActivityMutation) AppendedH3Indexes() ([]string, bool) {
+	if len(m.appendh3_indexes) == 0 {
+		return nil, false
+	}
+	return m.appendh3_indexes, true
+}
+
+// ResetH3Indexes resets all changes to the "h3_indexes" field.
+func (m *ActivityMutation) ResetH3Indexes() {
+	m.h3_indexes = nil
+	m.appendh3_indexes = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ActivityMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ActivityMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Activity entity.
+// If the Activity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ActivityMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ActivityMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUsersID sets the "users" edge to the User entity by id.
+func (m *ActivityMutation) SetUsersID(id uuid.UUID) {
+	m.users = &id
+}
+
+// ClearUsers clears the "users" edge to the User entity.
+func (m *ActivityMutation) ClearUsers() {
+	m.clearedusers = true
+	m.clearedFields[activity.FieldUserID] = struct{}{}
+}
+
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *ActivityMutation) UsersCleared() bool {
+	return m.clearedusers
+}
+
+// UsersID returns the "users" edge ID in the mutation.
+func (m *ActivityMutation) UsersID() (id uuid.UUID, exists bool) {
+	if m.users != nil {
+		return *m.users, true
+	}
+	return
+}
+
+// UsersIDs returns the "users" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UsersID instead. It exists only for internal usage by the builders.
+func (m *ActivityMutation) UsersIDs() (ids []uuid.UUID) {
+	if id := m.users; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUsers resets all changes to the "users" edge.
+func (m *ActivityMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+}
+
+// Where appends a list predicates to the ActivityMutation builder.
+func (m *ActivityMutation) Where(ps ...predicate.Activity) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ActivityMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ActivityMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Activity, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ActivityMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ActivityMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Activity).
+func (m *ActivityMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ActivityMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.users != nil {
+		fields = append(fields, activity.FieldUserID)
+	}
+	if m.timestamp != nil {
+		fields = append(fields, activity.FieldTimestamp)
+	}
+	if m.duration_seconds != nil {
+		fields = append(fields, activity.FieldDurationSeconds)
+	}
+	if m.distance_meters != nil {
+		fields = append(fields, activity.FieldDistanceMeters)
+	}
+	if m.h3_indexes != nil {
+		fields = append(fields, activity.FieldH3Indexes)
+	}
+	if m.created_at != nil {
+		fields = append(fields, activity.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ActivityMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case activity.FieldUserID:
+		return m.UserID()
+	case activity.FieldTimestamp:
+		return m.Timestamp()
+	case activity.FieldDurationSeconds:
+		return m.DurationSeconds()
+	case activity.FieldDistanceMeters:
+		return m.DistanceMeters()
+	case activity.FieldH3Indexes:
+		return m.H3Indexes()
+	case activity.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ActivityMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case activity.FieldUserID:
+		return m.OldUserID(ctx)
+	case activity.FieldTimestamp:
+		return m.OldTimestamp(ctx)
+	case activity.FieldDurationSeconds:
+		return m.OldDurationSeconds(ctx)
+	case activity.FieldDistanceMeters:
+		return m.OldDistanceMeters(ctx)
+	case activity.FieldH3Indexes:
+		return m.OldH3Indexes(ctx)
+	case activity.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Activity field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ActivityMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case activity.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case activity.FieldTimestamp:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimestamp(v)
+		return nil
+	case activity.FieldDurationSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDurationSeconds(v)
+		return nil
+	case activity.FieldDistanceMeters:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDistanceMeters(v)
+		return nil
+	case activity.FieldH3Indexes:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetH3Indexes(v)
+		return nil
+	case activity.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Activity field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ActivityMutation) AddedFields() []string {
+	var fields []string
+	if m.addduration_seconds != nil {
+		fields = append(fields, activity.FieldDurationSeconds)
+	}
+	if m.adddistance_meters != nil {
+		fields = append(fields, activity.FieldDistanceMeters)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ActivityMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case activity.FieldDurationSeconds:
+		return m.AddedDurationSeconds()
+	case activity.FieldDistanceMeters:
+		return m.AddedDistanceMeters()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ActivityMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case activity.FieldDurationSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDurationSeconds(v)
+		return nil
+	case activity.FieldDistanceMeters:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDistanceMeters(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Activity numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ActivityMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ActivityMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ActivityMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Activity nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ActivityMutation) ResetField(name string) error {
+	switch name {
+	case activity.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case activity.FieldTimestamp:
+		m.ResetTimestamp()
+		return nil
+	case activity.FieldDurationSeconds:
+		m.ResetDurationSeconds()
+		return nil
+	case activity.FieldDistanceMeters:
+		m.ResetDistanceMeters()
+		return nil
+	case activity.FieldH3Indexes:
+		m.ResetH3Indexes()
+		return nil
+	case activity.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Activity field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ActivityMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.users != nil {
+		edges = append(edges, activity.EdgeUsers)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ActivityMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case activity.EdgeUsers:
+		if id := m.users; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ActivityMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ActivityMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ActivityMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedusers {
+		edges = append(edges, activity.EdgeUsers)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ActivityMutation) EdgeCleared(name string) bool {
+	switch name {
+	case activity.EdgeUsers:
+		return m.clearedusers
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ActivityMutation) ClearEdge(name string) error {
+	switch name {
+	case activity.EdgeUsers:
+		m.ClearUsers()
+		return nil
+	}
+	return fmt.Errorf("unknown Activity unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ActivityMutation) ResetEdge(name string) error {
+	switch name {
+	case activity.EdgeUsers:
+		m.ResetUsers()
+		return nil
+	}
+	return fmt.Errorf("unknown Activity edge %s", name)
+}
+
+// FriendshipMutation represents an operation that mutates the Friendship nodes in the graph.
+type FriendshipMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	created_at     *time.Time
+	clearedFields  map[string]struct{}
+	users          *uuid.UUID
+	clearedusers   bool
+	friends        *uuid.UUID
+	clearedfriends bool
+	done           bool
+	oldValue       func(context.Context) (*Friendship, error)
+	predicates     []predicate.Friendship
+}
+
+var _ ent.Mutation = (*FriendshipMutation)(nil)
+
+// friendshipOption allows management of the mutation configuration using functional options.
+type friendshipOption func(*FriendshipMutation)
+
+// newFriendshipMutation creates new mutation for the Friendship entity.
+func newFriendshipMutation(c config, op Op, opts ...friendshipOption) *FriendshipMutation {
+	m := &FriendshipMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFriendship,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFriendshipID sets the ID field of the mutation.
+func withFriendshipID(id int) friendshipOption {
+	return func(m *FriendshipMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Friendship
+		)
+		m.oldValue = func(ctx context.Context) (*Friendship, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Friendship.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFriendship sets the old Friendship of the mutation.
+func withFriendship(node *Friendship) friendshipOption {
+	return func(m *FriendshipMutation) {
+		m.oldValue = func(context.Context) (*Friendship, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FriendshipMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FriendshipMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Friendship entities.
+func (m *FriendshipMutation) SetID(id int) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FriendshipMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FriendshipMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Friendship.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUserID sets the "user_id" field.
+func (m *FriendshipMutation) SetUserID(u uuid.UUID) {
+	m.users = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *FriendshipMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.users
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the Friendship entity.
+// If the Friendship object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FriendshipMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *FriendshipMutation) ResetUserID() {
+	m.users = nil
+}
+
+// SetFriendID sets the "friend_id" field.
+func (m *FriendshipMutation) SetFriendID(u uuid.UUID) {
+	m.friends = &u
+}
+
+// FriendID returns the value of the "friend_id" field in the mutation.
+func (m *FriendshipMutation) FriendID() (r uuid.UUID, exists bool) {
+	v := m.friends
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFriendID returns the old "friend_id" field's value of the Friendship entity.
+// If the Friendship object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FriendshipMutation) OldFriendID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFriendID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFriendID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFriendID: %w", err)
+	}
+	return oldValue.FriendID, nil
+}
+
+// ResetFriendID resets all changes to the "friend_id" field.
+func (m *FriendshipMutation) ResetFriendID() {
+	m.friends = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FriendshipMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FriendshipMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Friendship entity.
+// If the Friendship object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FriendshipMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FriendshipMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUsersID sets the "users" edge to the User entity by id.
+func (m *FriendshipMutation) SetUsersID(id uuid.UUID) {
+	m.users = &id
+}
+
+// ClearUsers clears the "users" edge to the User entity.
+func (m *FriendshipMutation) ClearUsers() {
+	m.clearedusers = true
+	m.clearedFields[friendship.FieldUserID] = struct{}{}
+}
+
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *FriendshipMutation) UsersCleared() bool {
+	return m.clearedusers
+}
+
+// UsersID returns the "users" edge ID in the mutation.
+func (m *FriendshipMutation) UsersID() (id uuid.UUID, exists bool) {
+	if m.users != nil {
+		return *m.users, true
+	}
+	return
+}
+
+// UsersIDs returns the "users" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UsersID instead. It exists only for internal usage by the builders.
+func (m *FriendshipMutation) UsersIDs() (ids []uuid.UUID) {
+	if id := m.users; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUsers resets all changes to the "users" edge.
+func (m *FriendshipMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+}
+
+// SetFriendsID sets the "friends" edge to the User entity by id.
+func (m *FriendshipMutation) SetFriendsID(id uuid.UUID) {
+	m.friends = &id
+}
+
+// ClearFriends clears the "friends" edge to the User entity.
+func (m *FriendshipMutation) ClearFriends() {
+	m.clearedfriends = true
+	m.clearedFields[friendship.FieldFriendID] = struct{}{}
+}
+
+// FriendsCleared reports if the "friends" edge to the User entity was cleared.
+func (m *FriendshipMutation) FriendsCleared() bool {
+	return m.clearedfriends
+}
+
+// FriendsID returns the "friends" edge ID in the mutation.
+func (m *FriendshipMutation) FriendsID() (id uuid.UUID, exists bool) {
+	if m.friends != nil {
+		return *m.friends, true
+	}
+	return
+}
+
+// FriendsIDs returns the "friends" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// FriendsID instead. It exists only for internal usage by the builders.
+func (m *FriendshipMutation) FriendsIDs() (ids []uuid.UUID) {
+	if id := m.friends; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetFriends resets all changes to the "friends" edge.
+func (m *FriendshipMutation) ResetFriends() {
+	m.friends = nil
+	m.clearedfriends = false
+}
+
+// Where appends a list predicates to the FriendshipMutation builder.
+func (m *FriendshipMutation) Where(ps ...predicate.Friendship) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FriendshipMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FriendshipMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Friendship, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FriendshipMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FriendshipMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Friendship).
+func (m *FriendshipMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FriendshipMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.users != nil {
+		fields = append(fields, friendship.FieldUserID)
+	}
+	if m.friends != nil {
+		fields = append(fields, friendship.FieldFriendID)
+	}
+	if m.created_at != nil {
+		fields = append(fields, friendship.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FriendshipMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case friendship.FieldUserID:
+		return m.UserID()
+	case friendship.FieldFriendID:
+		return m.FriendID()
+	case friendship.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FriendshipMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case friendship.FieldUserID:
+		return m.OldUserID(ctx)
+	case friendship.FieldFriendID:
+		return m.OldFriendID(ctx)
+	case friendship.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Friendship field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FriendshipMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case friendship.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case friendship.FieldFriendID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFriendID(v)
+		return nil
+	case friendship.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Friendship field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FriendshipMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FriendshipMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FriendshipMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Friendship numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FriendshipMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FriendshipMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FriendshipMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Friendship nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FriendshipMutation) ResetField(name string) error {
+	switch name {
+	case friendship.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case friendship.FieldFriendID:
+		m.ResetFriendID()
+		return nil
+	case friendship.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Friendship field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FriendshipMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.users != nil {
+		edges = append(edges, friendship.EdgeUsers)
+	}
+	if m.friends != nil {
+		edges = append(edges, friendship.EdgeFriends)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FriendshipMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case friendship.EdgeUsers:
+		if id := m.users; id != nil {
+			return []ent.Value{*id}
+		}
+	case friendship.EdgeFriends:
+		if id := m.friends; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FriendshipMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FriendshipMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FriendshipMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedusers {
+		edges = append(edges, friendship.EdgeUsers)
+	}
+	if m.clearedfriends {
+		edges = append(edges, friendship.EdgeFriends)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FriendshipMutation) EdgeCleared(name string) bool {
+	switch name {
+	case friendship.EdgeUsers:
+		return m.clearedusers
+	case friendship.EdgeFriends:
+		return m.clearedfriends
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FriendshipMutation) ClearEdge(name string) error {
+	switch name {
+	case friendship.EdgeUsers:
+		m.ClearUsers()
+		return nil
+	case friendship.EdgeFriends:
+		m.ClearFriends()
+		return nil
+	}
+	return fmt.Errorf("unknown Friendship unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FriendshipMutation) ResetEdge(name string) error {
+	switch name {
+	case friendship.EdgeUsers:
+		m.ResetUsers()
+		return nil
+	case friendship.EdgeFriends:
+		m.ResetFriends()
+		return nil
+	}
+	return fmt.Errorf("unknown Friendship edge %s", name)
+}
 
 // HexMutation represents an operation that mutates the Hex nodes in the graph.
 type HexMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	hex_owner     *int64
-	addhex_owner  *int64
-	created_at    *time.Time
-	updated_at    *time.Time
-	is_active     *bool
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Hex, error)
-	predicates    []predicate.Hex
+	op                     Op
+	typ                    string
+	id                     *string
+	clearedFields          map[string]struct{}
+	hexinfluences          map[int]struct{}
+	removedhexinfluences   map[int]struct{}
+	clearedhexinfluences   bool
+	hexleaderboards        map[int]struct{}
+	removedhexleaderboards map[int]struct{}
+	clearedhexleaderboards bool
+	done                   bool
+	oldValue               func(context.Context) (*Hex, error)
+	predicates             []predicate.Hex
 }
 
 var _ ent.Mutation = (*HexMutation)(nil)
@@ -64,7 +1396,7 @@ func newHexMutation(c config, op Op, opts ...hexOption) *HexMutation {
 }
 
 // withHexID sets the ID field of the mutation.
-func withHexID(id int) hexOption {
+func withHexID(id string) hexOption {
 	return func(m *HexMutation) {
 		var (
 			err   error
@@ -114,9 +1446,15 @@ func (m HexMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Hex entities.
+func (m *HexMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *HexMutation) ID() (id int, exists bool) {
+func (m *HexMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -127,12 +1465,12 @@ func (m *HexMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *HexMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *HexMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -142,168 +1480,112 @@ func (m *HexMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetHexOwner sets the "hex_owner" field.
-func (m *HexMutation) SetHexOwner(i int64) {
-	m.hex_owner = &i
-	m.addhex_owner = nil
-}
-
-// HexOwner returns the value of the "hex_owner" field in the mutation.
-func (m *HexMutation) HexOwner() (r int64, exists bool) {
-	v := m.hex_owner
-	if v == nil {
-		return
+// AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by ids.
+func (m *HexMutation) AddHexinfluenceIDs(ids ...int) {
+	if m.hexinfluences == nil {
+		m.hexinfluences = make(map[int]struct{})
 	}
-	return *v, true
-}
-
-// OldHexOwner returns the old "hex_owner" field's value of the Hex entity.
-// If the Hex object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexMutation) OldHexOwner(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHexOwner is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHexOwner requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHexOwner: %w", err)
-	}
-	return oldValue.HexOwner, nil
-}
-
-// AddHexOwner adds i to the "hex_owner" field.
-func (m *HexMutation) AddHexOwner(i int64) {
-	if m.addhex_owner != nil {
-		*m.addhex_owner += i
-	} else {
-		m.addhex_owner = &i
+	for i := range ids {
+		m.hexinfluences[ids[i]] = struct{}{}
 	}
 }
 
-// AddedHexOwner returns the value that was added to the "hex_owner" field in this mutation.
-func (m *HexMutation) AddedHexOwner() (r int64, exists bool) {
-	v := m.addhex_owner
-	if v == nil {
-		return
-	}
-	return *v, true
+// ClearHexinfluences clears the "hexinfluences" edge to the HexInfluence entity.
+func (m *HexMutation) ClearHexinfluences() {
+	m.clearedhexinfluences = true
 }
 
-// ResetHexOwner resets all changes to the "hex_owner" field.
-func (m *HexMutation) ResetHexOwner() {
-	m.hex_owner = nil
-	m.addhex_owner = nil
+// HexinfluencesCleared reports if the "hexinfluences" edge to the HexInfluence entity was cleared.
+func (m *HexMutation) HexinfluencesCleared() bool {
+	return m.clearedhexinfluences
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (m *HexMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
+// RemoveHexinfluenceIDs removes the "hexinfluences" edge to the HexInfluence entity by IDs.
+func (m *HexMutation) RemoveHexinfluenceIDs(ids ...int) {
+	if m.removedhexinfluences == nil {
+		m.removedhexinfluences = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.hexinfluences, ids[i])
+		m.removedhexinfluences[ids[i]] = struct{}{}
+	}
 }
 
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *HexMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
+// RemovedHexinfluences returns the removed IDs of the "hexinfluences" edge to the HexInfluence entity.
+func (m *HexMutation) RemovedHexinfluencesIDs() (ids []int) {
+	for id := range m.removedhexinfluences {
+		ids = append(ids, id)
 	}
-	return *v, true
+	return
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the Hex entity.
-// If the Hex object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+// HexinfluencesIDs returns the "hexinfluences" edge IDs in the mutation.
+func (m *HexMutation) HexinfluencesIDs() (ids []int) {
+	for id := range m.hexinfluences {
+		ids = append(ids, id)
 	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
+	return
 }
 
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *HexMutation) ResetCreatedAt() {
-	m.created_at = nil
+// ResetHexinfluences resets all changes to the "hexinfluences" edge.
+func (m *HexMutation) ResetHexinfluences() {
+	m.hexinfluences = nil
+	m.clearedhexinfluences = false
+	m.removedhexinfluences = nil
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (m *HexMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
+// AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by ids.
+func (m *HexMutation) AddHexleaderboardIDs(ids ...int) {
+	if m.hexleaderboards == nil {
+		m.hexleaderboards = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.hexleaderboards[ids[i]] = struct{}{}
+	}
 }
 
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *HexMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
+// ClearHexleaderboards clears the "hexleaderboards" edge to the HexLeaderboard entity.
+func (m *HexMutation) ClearHexleaderboards() {
+	m.clearedhexleaderboards = true
 }
 
-// OldUpdatedAt returns the old "updated_at" field's value of the Hex entity.
-// If the Hex object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
+// HexleaderboardsCleared reports if the "hexleaderboards" edge to the HexLeaderboard entity was cleared.
+func (m *HexMutation) HexleaderboardsCleared() bool {
+	return m.clearedhexleaderboards
 }
 
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *HexMutation) ResetUpdatedAt() {
-	m.updated_at = nil
+// RemoveHexleaderboardIDs removes the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
+func (m *HexMutation) RemoveHexleaderboardIDs(ids ...int) {
+	if m.removedhexleaderboards == nil {
+		m.removedhexleaderboards = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.hexleaderboards, ids[i])
+		m.removedhexleaderboards[ids[i]] = struct{}{}
+	}
 }
 
-// SetIsActive sets the "is_active" field.
-func (m *HexMutation) SetIsActive(b bool) {
-	m.is_active = &b
+// RemovedHexleaderboards returns the removed IDs of the "hexleaderboards" edge to the HexLeaderboard entity.
+func (m *HexMutation) RemovedHexleaderboardsIDs() (ids []int) {
+	for id := range m.removedhexleaderboards {
+		ids = append(ids, id)
+	}
+	return
 }
 
-// IsActive returns the value of the "is_active" field in the mutation.
-func (m *HexMutation) IsActive() (r bool, exists bool) {
-	v := m.is_active
-	if v == nil {
-		return
+// HexleaderboardsIDs returns the "hexleaderboards" edge IDs in the mutation.
+func (m *HexMutation) HexleaderboardsIDs() (ids []int) {
+	for id := range m.hexleaderboards {
+		ids = append(ids, id)
 	}
-	return *v, true
+	return
 }
 
-// OldIsActive returns the old "is_active" field's value of the Hex entity.
-// If the Hex object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexMutation) OldIsActive(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsActive is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsActive requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsActive: %w", err)
-	}
-	return oldValue.IsActive, nil
-}
-
-// ResetIsActive resets all changes to the "is_active" field.
-func (m *HexMutation) ResetIsActive() {
-	m.is_active = nil
+// ResetHexleaderboards resets all changes to the "hexleaderboards" edge.
+func (m *HexMutation) ResetHexleaderboards() {
+	m.hexleaderboards = nil
+	m.clearedhexleaderboards = false
+	m.removedhexleaderboards = nil
 }
 
 // Where appends a list predicates to the HexMutation builder.
@@ -340,19 +1622,7 @@ func (m *HexMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HexMutation) Fields() []string {
-	fields := make([]string, 0, 4)
-	if m.hex_owner != nil {
-		fields = append(fields, hex.FieldHexOwner)
-	}
-	if m.created_at != nil {
-		fields = append(fields, hex.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, hex.FieldUpdatedAt)
-	}
-	if m.is_active != nil {
-		fields = append(fields, hex.FieldIsActive)
-	}
+	fields := make([]string, 0, 0)
 	return fields
 }
 
@@ -360,16 +1630,6 @@ func (m *HexMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *HexMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case hex.FieldHexOwner:
-		return m.HexOwner()
-	case hex.FieldCreatedAt:
-		return m.CreatedAt()
-	case hex.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case hex.FieldIsActive:
-		return m.IsActive()
-	}
 	return nil, false
 }
 
@@ -377,16 +1637,6 @@ func (m *HexMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *HexMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case hex.FieldHexOwner:
-		return m.OldHexOwner(ctx)
-	case hex.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case hex.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case hex.FieldIsActive:
-		return m.OldIsActive(ctx)
-	}
 	return nil, fmt.Errorf("unknown Hex field %s", name)
 }
 
@@ -395,34 +1645,6 @@ func (m *HexMutation) OldField(ctx context.Context, name string) (ent.Value, err
 // type.
 func (m *HexMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case hex.FieldHexOwner:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHexOwner(v)
-		return nil
-	case hex.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case hex.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case hex.FieldIsActive:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsActive(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Hex field %s", name)
 }
@@ -430,21 +1652,13 @@ func (m *HexMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *HexMutation) AddedFields() []string {
-	var fields []string
-	if m.addhex_owner != nil {
-		fields = append(fields, hex.FieldHexOwner)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *HexMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case hex.FieldHexOwner:
-		return m.AddedHexOwner()
-	}
 	return nil, false
 }
 
@@ -452,15 +1666,6 @@ func (m *HexMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *HexMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	case hex.FieldHexOwner:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddHexOwner(v)
-		return nil
-	}
 	return fmt.Errorf("unknown Hex numeric field %s", name)
 }
 
@@ -486,67 +1691,1857 @@ func (m *HexMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *HexMutation) ResetField(name string) error {
-	switch name {
-	case hex.FieldHexOwner:
-		m.ResetHexOwner()
-		return nil
-	case hex.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case hex.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case hex.FieldIsActive:
-		m.ResetIsActive()
-		return nil
-	}
 	return fmt.Errorf("unknown Hex field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HexMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.hexinfluences != nil {
+		edges = append(edges, hex.EdgeHexinfluences)
+	}
+	if m.hexleaderboards != nil {
+		edges = append(edges, hex.EdgeHexleaderboards)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *HexMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hex.EdgeHexinfluences:
+		ids := make([]ent.Value, 0, len(m.hexinfluences))
+		for id := range m.hexinfluences {
+			ids = append(ids, id)
+		}
+		return ids
+	case hex.EdgeHexleaderboards:
+		ids := make([]ent.Value, 0, len(m.hexleaderboards))
+		for id := range m.hexleaderboards {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HexMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.removedhexinfluences != nil {
+		edges = append(edges, hex.EdgeHexinfluences)
+	}
+	if m.removedhexleaderboards != nil {
+		edges = append(edges, hex.EdgeHexleaderboards)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *HexMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case hex.EdgeHexinfluences:
+		ids := make([]ent.Value, 0, len(m.removedhexinfluences))
+		for id := range m.removedhexinfluences {
+			ids = append(ids, id)
+		}
+		return ids
+	case hex.EdgeHexleaderboards:
+		ids := make([]ent.Value, 0, len(m.removedhexleaderboards))
+		for id := range m.removedhexleaderboards {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HexMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedhexinfluences {
+		edges = append(edges, hex.EdgeHexinfluences)
+	}
+	if m.clearedhexleaderboards {
+		edges = append(edges, hex.EdgeHexleaderboards)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *HexMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hex.EdgeHexinfluences:
+		return m.clearedhexinfluences
+	case hex.EdgeHexleaderboards:
+		return m.clearedhexleaderboards
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *HexMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Hex unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *HexMutation) ResetEdge(name string) error {
+	switch name {
+	case hex.EdgeHexinfluences:
+		m.ResetHexinfluences()
+		return nil
+	case hex.EdgeHexleaderboards:
+		m.ResetHexleaderboards()
+		return nil
+	}
 	return fmt.Errorf("unknown Hex edge %s", name)
+}
+
+// HexInfluenceMutation represents an operation that mutates the HexInfluence nodes in the graph.
+type HexInfluenceMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	score         *float64
+	addscore      *float64
+	last_updated  *time.Time
+	clearedFields map[string]struct{}
+	hex           *string
+	clearedhex    bool
+	users         *uuid.UUID
+	clearedusers  bool
+	done          bool
+	oldValue      func(context.Context) (*HexInfluence, error)
+	predicates    []predicate.HexInfluence
+}
+
+var _ ent.Mutation = (*HexInfluenceMutation)(nil)
+
+// hexinfluenceOption allows management of the mutation configuration using functional options.
+type hexinfluenceOption func(*HexInfluenceMutation)
+
+// newHexInfluenceMutation creates new mutation for the HexInfluence entity.
+func newHexInfluenceMutation(c config, op Op, opts ...hexinfluenceOption) *HexInfluenceMutation {
+	m := &HexInfluenceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHexInfluence,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHexInfluenceID sets the ID field of the mutation.
+func withHexInfluenceID(id int) hexinfluenceOption {
+	return func(m *HexInfluenceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *HexInfluence
+		)
+		m.oldValue = func(ctx context.Context) (*HexInfluence, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().HexInfluence.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHexInfluence sets the old HexInfluence of the mutation.
+func withHexInfluence(node *HexInfluence) hexinfluenceOption {
+	return func(m *HexInfluenceMutation) {
+		m.oldValue = func(context.Context) (*HexInfluence, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HexInfluenceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HexInfluenceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HexInfluenceMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HexInfluenceMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().HexInfluence.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetH3Index sets the "h3_index" field.
+func (m *HexInfluenceMutation) SetH3Index(s string) {
+	m.hex = &s
+}
+
+// H3Index returns the value of the "h3_index" field in the mutation.
+func (m *HexInfluenceMutation) H3Index() (r string, exists bool) {
+	v := m.hex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldH3Index returns the old "h3_index" field's value of the HexInfluence entity.
+// If the HexInfluence object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HexInfluenceMutation) OldH3Index(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldH3Index is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldH3Index requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldH3Index: %w", err)
+	}
+	return oldValue.H3Index, nil
+}
+
+// ResetH3Index resets all changes to the "h3_index" field.
+func (m *HexInfluenceMutation) ResetH3Index() {
+	m.hex = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *HexInfluenceMutation) SetUserID(u uuid.UUID) {
+	m.users = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *HexInfluenceMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.users
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the HexInfluence entity.
+// If the HexInfluence object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HexInfluenceMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *HexInfluenceMutation) ResetUserID() {
+	m.users = nil
+}
+
+// SetScore sets the "score" field.
+func (m *HexInfluenceMutation) SetScore(f float64) {
+	m.score = &f
+	m.addscore = nil
+}
+
+// Score returns the value of the "score" field in the mutation.
+func (m *HexInfluenceMutation) Score() (r float64, exists bool) {
+	v := m.score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScore returns the old "score" field's value of the HexInfluence entity.
+// If the HexInfluence object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HexInfluenceMutation) OldScore(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScore: %w", err)
+	}
+	return oldValue.Score, nil
+}
+
+// AddScore adds f to the "score" field.
+func (m *HexInfluenceMutation) AddScore(f float64) {
+	if m.addscore != nil {
+		*m.addscore += f
+	} else {
+		m.addscore = &f
+	}
+}
+
+// AddedScore returns the value that was added to the "score" field in this mutation.
+func (m *HexInfluenceMutation) AddedScore() (r float64, exists bool) {
+	v := m.addscore
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetScore resets all changes to the "score" field.
+func (m *HexInfluenceMutation) ResetScore() {
+	m.score = nil
+	m.addscore = nil
+}
+
+// SetLastUpdated sets the "last_updated" field.
+func (m *HexInfluenceMutation) SetLastUpdated(t time.Time) {
+	m.last_updated = &t
+}
+
+// LastUpdated returns the value of the "last_updated" field in the mutation.
+func (m *HexInfluenceMutation) LastUpdated() (r time.Time, exists bool) {
+	v := m.last_updated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastUpdated returns the old "last_updated" field's value of the HexInfluence entity.
+// If the HexInfluence object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HexInfluenceMutation) OldLastUpdated(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastUpdated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastUpdated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastUpdated: %w", err)
+	}
+	return oldValue.LastUpdated, nil
+}
+
+// ResetLastUpdated resets all changes to the "last_updated" field.
+func (m *HexInfluenceMutation) ResetLastUpdated() {
+	m.last_updated = nil
+}
+
+// SetHexID sets the "hex" edge to the Hex entity by id.
+func (m *HexInfluenceMutation) SetHexID(id string) {
+	m.hex = &id
+}
+
+// ClearHex clears the "hex" edge to the Hex entity.
+func (m *HexInfluenceMutation) ClearHex() {
+	m.clearedhex = true
+	m.clearedFields[hexinfluence.FieldH3Index] = struct{}{}
+}
+
+// HexCleared reports if the "hex" edge to the Hex entity was cleared.
+func (m *HexInfluenceMutation) HexCleared() bool {
+	return m.clearedhex
+}
+
+// HexID returns the "hex" edge ID in the mutation.
+func (m *HexInfluenceMutation) HexID() (id string, exists bool) {
+	if m.hex != nil {
+		return *m.hex, true
+	}
+	return
+}
+
+// HexIDs returns the "hex" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HexID instead. It exists only for internal usage by the builders.
+func (m *HexInfluenceMutation) HexIDs() (ids []string) {
+	if id := m.hex; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHex resets all changes to the "hex" edge.
+func (m *HexInfluenceMutation) ResetHex() {
+	m.hex = nil
+	m.clearedhex = false
+}
+
+// SetUsersID sets the "users" edge to the User entity by id.
+func (m *HexInfluenceMutation) SetUsersID(id uuid.UUID) {
+	m.users = &id
+}
+
+// ClearUsers clears the "users" edge to the User entity.
+func (m *HexInfluenceMutation) ClearUsers() {
+	m.clearedusers = true
+	m.clearedFields[hexinfluence.FieldUserID] = struct{}{}
+}
+
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *HexInfluenceMutation) UsersCleared() bool {
+	return m.clearedusers
+}
+
+// UsersID returns the "users" edge ID in the mutation.
+func (m *HexInfluenceMutation) UsersID() (id uuid.UUID, exists bool) {
+	if m.users != nil {
+		return *m.users, true
+	}
+	return
+}
+
+// UsersIDs returns the "users" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UsersID instead. It exists only for internal usage by the builders.
+func (m *HexInfluenceMutation) UsersIDs() (ids []uuid.UUID) {
+	if id := m.users; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUsers resets all changes to the "users" edge.
+func (m *HexInfluenceMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+}
+
+// Where appends a list predicates to the HexInfluenceMutation builder.
+func (m *HexInfluenceMutation) Where(ps ...predicate.HexInfluence) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HexInfluenceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HexInfluenceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HexInfluence, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HexInfluenceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HexInfluenceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (HexInfluence).
+func (m *HexInfluenceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HexInfluenceMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.hex != nil {
+		fields = append(fields, hexinfluence.FieldH3Index)
+	}
+	if m.users != nil {
+		fields = append(fields, hexinfluence.FieldUserID)
+	}
+	if m.score != nil {
+		fields = append(fields, hexinfluence.FieldScore)
+	}
+	if m.last_updated != nil {
+		fields = append(fields, hexinfluence.FieldLastUpdated)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HexInfluenceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case hexinfluence.FieldH3Index:
+		return m.H3Index()
+	case hexinfluence.FieldUserID:
+		return m.UserID()
+	case hexinfluence.FieldScore:
+		return m.Score()
+	case hexinfluence.FieldLastUpdated:
+		return m.LastUpdated()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HexInfluenceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case hexinfluence.FieldH3Index:
+		return m.OldH3Index(ctx)
+	case hexinfluence.FieldUserID:
+		return m.OldUserID(ctx)
+	case hexinfluence.FieldScore:
+		return m.OldScore(ctx)
+	case hexinfluence.FieldLastUpdated:
+		return m.OldLastUpdated(ctx)
+	}
+	return nil, fmt.Errorf("unknown HexInfluence field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HexInfluenceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case hexinfluence.FieldH3Index:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetH3Index(v)
+		return nil
+	case hexinfluence.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case hexinfluence.FieldScore:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScore(v)
+		return nil
+	case hexinfluence.FieldLastUpdated:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastUpdated(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HexInfluence field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HexInfluenceMutation) AddedFields() []string {
+	var fields []string
+	if m.addscore != nil {
+		fields = append(fields, hexinfluence.FieldScore)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HexInfluenceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case hexinfluence.FieldScore:
+		return m.AddedScore()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HexInfluenceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case hexinfluence.FieldScore:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddScore(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HexInfluence numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HexInfluenceMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HexInfluenceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HexInfluenceMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown HexInfluence nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HexInfluenceMutation) ResetField(name string) error {
+	switch name {
+	case hexinfluence.FieldH3Index:
+		m.ResetH3Index()
+		return nil
+	case hexinfluence.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case hexinfluence.FieldScore:
+		m.ResetScore()
+		return nil
+	case hexinfluence.FieldLastUpdated:
+		m.ResetLastUpdated()
+		return nil
+	}
+	return fmt.Errorf("unknown HexInfluence field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HexInfluenceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.hex != nil {
+		edges = append(edges, hexinfluence.EdgeHex)
+	}
+	if m.users != nil {
+		edges = append(edges, hexinfluence.EdgeUsers)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HexInfluenceMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hexinfluence.EdgeHex:
+		if id := m.hex; id != nil {
+			return []ent.Value{*id}
+		}
+	case hexinfluence.EdgeUsers:
+		if id := m.users; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HexInfluenceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HexInfluenceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HexInfluenceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedhex {
+		edges = append(edges, hexinfluence.EdgeHex)
+	}
+	if m.clearedusers {
+		edges = append(edges, hexinfluence.EdgeUsers)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HexInfluenceMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hexinfluence.EdgeHex:
+		return m.clearedhex
+	case hexinfluence.EdgeUsers:
+		return m.clearedusers
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HexInfluenceMutation) ClearEdge(name string) error {
+	switch name {
+	case hexinfluence.EdgeHex:
+		m.ClearHex()
+		return nil
+	case hexinfluence.EdgeUsers:
+		m.ClearUsers()
+		return nil
+	}
+	return fmt.Errorf("unknown HexInfluence unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HexInfluenceMutation) ResetEdge(name string) error {
+	switch name {
+	case hexinfluence.EdgeHex:
+		m.ResetHex()
+		return nil
+	case hexinfluence.EdgeUsers:
+		m.ResetUsers()
+		return nil
+	}
+	return fmt.Errorf("unknown HexInfluence edge %s", name)
+}
+
+// HexLeaderboardMutation represents an operation that mutates the HexLeaderboard nodes in the graph.
+type HexLeaderboardMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	top_users     *map[string][]uuid.UUID
+	clearedFields map[string]struct{}
+	hex           *string
+	clearedhex    bool
+	done          bool
+	oldValue      func(context.Context) (*HexLeaderboard, error)
+	predicates    []predicate.HexLeaderboard
+}
+
+var _ ent.Mutation = (*HexLeaderboardMutation)(nil)
+
+// hexleaderboardOption allows management of the mutation configuration using functional options.
+type hexleaderboardOption func(*HexLeaderboardMutation)
+
+// newHexLeaderboardMutation creates new mutation for the HexLeaderboard entity.
+func newHexLeaderboardMutation(c config, op Op, opts ...hexleaderboardOption) *HexLeaderboardMutation {
+	m := &HexLeaderboardMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHexLeaderboard,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHexLeaderboardID sets the ID field of the mutation.
+func withHexLeaderboardID(id int) hexleaderboardOption {
+	return func(m *HexLeaderboardMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *HexLeaderboard
+		)
+		m.oldValue = func(ctx context.Context) (*HexLeaderboard, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().HexLeaderboard.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHexLeaderboard sets the old HexLeaderboard of the mutation.
+func withHexLeaderboard(node *HexLeaderboard) hexleaderboardOption {
+	return func(m *HexLeaderboardMutation) {
+		m.oldValue = func(context.Context) (*HexLeaderboard, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HexLeaderboardMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HexLeaderboardMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HexLeaderboardMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HexLeaderboardMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().HexLeaderboard.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetH3Index sets the "h3_index" field.
+func (m *HexLeaderboardMutation) SetH3Index(s string) {
+	m.hex = &s
+}
+
+// H3Index returns the value of the "h3_index" field in the mutation.
+func (m *HexLeaderboardMutation) H3Index() (r string, exists bool) {
+	v := m.hex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldH3Index returns the old "h3_index" field's value of the HexLeaderboard entity.
+// If the HexLeaderboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HexLeaderboardMutation) OldH3Index(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldH3Index is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldH3Index requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldH3Index: %w", err)
+	}
+	return oldValue.H3Index, nil
+}
+
+// ResetH3Index resets all changes to the "h3_index" field.
+func (m *HexLeaderboardMutation) ResetH3Index() {
+	m.hex = nil
+}
+
+// SetTopUsers sets the "top_users" field.
+func (m *HexLeaderboardMutation) SetTopUsers(value map[string][]uuid.UUID) {
+	m.top_users = &value
+}
+
+// TopUsers returns the value of the "top_users" field in the mutation.
+func (m *HexLeaderboardMutation) TopUsers() (r map[string][]uuid.UUID, exists bool) {
+	v := m.top_users
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTopUsers returns the old "top_users" field's value of the HexLeaderboard entity.
+// If the HexLeaderboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HexLeaderboardMutation) OldTopUsers(ctx context.Context) (v map[string][]uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTopUsers is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTopUsers requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTopUsers: %w", err)
+	}
+	return oldValue.TopUsers, nil
+}
+
+// ResetTopUsers resets all changes to the "top_users" field.
+func (m *HexLeaderboardMutation) ResetTopUsers() {
+	m.top_users = nil
+}
+
+// SetHexID sets the "hex" edge to the Hex entity by id.
+func (m *HexLeaderboardMutation) SetHexID(id string) {
+	m.hex = &id
+}
+
+// ClearHex clears the "hex" edge to the Hex entity.
+func (m *HexLeaderboardMutation) ClearHex() {
+	m.clearedhex = true
+	m.clearedFields[hexleaderboard.FieldH3Index] = struct{}{}
+}
+
+// HexCleared reports if the "hex" edge to the Hex entity was cleared.
+func (m *HexLeaderboardMutation) HexCleared() bool {
+	return m.clearedhex
+}
+
+// HexID returns the "hex" edge ID in the mutation.
+func (m *HexLeaderboardMutation) HexID() (id string, exists bool) {
+	if m.hex != nil {
+		return *m.hex, true
+	}
+	return
+}
+
+// HexIDs returns the "hex" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HexID instead. It exists only for internal usage by the builders.
+func (m *HexLeaderboardMutation) HexIDs() (ids []string) {
+	if id := m.hex; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHex resets all changes to the "hex" edge.
+func (m *HexLeaderboardMutation) ResetHex() {
+	m.hex = nil
+	m.clearedhex = false
+}
+
+// Where appends a list predicates to the HexLeaderboardMutation builder.
+func (m *HexLeaderboardMutation) Where(ps ...predicate.HexLeaderboard) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HexLeaderboardMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HexLeaderboardMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HexLeaderboard, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HexLeaderboardMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HexLeaderboardMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (HexLeaderboard).
+func (m *HexLeaderboardMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HexLeaderboardMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.hex != nil {
+		fields = append(fields, hexleaderboard.FieldH3Index)
+	}
+	if m.top_users != nil {
+		fields = append(fields, hexleaderboard.FieldTopUsers)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HexLeaderboardMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case hexleaderboard.FieldH3Index:
+		return m.H3Index()
+	case hexleaderboard.FieldTopUsers:
+		return m.TopUsers()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HexLeaderboardMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case hexleaderboard.FieldH3Index:
+		return m.OldH3Index(ctx)
+	case hexleaderboard.FieldTopUsers:
+		return m.OldTopUsers(ctx)
+	}
+	return nil, fmt.Errorf("unknown HexLeaderboard field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HexLeaderboardMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case hexleaderboard.FieldH3Index:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetH3Index(v)
+		return nil
+	case hexleaderboard.FieldTopUsers:
+		v, ok := value.(map[string][]uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTopUsers(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HexLeaderboard field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HexLeaderboardMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HexLeaderboardMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HexLeaderboardMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown HexLeaderboard numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HexLeaderboardMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HexLeaderboardMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HexLeaderboardMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown HexLeaderboard nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HexLeaderboardMutation) ResetField(name string) error {
+	switch name {
+	case hexleaderboard.FieldH3Index:
+		m.ResetH3Index()
+		return nil
+	case hexleaderboard.FieldTopUsers:
+		m.ResetTopUsers()
+		return nil
+	}
+	return fmt.Errorf("unknown HexLeaderboard field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HexLeaderboardMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.hex != nil {
+		edges = append(edges, hexleaderboard.EdgeHex)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HexLeaderboardMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hexleaderboard.EdgeHex:
+		if id := m.hex; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HexLeaderboardMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HexLeaderboardMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HexLeaderboardMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedhex {
+		edges = append(edges, hexleaderboard.EdgeHex)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HexLeaderboardMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hexleaderboard.EdgeHex:
+		return m.clearedhex
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HexLeaderboardMutation) ClearEdge(name string) error {
+	switch name {
+	case hexleaderboard.EdgeHex:
+		m.ClearHex()
+		return nil
+	}
+	return fmt.Errorf("unknown HexLeaderboard unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HexLeaderboardMutation) ResetEdge(name string) error {
+	switch name {
+	case hexleaderboard.EdgeHex:
+		m.ResetHex()
+		return nil
+	}
+	return fmt.Errorf("unknown HexLeaderboard edge %s", name)
+}
+
+// UserMutation represents an operation that mutates the User nodes in the graph.
+type UserMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	username            *string
+	external_user       *uuid.UUID
+	clearedFields       map[string]struct{}
+	activity            map[uuid.UUID]struct{}
+	removedactivity     map[uuid.UUID]struct{}
+	clearedactivity     bool
+	friendship          map[int]struct{}
+	removedfriendship   map[int]struct{}
+	clearedfriendship   bool
+	hexinfluence        map[int]struct{}
+	removedhexinfluence map[int]struct{}
+	clearedhexinfluence bool
+	done                bool
+	oldValue            func(context.Context) (*User, error)
+	predicates          []predicate.User
+}
+
+var _ ent.Mutation = (*UserMutation)(nil)
+
+// userOption allows management of the mutation configuration using functional options.
+type userOption func(*UserMutation)
+
+// newUserMutation creates new mutation for the User entity.
+func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
+	m := &UserMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUser,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUserID sets the ID field of the mutation.
+func withUserID(id uuid.UUID) userOption {
+	return func(m *UserMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *User
+		)
+		m.oldValue = func(ctx context.Context) (*User, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().User.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUser sets the old User of the mutation.
+func withUser(node *User) userOption {
+	return func(m *UserMutation) {
+		m.oldValue = func(context.Context) (*User, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UserMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UserMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of User entities.
+func (m *UserMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UserMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UserMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().User.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUsername sets the "username" field.
+func (m *UserMutation) SetUsername(s string) {
+	m.username = &s
+}
+
+// Username returns the value of the "username" field in the mutation.
+func (m *UserMutation) Username() (r string, exists bool) {
+	v := m.username
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsername returns the old "username" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldUsername(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsername requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
+	}
+	return oldValue.Username, nil
+}
+
+// ResetUsername resets all changes to the "username" field.
+func (m *UserMutation) ResetUsername() {
+	m.username = nil
+}
+
+// SetExternalUser sets the "external_user" field.
+func (m *UserMutation) SetExternalUser(u uuid.UUID) {
+	m.external_user = &u
+}
+
+// ExternalUser returns the value of the "external_user" field in the mutation.
+func (m *UserMutation) ExternalUser() (r uuid.UUID, exists bool) {
+	v := m.external_user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExternalUser returns the old "external_user" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldExternalUser(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExternalUser is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExternalUser requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExternalUser: %w", err)
+	}
+	return oldValue.ExternalUser, nil
+}
+
+// ResetExternalUser resets all changes to the "external_user" field.
+func (m *UserMutation) ResetExternalUser() {
+	m.external_user = nil
+}
+
+// AddActivityIDs adds the "activity" edge to the Activity entity by ids.
+func (m *UserMutation) AddActivityIDs(ids ...uuid.UUID) {
+	if m.activity == nil {
+		m.activity = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.activity[ids[i]] = struct{}{}
+	}
+}
+
+// ClearActivity clears the "activity" edge to the Activity entity.
+func (m *UserMutation) ClearActivity() {
+	m.clearedactivity = true
+}
+
+// ActivityCleared reports if the "activity" edge to the Activity entity was cleared.
+func (m *UserMutation) ActivityCleared() bool {
+	return m.clearedactivity
+}
+
+// RemoveActivityIDs removes the "activity" edge to the Activity entity by IDs.
+func (m *UserMutation) RemoveActivityIDs(ids ...uuid.UUID) {
+	if m.removedactivity == nil {
+		m.removedactivity = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.activity, ids[i])
+		m.removedactivity[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedActivity returns the removed IDs of the "activity" edge to the Activity entity.
+func (m *UserMutation) RemovedActivityIDs() (ids []uuid.UUID) {
+	for id := range m.removedactivity {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ActivityIDs returns the "activity" edge IDs in the mutation.
+func (m *UserMutation) ActivityIDs() (ids []uuid.UUID) {
+	for id := range m.activity {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetActivity resets all changes to the "activity" edge.
+func (m *UserMutation) ResetActivity() {
+	m.activity = nil
+	m.clearedactivity = false
+	m.removedactivity = nil
+}
+
+// AddFriendshipIDs adds the "friendship" edge to the Friendship entity by ids.
+func (m *UserMutation) AddFriendshipIDs(ids ...int) {
+	if m.friendship == nil {
+		m.friendship = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.friendship[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFriendship clears the "friendship" edge to the Friendship entity.
+func (m *UserMutation) ClearFriendship() {
+	m.clearedfriendship = true
+}
+
+// FriendshipCleared reports if the "friendship" edge to the Friendship entity was cleared.
+func (m *UserMutation) FriendshipCleared() bool {
+	return m.clearedfriendship
+}
+
+// RemoveFriendshipIDs removes the "friendship" edge to the Friendship entity by IDs.
+func (m *UserMutation) RemoveFriendshipIDs(ids ...int) {
+	if m.removedfriendship == nil {
+		m.removedfriendship = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.friendship, ids[i])
+		m.removedfriendship[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFriendship returns the removed IDs of the "friendship" edge to the Friendship entity.
+func (m *UserMutation) RemovedFriendshipIDs() (ids []int) {
+	for id := range m.removedfriendship {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FriendshipIDs returns the "friendship" edge IDs in the mutation.
+func (m *UserMutation) FriendshipIDs() (ids []int) {
+	for id := range m.friendship {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFriendship resets all changes to the "friendship" edge.
+func (m *UserMutation) ResetFriendship() {
+	m.friendship = nil
+	m.clearedfriendship = false
+	m.removedfriendship = nil
+}
+
+// AddHexinfluenceIDs adds the "hexinfluence" edge to the HexInfluence entity by ids.
+func (m *UserMutation) AddHexinfluenceIDs(ids ...int) {
+	if m.hexinfluence == nil {
+		m.hexinfluence = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.hexinfluence[ids[i]] = struct{}{}
+	}
+}
+
+// ClearHexinfluence clears the "hexinfluence" edge to the HexInfluence entity.
+func (m *UserMutation) ClearHexinfluence() {
+	m.clearedhexinfluence = true
+}
+
+// HexinfluenceCleared reports if the "hexinfluence" edge to the HexInfluence entity was cleared.
+func (m *UserMutation) HexinfluenceCleared() bool {
+	return m.clearedhexinfluence
+}
+
+// RemoveHexinfluenceIDs removes the "hexinfluence" edge to the HexInfluence entity by IDs.
+func (m *UserMutation) RemoveHexinfluenceIDs(ids ...int) {
+	if m.removedhexinfluence == nil {
+		m.removedhexinfluence = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.hexinfluence, ids[i])
+		m.removedhexinfluence[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedHexinfluence returns the removed IDs of the "hexinfluence" edge to the HexInfluence entity.
+func (m *UserMutation) RemovedHexinfluenceIDs() (ids []int) {
+	for id := range m.removedhexinfluence {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// HexinfluenceIDs returns the "hexinfluence" edge IDs in the mutation.
+func (m *UserMutation) HexinfluenceIDs() (ids []int) {
+	for id := range m.hexinfluence {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetHexinfluence resets all changes to the "hexinfluence" edge.
+func (m *UserMutation) ResetHexinfluence() {
+	m.hexinfluence = nil
+	m.clearedhexinfluence = false
+	m.removedhexinfluence = nil
+}
+
+// Where appends a list predicates to the UserMutation builder.
+func (m *UserMutation) Where(ps ...predicate.User) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UserMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.User, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UserMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (User).
+func (m *UserMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UserMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.username != nil {
+		fields = append(fields, user.FieldUsername)
+	}
+	if m.external_user != nil {
+		fields = append(fields, user.FieldExternalUser)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UserMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case user.FieldUsername:
+		return m.Username()
+	case user.FieldExternalUser:
+		return m.ExternalUser()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case user.FieldUsername:
+		return m.OldUsername(ctx)
+	case user.FieldExternalUser:
+		return m.OldExternalUser(ctx)
+	}
+	return nil, fmt.Errorf("unknown User field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case user.FieldUsername:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsername(v)
+		return nil
+	case user.FieldExternalUser:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExternalUser(v)
+		return nil
+	}
+	return fmt.Errorf("unknown User field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UserMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown User numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UserMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UserMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UserMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown User nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UserMutation) ResetField(name string) error {
+	switch name {
+	case user.FieldUsername:
+		m.ResetUsername()
+		return nil
+	case user.FieldExternalUser:
+		m.ResetExternalUser()
+		return nil
+	}
+	return fmt.Errorf("unknown User field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UserMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.activity != nil {
+		edges = append(edges, user.EdgeActivity)
+	}
+	if m.friendship != nil {
+		edges = append(edges, user.EdgeFriendship)
+	}
+	if m.hexinfluence != nil {
+		edges = append(edges, user.EdgeHexinfluence)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeActivity:
+		ids := make([]ent.Value, 0, len(m.activity))
+		for id := range m.activity {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeFriendship:
+		ids := make([]ent.Value, 0, len(m.friendship))
+		for id := range m.friendship {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeHexinfluence:
+		ids := make([]ent.Value, 0, len(m.hexinfluence))
+		for id := range m.hexinfluence {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UserMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedactivity != nil {
+		edges = append(edges, user.EdgeActivity)
+	}
+	if m.removedfriendship != nil {
+		edges = append(edges, user.EdgeFriendship)
+	}
+	if m.removedhexinfluence != nil {
+		edges = append(edges, user.EdgeHexinfluence)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeActivity:
+		ids := make([]ent.Value, 0, len(m.removedactivity))
+		for id := range m.removedactivity {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeFriendship:
+		ids := make([]ent.Value, 0, len(m.removedfriendship))
+		for id := range m.removedfriendship {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeHexinfluence:
+		ids := make([]ent.Value, 0, len(m.removedhexinfluence))
+		for id := range m.removedhexinfluence {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UserMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedactivity {
+		edges = append(edges, user.EdgeActivity)
+	}
+	if m.clearedfriendship {
+		edges = append(edges, user.EdgeFriendship)
+	}
+	if m.clearedhexinfluence {
+		edges = append(edges, user.EdgeHexinfluence)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeActivity:
+		return m.clearedactivity
+	case user.EdgeFriendship:
+		return m.clearedfriendship
+	case user.EdgeHexinfluence:
+		return m.clearedhexinfluence
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown User unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeActivity:
+		m.ResetActivity()
+		return nil
+	case user.EdgeFriendship:
+		m.ResetFriendship()
+		return nil
+	case user.EdgeHexinfluence:
+		m.ResetHexinfluence()
+		return nil
+	}
+	return fmt.Errorf("unknown User edge %s", name)
 }
