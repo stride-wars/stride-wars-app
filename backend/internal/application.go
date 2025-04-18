@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"stride-wars-app/ent"
+	"stride-wars-app/internal/service"
 	"stride-wars-app/pkg/errors"
 
 	"github.com/gorilla/mux"
@@ -19,6 +20,7 @@ type Application struct {
 	SupabaseClient *supabase.Client
 	EntClient      *ent.Client
 	Router         *http.Handler
+	Services       *service.Service
 }
 
 func New() (*Application, error) {
@@ -43,9 +45,16 @@ func (a *Application) Start() error {
 		return err
 	}
 
+	a.initializeServices()
+	
 	a.setupMuxRoutes()
 
 	return nil
+}
+
+func (a *Application) initializeServices() {
+	services := service.Provide(a.EntClient, a.Logger)
+	a.Services = services
 }
 
 func (a *Application) initializeSupabaseClient() error {
