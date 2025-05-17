@@ -25,3 +25,16 @@ func (r HexRepository) FindByIDs(ctx context.Context, ids []int64) ([]*ent.Hex, 
 func (r HexRepository) CreateHex(ctx context.Context, h3_index int64) (*ent.Hex, error) {
 	return r.client.Hex.Create().SetID(h3_index).Save(ctx)
 }
+func (r HexRepository) CreateHexes(ctx context.Context, hexes []*ent.Hex) ([]*ent.Hex, error) {
+	createdHexes := make([]*ent.Hex, len(hexes))
+
+	for i, hex := range hexes {
+		createdHex, err := r.client.Hex.Create().SetID(hex.ID).Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+		createdHexes[i] = createdHex
+	}
+
+	return createdHexes, nil
+}

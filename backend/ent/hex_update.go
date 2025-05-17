@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // HexUpdate is the builder for updating Hex entities.
@@ -30,14 +31,14 @@ func (hu *HexUpdate) Where(ps ...predicate.Hex) *HexUpdate {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by IDs.
-func (hu *HexUpdate) AddHexinfluenceIDs(ids ...int) *HexUpdate {
+func (hu *HexUpdate) AddHexinfluenceIDs(ids ...uuid.UUID) *HexUpdate {
 	hu.mutation.AddHexinfluenceIDs(ids...)
 	return hu
 }
 
 // AddHexinfluences adds the "hexinfluences" edges to the HexInfluence entity.
 func (hu *HexUpdate) AddHexinfluences(h ...*HexInfluence) *HexUpdate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -45,14 +46,14 @@ func (hu *HexUpdate) AddHexinfluences(h ...*HexInfluence) *HexUpdate {
 }
 
 // AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
-func (hu *HexUpdate) AddHexleaderboardIDs(ids ...int) *HexUpdate {
+func (hu *HexUpdate) AddHexleaderboardIDs(ids ...uuid.UUID) *HexUpdate {
 	hu.mutation.AddHexleaderboardIDs(ids...)
 	return hu
 }
 
 // AddHexleaderboards adds the "hexleaderboards" edges to the HexLeaderboard entity.
 func (hu *HexUpdate) AddHexleaderboards(h ...*HexLeaderboard) *HexUpdate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -71,14 +72,14 @@ func (hu *HexUpdate) ClearHexinfluences() *HexUpdate {
 }
 
 // RemoveHexinfluenceIDs removes the "hexinfluences" edge to HexInfluence entities by IDs.
-func (hu *HexUpdate) RemoveHexinfluenceIDs(ids ...int) *HexUpdate {
+func (hu *HexUpdate) RemoveHexinfluenceIDs(ids ...uuid.UUID) *HexUpdate {
 	hu.mutation.RemoveHexinfluenceIDs(ids...)
 	return hu
 }
 
 // RemoveHexinfluences removes "hexinfluences" edges to HexInfluence entities.
 func (hu *HexUpdate) RemoveHexinfluences(h ...*HexInfluence) *HexUpdate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -92,14 +93,14 @@ func (hu *HexUpdate) ClearHexleaderboards() *HexUpdate {
 }
 
 // RemoveHexleaderboardIDs removes the "hexleaderboards" edge to HexLeaderboard entities by IDs.
-func (hu *HexUpdate) RemoveHexleaderboardIDs(ids ...int) *HexUpdate {
+func (hu *HexUpdate) RemoveHexleaderboardIDs(ids ...uuid.UUID) *HexUpdate {
 	hu.mutation.RemoveHexleaderboardIDs(ids...)
 	return hu
 }
 
 // RemoveHexleaderboards removes "hexleaderboards" edges to HexLeaderboard entities.
 func (hu *HexUpdate) RemoveHexleaderboards(h ...*HexLeaderboard) *HexUpdate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -150,7 +151,7 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -163,7 +164,7 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -179,7 +180,7 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -195,7 +196,7 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -208,7 +209,7 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -224,7 +225,7 @@ func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -253,14 +254,14 @@ type HexUpdateOne struct {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by IDs.
-func (huo *HexUpdateOne) AddHexinfluenceIDs(ids ...int) *HexUpdateOne {
+func (huo *HexUpdateOne) AddHexinfluenceIDs(ids ...uuid.UUID) *HexUpdateOne {
 	huo.mutation.AddHexinfluenceIDs(ids...)
 	return huo
 }
 
 // AddHexinfluences adds the "hexinfluences" edges to the HexInfluence entity.
 func (huo *HexUpdateOne) AddHexinfluences(h ...*HexInfluence) *HexUpdateOne {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -268,14 +269,14 @@ func (huo *HexUpdateOne) AddHexinfluences(h ...*HexInfluence) *HexUpdateOne {
 }
 
 // AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
-func (huo *HexUpdateOne) AddHexleaderboardIDs(ids ...int) *HexUpdateOne {
+func (huo *HexUpdateOne) AddHexleaderboardIDs(ids ...uuid.UUID) *HexUpdateOne {
 	huo.mutation.AddHexleaderboardIDs(ids...)
 	return huo
 }
 
 // AddHexleaderboards adds the "hexleaderboards" edges to the HexLeaderboard entity.
 func (huo *HexUpdateOne) AddHexleaderboards(h ...*HexLeaderboard) *HexUpdateOne {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -294,14 +295,14 @@ func (huo *HexUpdateOne) ClearHexinfluences() *HexUpdateOne {
 }
 
 // RemoveHexinfluenceIDs removes the "hexinfluences" edge to HexInfluence entities by IDs.
-func (huo *HexUpdateOne) RemoveHexinfluenceIDs(ids ...int) *HexUpdateOne {
+func (huo *HexUpdateOne) RemoveHexinfluenceIDs(ids ...uuid.UUID) *HexUpdateOne {
 	huo.mutation.RemoveHexinfluenceIDs(ids...)
 	return huo
 }
 
 // RemoveHexinfluences removes "hexinfluences" edges to HexInfluence entities.
 func (huo *HexUpdateOne) RemoveHexinfluences(h ...*HexInfluence) *HexUpdateOne {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -315,14 +316,14 @@ func (huo *HexUpdateOne) ClearHexleaderboards() *HexUpdateOne {
 }
 
 // RemoveHexleaderboardIDs removes the "hexleaderboards" edge to HexLeaderboard entities by IDs.
-func (huo *HexUpdateOne) RemoveHexleaderboardIDs(ids ...int) *HexUpdateOne {
+func (huo *HexUpdateOne) RemoveHexleaderboardIDs(ids ...uuid.UUID) *HexUpdateOne {
 	huo.mutation.RemoveHexleaderboardIDs(ids...)
 	return huo
 }
 
 // RemoveHexleaderboards removes "hexleaderboards" edges to HexLeaderboard entities.
 func (huo *HexUpdateOne) RemoveHexleaderboards(h ...*HexLeaderboard) *HexUpdateOne {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -403,7 +404,7 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -416,7 +417,7 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -432,7 +433,7 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -448,7 +449,7 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -461,7 +462,7 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -477,7 +478,7 @@ func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

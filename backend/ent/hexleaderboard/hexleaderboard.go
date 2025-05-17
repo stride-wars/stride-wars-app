@@ -3,8 +3,11 @@
 package hexleaderboard
 
 import (
+	"stride-wars-app/ent/model"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -45,6 +48,13 @@ func ValidColumn(column string) bool {
 	}
 	return false
 }
+
+var (
+	// DefaultTopUsers holds the default value on creation for the "top_users" field.
+	DefaultTopUsers []model.TopUser
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
+)
 
 // OrderOption defines the ordering options for the HexLeaderboard queries.
 type OrderOption func(*sql.Selector)

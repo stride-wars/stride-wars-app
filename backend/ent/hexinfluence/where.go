@@ -12,47 +12,47 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.HexInfluence {
+func ID(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.HexInfluence {
+func IDEQ(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.HexInfluence {
+func IDNEQ(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.HexInfluence {
+func IDIn(ids ...uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.HexInfluence {
+func IDNotIn(ids ...uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.HexInfluence {
+func IDGT(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.HexInfluence {
+func IDGTE(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.HexInfluence {
+func IDLT(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.HexInfluence {
+func IDLTE(id uuid.UUID) predicate.HexInfluence {
 	return predicate.HexInfluence(sql.FieldLTE(FieldID, id))
 }
 

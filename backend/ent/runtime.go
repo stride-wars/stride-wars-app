@@ -4,6 +4,8 @@ package ent
 
 import (
 	"stride-wars-app/ent/activity"
+	"stride-wars-app/ent/hexinfluence"
+	"stride-wars-app/ent/hexleaderboard"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/ent/user"
 	"time"
@@ -25,6 +27,22 @@ func init() {
 	activityDescID := activityFields[0].Descriptor()
 	// activity.DefaultID holds the default value on creation for the id field.
 	activity.DefaultID = activityDescID.Default.(func() uuid.UUID)
+	hexinfluenceFields := model.HexInfluence{}.Fields()
+	_ = hexinfluenceFields
+	// hexinfluenceDescID is the schema descriptor for id field.
+	hexinfluenceDescID := hexinfluenceFields[0].Descriptor()
+	// hexinfluence.DefaultID holds the default value on creation for the id field.
+	hexinfluence.DefaultID = hexinfluenceDescID.Default.(func() uuid.UUID)
+	hexleaderboardFields := model.HexLeaderboard{}.Fields()
+	_ = hexleaderboardFields
+	// hexleaderboardDescTopUsers is the schema descriptor for top_users field.
+	hexleaderboardDescTopUsers := hexleaderboardFields[2].Descriptor()
+	// hexleaderboard.DefaultTopUsers holds the default value on creation for the top_users field.
+	hexleaderboard.DefaultTopUsers = hexleaderboardDescTopUsers.Default.([]model.TopUser)
+	// hexleaderboardDescID is the schema descriptor for id field.
+	hexleaderboardDescID := hexleaderboardFields[0].Descriptor()
+	// hexleaderboard.DefaultID holds the default value on creation for the id field.
+	hexleaderboard.DefaultID = hexleaderboardDescID.Default.(func() uuid.UUID)
 	userFields := model.User{}.Fields()
 	_ = userFields
 	// userDescID is the schema descriptor for id field.

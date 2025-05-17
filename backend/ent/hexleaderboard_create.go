@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"stride-wars-app/ent/hex"
 	"stride-wars-app/ent/hexleaderboard"
+	"stride-wars-app/ent/model"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -28,8 +29,22 @@ func (hlc *HexLeaderboardCreate) SetH3Index(i int64) *HexLeaderboardCreate {
 }
 
 // SetTopUsers sets the "top_users" field.
-func (hlc *HexLeaderboardCreate) SetTopUsers(m map[string][]uuid.UUID) *HexLeaderboardCreate {
-	hlc.mutation.SetTopUsers(m)
+func (hlc *HexLeaderboardCreate) SetTopUsers(mu []model.TopUser) *HexLeaderboardCreate {
+	hlc.mutation.SetTopUsers(mu)
+	return hlc
+}
+
+// SetID sets the "id" field.
+func (hlc *HexLeaderboardCreate) SetID(u uuid.UUID) *HexLeaderboardCreate {
+	hlc.mutation.SetID(u)
+	return hlc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (hlc *HexLeaderboardCreate) SetNillableID(u *uuid.UUID) *HexLeaderboardCreate {
+	if u != nil {
+		hlc.SetID(*u)
+	}
 	return hlc
 }
 
@@ -51,6 +66,7 @@ func (hlc *HexLeaderboardCreate) Mutation() *HexLeaderboardMutation {
 
 // Save creates the HexLeaderboard in the database.
 func (hlc *HexLeaderboardCreate) Save(ctx context.Context) (*HexLeaderboard, error) {
+	hlc.defaults()
 	return withHooks(ctx, hlc.sqlSave, hlc.mutation, hlc.hooks)
 }
 
@@ -73,6 +89,18 @@ func (hlc *HexLeaderboardCreate) Exec(ctx context.Context) error {
 func (hlc *HexLeaderboardCreate) ExecX(ctx context.Context) {
 	if err := hlc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (hlc *HexLeaderboardCreate) defaults() {
+	if _, ok := hlc.mutation.TopUsers(); !ok {
+		v := hexleaderboard.DefaultTopUsers
+		hlc.mutation.SetTopUsers(v)
+	}
+	if _, ok := hlc.mutation.ID(); !ok {
+		v := hexleaderboard.DefaultID()
+		hlc.mutation.SetID(v)
 	}
 }
 
@@ -101,8 +129,13 @@ func (hlc *HexLeaderboardCreate) sqlSave(ctx context.Context) (*HexLeaderboard, 
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	hlc.mutation.id = &_node.ID
 	hlc.mutation.done = true
 	return _node, nil
@@ -111,8 +144,12 @@ func (hlc *HexLeaderboardCreate) sqlSave(ctx context.Context) (*HexLeaderboard, 
 func (hlc *HexLeaderboardCreate) createSpec() (*HexLeaderboard, *sqlgraph.CreateSpec) {
 	var (
 		_node = &HexLeaderboard{config: hlc.config}
-		_spec = sqlgraph.NewCreateSpec(hexleaderboard.Table, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(hexleaderboard.Table, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	)
+	if id, ok := hlc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := hlc.mutation.TopUsers(); ok {
 		_spec.SetField(hexleaderboard.FieldTopUsers, field.TypeJSON, value)
 		_node.TopUsers = value
@@ -155,6 +192,7 @@ func (hlcb *HexLeaderboardCreateBulk) Save(ctx context.Context) ([]*HexLeaderboa
 	for i := range hlcb.builders {
 		func(i int, root context.Context) {
 			builder := hlcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*HexLeaderboardMutation)
 				if !ok {
@@ -181,10 +219,6 @@ func (hlcb *HexLeaderboardCreateBulk) Save(ctx context.Context) ([]*HexLeaderboa
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

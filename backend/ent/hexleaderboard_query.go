@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // HexLeaderboardQuery is the builder for querying HexLeaderboard entities.
@@ -106,8 +107,8 @@ func (hlq *HexLeaderboardQuery) FirstX(ctx context.Context) *HexLeaderboard {
 
 // FirstID returns the first HexLeaderboard ID from the query.
 // Returns a *NotFoundError when no HexLeaderboard ID was found.
-func (hlq *HexLeaderboardQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (hlq *HexLeaderboardQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = hlq.Limit(1).IDs(setContextOp(ctx, hlq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -119,7 +120,7 @@ func (hlq *HexLeaderboardQuery) FirstID(ctx context.Context) (id int, err error)
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hlq *HexLeaderboardQuery) FirstIDX(ctx context.Context) int {
+func (hlq *HexLeaderboardQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := hlq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -157,8 +158,8 @@ func (hlq *HexLeaderboardQuery) OnlyX(ctx context.Context) *HexLeaderboard {
 // OnlyID is like Only, but returns the only HexLeaderboard ID in the query.
 // Returns a *NotSingularError when more than one HexLeaderboard ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hlq *HexLeaderboardQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (hlq *HexLeaderboardQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = hlq.Limit(2).IDs(setContextOp(ctx, hlq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -174,7 +175,7 @@ func (hlq *HexLeaderboardQuery) OnlyID(ctx context.Context) (id int, err error) 
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hlq *HexLeaderboardQuery) OnlyIDX(ctx context.Context) int {
+func (hlq *HexLeaderboardQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := hlq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -202,7 +203,7 @@ func (hlq *HexLeaderboardQuery) AllX(ctx context.Context) []*HexLeaderboard {
 }
 
 // IDs executes the query and returns a list of HexLeaderboard IDs.
-func (hlq *HexLeaderboardQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (hlq *HexLeaderboardQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if hlq.ctx.Unique == nil && hlq.path != nil {
 		hlq.Unique(true)
 	}
@@ -214,7 +215,7 @@ func (hlq *HexLeaderboardQuery) IDs(ctx context.Context) (ids []int, err error) 
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hlq *HexLeaderboardQuery) IDsX(ctx context.Context) []int {
+func (hlq *HexLeaderboardQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := hlq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -441,7 +442,7 @@ func (hlq *HexLeaderboardQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (hlq *HexLeaderboardQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	_spec.From = hlq.sql
 	if unique := hlq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

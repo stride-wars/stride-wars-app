@@ -11,6 +11,7 @@ import (
 	"stride-wars-app/ent/hex"
 	"stride-wars-app/ent/hexinfluence"
 	"stride-wars-app/ent/hexleaderboard"
+	"stride-wars-app/ent/model"
 	"stride-wars-app/ent/predicate"
 	"stride-wars-app/ent/user"
 	"sync"
@@ -1298,11 +1299,11 @@ type HexMutation struct {
 	typ                    string
 	id                     *int64
 	clearedFields          map[string]struct{}
-	hexinfluences          map[int]struct{}
-	removedhexinfluences   map[int]struct{}
+	hexinfluences          map[uuid.UUID]struct{}
+	removedhexinfluences   map[uuid.UUID]struct{}
 	clearedhexinfluences   bool
-	hexleaderboards        map[int]struct{}
-	removedhexleaderboards map[int]struct{}
+	hexleaderboards        map[uuid.UUID]struct{}
+	removedhexleaderboards map[uuid.UUID]struct{}
 	clearedhexleaderboards bool
 	done                   bool
 	oldValue               func(context.Context) (*Hex, error)
@@ -1414,9 +1415,9 @@ func (m *HexMutation) IDs(ctx context.Context) ([]int64, error) {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by ids.
-func (m *HexMutation) AddHexinfluenceIDs(ids ...int) {
+func (m *HexMutation) AddHexinfluenceIDs(ids ...uuid.UUID) {
 	if m.hexinfluences == nil {
-		m.hexinfluences = make(map[int]struct{})
+		m.hexinfluences = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.hexinfluences[ids[i]] = struct{}{}
@@ -1434,9 +1435,9 @@ func (m *HexMutation) HexinfluencesCleared() bool {
 }
 
 // RemoveHexinfluenceIDs removes the "hexinfluences" edge to the HexInfluence entity by IDs.
-func (m *HexMutation) RemoveHexinfluenceIDs(ids ...int) {
+func (m *HexMutation) RemoveHexinfluenceIDs(ids ...uuid.UUID) {
 	if m.removedhexinfluences == nil {
-		m.removedhexinfluences = make(map[int]struct{})
+		m.removedhexinfluences = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.hexinfluences, ids[i])
@@ -1445,7 +1446,7 @@ func (m *HexMutation) RemoveHexinfluenceIDs(ids ...int) {
 }
 
 // RemovedHexinfluences returns the removed IDs of the "hexinfluences" edge to the HexInfluence entity.
-func (m *HexMutation) RemovedHexinfluencesIDs() (ids []int) {
+func (m *HexMutation) RemovedHexinfluencesIDs() (ids []uuid.UUID) {
 	for id := range m.removedhexinfluences {
 		ids = append(ids, id)
 	}
@@ -1453,7 +1454,7 @@ func (m *HexMutation) RemovedHexinfluencesIDs() (ids []int) {
 }
 
 // HexinfluencesIDs returns the "hexinfluences" edge IDs in the mutation.
-func (m *HexMutation) HexinfluencesIDs() (ids []int) {
+func (m *HexMutation) HexinfluencesIDs() (ids []uuid.UUID) {
 	for id := range m.hexinfluences {
 		ids = append(ids, id)
 	}
@@ -1468,9 +1469,9 @@ func (m *HexMutation) ResetHexinfluences() {
 }
 
 // AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by ids.
-func (m *HexMutation) AddHexleaderboardIDs(ids ...int) {
+func (m *HexMutation) AddHexleaderboardIDs(ids ...uuid.UUID) {
 	if m.hexleaderboards == nil {
-		m.hexleaderboards = make(map[int]struct{})
+		m.hexleaderboards = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.hexleaderboards[ids[i]] = struct{}{}
@@ -1488,9 +1489,9 @@ func (m *HexMutation) HexleaderboardsCleared() bool {
 }
 
 // RemoveHexleaderboardIDs removes the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
-func (m *HexMutation) RemoveHexleaderboardIDs(ids ...int) {
+func (m *HexMutation) RemoveHexleaderboardIDs(ids ...uuid.UUID) {
 	if m.removedhexleaderboards == nil {
-		m.removedhexleaderboards = make(map[int]struct{})
+		m.removedhexleaderboards = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.hexleaderboards, ids[i])
@@ -1499,7 +1500,7 @@ func (m *HexMutation) RemoveHexleaderboardIDs(ids ...int) {
 }
 
 // RemovedHexleaderboards returns the removed IDs of the "hexleaderboards" edge to the HexLeaderboard entity.
-func (m *HexMutation) RemovedHexleaderboardsIDs() (ids []int) {
+func (m *HexMutation) RemovedHexleaderboardsIDs() (ids []uuid.UUID) {
 	for id := range m.removedhexleaderboards {
 		ids = append(ids, id)
 	}
@@ -1507,7 +1508,7 @@ func (m *HexMutation) RemovedHexleaderboardsIDs() (ids []int) {
 }
 
 // HexleaderboardsIDs returns the "hexleaderboards" edge IDs in the mutation.
-func (m *HexMutation) HexleaderboardsIDs() (ids []int) {
+func (m *HexMutation) HexleaderboardsIDs() (ids []uuid.UUID) {
 	for id := range m.hexleaderboards {
 		ids = append(ids, id)
 	}
@@ -1742,7 +1743,7 @@ type HexInfluenceMutation struct {
 	config
 	op            Op
 	typ           string
-	id            *int
+	id            *uuid.UUID
 	score         *float64
 	addscore      *float64
 	last_updated  *time.Time
@@ -1776,7 +1777,7 @@ func newHexInfluenceMutation(c config, op Op, opts ...hexinfluenceOption) *HexIn
 }
 
 // withHexInfluenceID sets the ID field of the mutation.
-func withHexInfluenceID(id int) hexinfluenceOption {
+func withHexInfluenceID(id uuid.UUID) hexinfluenceOption {
 	return func(m *HexInfluenceMutation) {
 		var (
 			err   error
@@ -1826,9 +1827,15 @@ func (m HexInfluenceMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of HexInfluence entities.
+func (m *HexInfluenceMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *HexInfluenceMutation) ID() (id int, exists bool) {
+func (m *HexInfluenceMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1839,12 +1846,12 @@ func (m *HexInfluenceMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *HexInfluenceMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *HexInfluenceMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2390,16 +2397,17 @@ func (m *HexInfluenceMutation) ResetEdge(name string) error {
 // HexLeaderboardMutation represents an operation that mutates the HexLeaderboard nodes in the graph.
 type HexLeaderboardMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	top_users     *map[string][]uuid.UUID
-	clearedFields map[string]struct{}
-	hex           *int64
-	clearedhex    bool
-	done          bool
-	oldValue      func(context.Context) (*HexLeaderboard, error)
-	predicates    []predicate.HexLeaderboard
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	top_users       *[]model.TopUser
+	appendtop_users []model.TopUser
+	clearedFields   map[string]struct{}
+	hex             *int64
+	clearedhex      bool
+	done            bool
+	oldValue        func(context.Context) (*HexLeaderboard, error)
+	predicates      []predicate.HexLeaderboard
 }
 
 var _ ent.Mutation = (*HexLeaderboardMutation)(nil)
@@ -2422,7 +2430,7 @@ func newHexLeaderboardMutation(c config, op Op, opts ...hexleaderboardOption) *H
 }
 
 // withHexLeaderboardID sets the ID field of the mutation.
-func withHexLeaderboardID(id int) hexleaderboardOption {
+func withHexLeaderboardID(id uuid.UUID) hexleaderboardOption {
 	return func(m *HexLeaderboardMutation) {
 		var (
 			err   error
@@ -2472,9 +2480,15 @@ func (m HexLeaderboardMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of HexLeaderboard entities.
+func (m *HexLeaderboardMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *HexLeaderboardMutation) ID() (id int, exists bool) {
+func (m *HexLeaderboardMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2485,12 +2499,12 @@ func (m *HexLeaderboardMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *HexLeaderboardMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *HexLeaderboardMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2537,12 +2551,13 @@ func (m *HexLeaderboardMutation) ResetH3Index() {
 }
 
 // SetTopUsers sets the "top_users" field.
-func (m *HexLeaderboardMutation) SetTopUsers(value map[string][]uuid.UUID) {
-	m.top_users = &value
+func (m *HexLeaderboardMutation) SetTopUsers(mu []model.TopUser) {
+	m.top_users = &mu
+	m.appendtop_users = nil
 }
 
 // TopUsers returns the value of the "top_users" field in the mutation.
-func (m *HexLeaderboardMutation) TopUsers() (r map[string][]uuid.UUID, exists bool) {
+func (m *HexLeaderboardMutation) TopUsers() (r []model.TopUser, exists bool) {
 	v := m.top_users
 	if v == nil {
 		return
@@ -2553,7 +2568,7 @@ func (m *HexLeaderboardMutation) TopUsers() (r map[string][]uuid.UUID, exists bo
 // OldTopUsers returns the old "top_users" field's value of the HexLeaderboard entity.
 // If the HexLeaderboard object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexLeaderboardMutation) OldTopUsers(ctx context.Context) (v map[string][]uuid.UUID, err error) {
+func (m *HexLeaderboardMutation) OldTopUsers(ctx context.Context) (v []model.TopUser, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldTopUsers is only allowed on UpdateOne operations")
 	}
@@ -2567,9 +2582,23 @@ func (m *HexLeaderboardMutation) OldTopUsers(ctx context.Context) (v map[string]
 	return oldValue.TopUsers, nil
 }
 
+// AppendTopUsers adds mu to the "top_users" field.
+func (m *HexLeaderboardMutation) AppendTopUsers(mu []model.TopUser) {
+	m.appendtop_users = append(m.appendtop_users, mu...)
+}
+
+// AppendedTopUsers returns the list of values that were appended to the "top_users" field in this mutation.
+func (m *HexLeaderboardMutation) AppendedTopUsers() ([]model.TopUser, bool) {
+	if len(m.appendtop_users) == 0 {
+		return nil, false
+	}
+	return m.appendtop_users, true
+}
+
 // ResetTopUsers resets all changes to the "top_users" field.
 func (m *HexLeaderboardMutation) ResetTopUsers() {
 	m.top_users = nil
+	m.appendtop_users = nil
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by id.
@@ -2695,7 +2724,7 @@ func (m *HexLeaderboardMutation) SetField(name string, value ent.Value) error {
 		m.SetH3Index(v)
 		return nil
 	case hexleaderboard.FieldTopUsers:
-		v, ok := value.(map[string][]uuid.UUID)
+		v, ok := value.([]model.TopUser)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2852,8 +2881,8 @@ type UserMutation struct {
 	friendship          map[int]struct{}
 	removedfriendship   map[int]struct{}
 	clearedfriendship   bool
-	hexinfluence        map[int]struct{}
-	removedhexinfluence map[int]struct{}
+	hexinfluence        map[uuid.UUID]struct{}
+	removedhexinfluence map[uuid.UUID]struct{}
 	clearedhexinfluence bool
 	done                bool
 	oldValue            func(context.Context) (*User, error)
@@ -3145,9 +3174,9 @@ func (m *UserMutation) ResetFriendship() {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluence" edge to the HexInfluence entity by ids.
-func (m *UserMutation) AddHexinfluenceIDs(ids ...int) {
+func (m *UserMutation) AddHexinfluenceIDs(ids ...uuid.UUID) {
 	if m.hexinfluence == nil {
-		m.hexinfluence = make(map[int]struct{})
+		m.hexinfluence = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.hexinfluence[ids[i]] = struct{}{}
@@ -3165,9 +3194,9 @@ func (m *UserMutation) HexinfluenceCleared() bool {
 }
 
 // RemoveHexinfluenceIDs removes the "hexinfluence" edge to the HexInfluence entity by IDs.
-func (m *UserMutation) RemoveHexinfluenceIDs(ids ...int) {
+func (m *UserMutation) RemoveHexinfluenceIDs(ids ...uuid.UUID) {
 	if m.removedhexinfluence == nil {
-		m.removedhexinfluence = make(map[int]struct{})
+		m.removedhexinfluence = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.hexinfluence, ids[i])
@@ -3176,7 +3205,7 @@ func (m *UserMutation) RemoveHexinfluenceIDs(ids ...int) {
 }
 
 // RemovedHexinfluence returns the removed IDs of the "hexinfluence" edge to the HexInfluence entity.
-func (m *UserMutation) RemovedHexinfluenceIDs() (ids []int) {
+func (m *UserMutation) RemovedHexinfluenceIDs() (ids []uuid.UUID) {
 	for id := range m.removedhexinfluence {
 		ids = append(ids, id)
 	}
@@ -3184,7 +3213,7 @@ func (m *UserMutation) RemovedHexinfluenceIDs() (ids []int) {
 }
 
 // HexinfluenceIDs returns the "hexinfluence" edge IDs in the mutation.
-func (m *UserMutation) HexinfluenceIDs() (ids []int) {
+func (m *UserMutation) HexinfluenceIDs() (ids []uuid.UUID) {
 	for id := range m.hexinfluence {
 		ids = append(ids, id)
 	}

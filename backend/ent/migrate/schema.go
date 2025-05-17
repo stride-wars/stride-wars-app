@@ -70,7 +70,7 @@ var (
 	}
 	// HexInfluencesColumns holds the columns for the "hex_influences" table.
 	HexInfluencesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "score", Type: field.TypeFloat64},
 		{Name: "last_updated", Type: field.TypeTime},
 		{Name: "h3_index", Type: field.TypeInt64},
@@ -98,7 +98,7 @@ var (
 	}
 	// HexLeaderboardsColumns holds the columns for the "hex_leaderboards" table.
 	HexLeaderboardsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "top_users", Type: field.TypeJSON},
 		{Name: "h3_index", Type: field.TypeInt64},
 	}

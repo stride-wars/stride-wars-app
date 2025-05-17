@@ -90,14 +90,14 @@ func (uu *UserUpdate) AddFriendship(f ...*Friendship) *UserUpdate {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluence" edge to the HexInfluence entity by IDs.
-func (uu *UserUpdate) AddHexinfluenceIDs(ids ...int) *UserUpdate {
+func (uu *UserUpdate) AddHexinfluenceIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddHexinfluenceIDs(ids...)
 	return uu
 }
 
 // AddHexinfluence adds the "hexinfluence" edges to the HexInfluence entity.
 func (uu *UserUpdate) AddHexinfluence(h ...*HexInfluence) *UserUpdate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -158,14 +158,14 @@ func (uu *UserUpdate) ClearHexinfluence() *UserUpdate {
 }
 
 // RemoveHexinfluenceIDs removes the "hexinfluence" edge to HexInfluence entities by IDs.
-func (uu *UserUpdate) RemoveHexinfluenceIDs(ids ...int) *UserUpdate {
+func (uu *UserUpdate) RemoveHexinfluenceIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.RemoveHexinfluenceIDs(ids...)
 	return uu
 }
 
 // RemoveHexinfluence removes "hexinfluence" edges to HexInfluence entities.
 func (uu *UserUpdate) RemoveHexinfluence(h ...*HexInfluence) *UserUpdate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -312,7 +312,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -325,7 +325,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -341,7 +341,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -428,14 +428,14 @@ func (uuo *UserUpdateOne) AddFriendship(f ...*Friendship) *UserUpdateOne {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluence" edge to the HexInfluence entity by IDs.
-func (uuo *UserUpdateOne) AddHexinfluenceIDs(ids ...int) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddHexinfluenceIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddHexinfluenceIDs(ids...)
 	return uuo
 }
 
 // AddHexinfluence adds the "hexinfluence" edges to the HexInfluence entity.
 func (uuo *UserUpdateOne) AddHexinfluence(h ...*HexInfluence) *UserUpdateOne {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -496,14 +496,14 @@ func (uuo *UserUpdateOne) ClearHexinfluence() *UserUpdateOne {
 }
 
 // RemoveHexinfluenceIDs removes the "hexinfluence" edge to HexInfluence entities by IDs.
-func (uuo *UserUpdateOne) RemoveHexinfluenceIDs(ids ...int) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveHexinfluenceIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.RemoveHexinfluenceIDs(ids...)
 	return uuo
 }
 
 // RemoveHexinfluence removes "hexinfluence" edges to HexInfluence entities.
 func (uuo *UserUpdateOne) RemoveHexinfluence(h ...*HexInfluence) *UserUpdateOne {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -680,7 +680,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -693,7 +693,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -709,7 +709,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

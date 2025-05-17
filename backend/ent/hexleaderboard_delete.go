@@ -40,7 +40,7 @@ func (hld *HexLeaderboardDelete) ExecX(ctx context.Context) int {
 }
 
 func (hld *HexLeaderboardDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(hexleaderboard.Table, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(hexleaderboard.Table, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	if ps := hld.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

@@ -175,7 +175,7 @@ func (hiu *HexInfluenceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := hiu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(hexinfluence.Table, hexinfluence.Columns, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hexinfluence.Table, hexinfluence.Columns, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID))
 	if ps := hiu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -427,7 +427,7 @@ func (hiuo *HexInfluenceUpdateOne) sqlSave(ctx context.Context) (_node *HexInflu
 	if err := hiuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(hexinfluence.Table, hexinfluence.Columns, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hexinfluence.Table, hexinfluence.Columns, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID))
 	id, ok := hiuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "HexInfluence.id" for update`)}

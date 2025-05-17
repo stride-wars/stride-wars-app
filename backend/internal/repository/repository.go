@@ -29,7 +29,7 @@ type IHexRepository interface {
 	CreateHex(ctx context.Context, hex *model.Hex) (*ent.Hex, error)
 }
 
-type IHexInfluence interface {
+type IHexInfluenceRepository interface {
 	FindByID(ctx context.Context, uuid uuid.UUID) (*ent.Activity, error)
 	FindByIDs(ctx context.Context, ids []uuid.UUID) ([]*ent.Activity, error)
 	FindByUserID(ctx context.Context, userID uuid.UUID) ([]*ent.Activity, error)
@@ -37,7 +37,7 @@ type IHexInfluence interface {
 	UpdateHexInfluence(ctx context.Context, influence *model.HexInfluence) (int, error)
 }
 
-type IHexLeaderboard interface {
+type IHexLeaderboardRepository interface {
 	FindByH3Index(ctx context.Context, h3Index int64) (*ent.HexLeaderboard, error)
 	FindByH3Indexes(ctx context.Context, h3Indexes []int64) ([]*ent.HexLeaderboard, error)
 	CreateHexLeaderboard(ctx context.Context, hex *model.HexLeaderboard) (*ent.HexLeaderboard, error)

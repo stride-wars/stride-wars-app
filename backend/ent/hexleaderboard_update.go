@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"stride-wars-app/ent/hex"
 	"stride-wars-app/ent/hexleaderboard"
+	"stride-wars-app/ent/model"
 	"stride-wars-app/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 )
 
 // HexLeaderboardUpdate is the builder for updating HexLeaderboard entities.
@@ -44,8 +45,14 @@ func (hlu *HexLeaderboardUpdate) SetNillableH3Index(i *int64) *HexLeaderboardUpd
 }
 
 // SetTopUsers sets the "top_users" field.
-func (hlu *HexLeaderboardUpdate) SetTopUsers(m map[string][]uuid.UUID) *HexLeaderboardUpdate {
-	hlu.mutation.SetTopUsers(m)
+func (hlu *HexLeaderboardUpdate) SetTopUsers(mu []model.TopUser) *HexLeaderboardUpdate {
+	hlu.mutation.SetTopUsers(mu)
+	return hlu
+}
+
+// AppendTopUsers appends mu to the "top_users" field.
+func (hlu *HexLeaderboardUpdate) AppendTopUsers(mu []model.TopUser) *HexLeaderboardUpdate {
+	hlu.mutation.AppendTopUsers(mu)
 	return hlu
 }
 
@@ -110,7 +117,7 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 	if err := hlu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	if ps := hlu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -120,6 +127,11 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if value, ok := hlu.mutation.TopUsers(); ok {
 		_spec.SetField(hexleaderboard.FieldTopUsers, field.TypeJSON, value)
+	}
+	if value, ok := hlu.mutation.AppendedTopUsers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, hexleaderboard.FieldTopUsers, value)
+		})
 	}
 	if hlu.mutation.HexCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -185,8 +197,14 @@ func (hluo *HexLeaderboardUpdateOne) SetNillableH3Index(i *int64) *HexLeaderboar
 }
 
 // SetTopUsers sets the "top_users" field.
-func (hluo *HexLeaderboardUpdateOne) SetTopUsers(m map[string][]uuid.UUID) *HexLeaderboardUpdateOne {
-	hluo.mutation.SetTopUsers(m)
+func (hluo *HexLeaderboardUpdateOne) SetTopUsers(mu []model.TopUser) *HexLeaderboardUpdateOne {
+	hluo.mutation.SetTopUsers(mu)
+	return hluo
+}
+
+// AppendTopUsers appends mu to the "top_users" field.
+func (hluo *HexLeaderboardUpdateOne) AppendTopUsers(mu []model.TopUser) *HexLeaderboardUpdateOne {
+	hluo.mutation.AppendTopUsers(mu)
 	return hluo
 }
 
@@ -264,7 +282,7 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 	if err := hluo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	id, ok := hluo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "HexLeaderboard.id" for update`)}
@@ -291,6 +309,11 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 	}
 	if value, ok := hluo.mutation.TopUsers(); ok {
 		_spec.SetField(hexleaderboard.FieldTopUsers, field.TypeJSON, value)
+	}
+	if value, ok := hluo.mutation.AppendedTopUsers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, hexleaderboard.FieldTopUsers, value)
+		})
 	}
 	if hluo.mutation.HexCleared() {
 		edge := &sqlgraph.EdgeSpec{

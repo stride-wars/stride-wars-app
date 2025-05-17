@@ -47,6 +47,20 @@ func (hic *HexInfluenceCreate) SetLastUpdated(t time.Time) *HexInfluenceCreate {
 	return hic
 }
 
+// SetID sets the "id" field.
+func (hic *HexInfluenceCreate) SetID(u uuid.UUID) *HexInfluenceCreate {
+	hic.mutation.SetID(u)
+	return hic
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (hic *HexInfluenceCreate) SetNillableID(u *uuid.UUID) *HexInfluenceCreate {
+	if u != nil {
+		hic.SetID(*u)
+	}
+	return hic
+}
+
 // SetHexID sets the "hex" edge to the Hex entity by ID.
 func (hic *HexInfluenceCreate) SetHexID(id int64) *HexInfluenceCreate {
 	hic.mutation.SetHexID(id)
@@ -76,6 +90,7 @@ func (hic *HexInfluenceCreate) Mutation() *HexInfluenceMutation {
 
 // Save creates the HexInfluence in the database.
 func (hic *HexInfluenceCreate) Save(ctx context.Context) (*HexInfluence, error) {
+	hic.defaults()
 	return withHooks(ctx, hic.sqlSave, hic.mutation, hic.hooks)
 }
 
@@ -98,6 +113,14 @@ func (hic *HexInfluenceCreate) Exec(ctx context.Context) error {
 func (hic *HexInfluenceCreate) ExecX(ctx context.Context) {
 	if err := hic.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (hic *HexInfluenceCreate) defaults() {
+	if _, ok := hic.mutation.ID(); !ok {
+		v := hexinfluence.DefaultID()
+		hic.mutation.SetID(v)
 	}
 }
 
@@ -135,8 +158,13 @@ func (hic *HexInfluenceCreate) sqlSave(ctx context.Context) (*HexInfluence, erro
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	hic.mutation.id = &_node.ID
 	hic.mutation.done = true
 	return _node, nil
@@ -145,8 +173,12 @@ func (hic *HexInfluenceCreate) sqlSave(ctx context.Context) (*HexInfluence, erro
 func (hic *HexInfluenceCreate) createSpec() (*HexInfluence, *sqlgraph.CreateSpec) {
 	var (
 		_node = &HexInfluence{config: hic.config}
-		_spec = sqlgraph.NewCreateSpec(hexinfluence.Table, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(hexinfluence.Table, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID))
 	)
+	if id, ok := hic.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := hic.mutation.Score(); ok {
 		_spec.SetField(hexinfluence.FieldScore, field.TypeFloat64, value)
 		_node.Score = value
@@ -210,6 +242,7 @@ func (hicb *HexInfluenceCreateBulk) Save(ctx context.Context) ([]*HexInfluence, 
 	for i := range hicb.builders {
 		func(i int, root context.Context) {
 			builder := hicb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*HexInfluenceMutation)
 				if !ok {
@@ -236,10 +269,6 @@ func (hicb *HexInfluenceCreateBulk) Save(ctx context.Context) ([]*HexInfluence, 
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

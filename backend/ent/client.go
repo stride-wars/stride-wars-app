@@ -787,7 +787,7 @@ func (c *HexInfluenceClient) UpdateOne(hi *HexInfluence) *HexInfluenceUpdateOne 
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *HexInfluenceClient) UpdateOneID(id int) *HexInfluenceUpdateOne {
+func (c *HexInfluenceClient) UpdateOneID(id uuid.UUID) *HexInfluenceUpdateOne {
 	mutation := newHexInfluenceMutation(c.config, OpUpdateOne, withHexInfluenceID(id))
 	return &HexInfluenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -804,7 +804,7 @@ func (c *HexInfluenceClient) DeleteOne(hi *HexInfluence) *HexInfluenceDeleteOne 
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *HexInfluenceClient) DeleteOneID(id int) *HexInfluenceDeleteOne {
+func (c *HexInfluenceClient) DeleteOneID(id uuid.UUID) *HexInfluenceDeleteOne {
 	builder := c.Delete().Where(hexinfluence.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -821,12 +821,12 @@ func (c *HexInfluenceClient) Query() *HexInfluenceQuery {
 }
 
 // Get returns a HexInfluence entity by its id.
-func (c *HexInfluenceClient) Get(ctx context.Context, id int) (*HexInfluence, error) {
+func (c *HexInfluenceClient) Get(ctx context.Context, id uuid.UUID) (*HexInfluence, error) {
 	return c.Query().Where(hexinfluence.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *HexInfluenceClient) GetX(ctx context.Context, id int) *HexInfluence {
+func (c *HexInfluenceClient) GetX(ctx context.Context, id uuid.UUID) *HexInfluence {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -952,7 +952,7 @@ func (c *HexLeaderboardClient) UpdateOne(hl *HexLeaderboard) *HexLeaderboardUpda
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *HexLeaderboardClient) UpdateOneID(id int) *HexLeaderboardUpdateOne {
+func (c *HexLeaderboardClient) UpdateOneID(id uuid.UUID) *HexLeaderboardUpdateOne {
 	mutation := newHexLeaderboardMutation(c.config, OpUpdateOne, withHexLeaderboardID(id))
 	return &HexLeaderboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -969,7 +969,7 @@ func (c *HexLeaderboardClient) DeleteOne(hl *HexLeaderboard) *HexLeaderboardDele
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *HexLeaderboardClient) DeleteOneID(id int) *HexLeaderboardDeleteOne {
+func (c *HexLeaderboardClient) DeleteOneID(id uuid.UUID) *HexLeaderboardDeleteOne {
 	builder := c.Delete().Where(hexleaderboard.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -986,12 +986,12 @@ func (c *HexLeaderboardClient) Query() *HexLeaderboardQuery {
 }
 
 // Get returns a HexLeaderboard entity by its id.
-func (c *HexLeaderboardClient) Get(ctx context.Context, id int) (*HexLeaderboard, error) {
+func (c *HexLeaderboardClient) Get(ctx context.Context, id uuid.UUID) (*HexLeaderboard, error) {
 	return c.Query().Where(hexleaderboard.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *HexLeaderboardClient) GetX(ctx context.Context, id int) *HexLeaderboard {
+func (c *HexLeaderboardClient) GetX(ctx context.Context, id uuid.UUID) *HexLeaderboard {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

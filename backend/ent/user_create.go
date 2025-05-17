@@ -80,14 +80,14 @@ func (uc *UserCreate) AddFriendship(f ...*Friendship) *UserCreate {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluence" edge to the HexInfluence entity by IDs.
-func (uc *UserCreate) AddHexinfluenceIDs(ids ...int) *UserCreate {
+func (uc *UserCreate) AddHexinfluenceIDs(ids ...uuid.UUID) *UserCreate {
 	uc.mutation.AddHexinfluenceIDs(ids...)
 	return uc
 }
 
 // AddHexinfluence adds the "hexinfluence" edges to the HexInfluence entity.
 func (uc *UserCreate) AddHexinfluence(h ...*HexInfluence) *UserCreate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -226,7 +226,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.HexinfluenceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

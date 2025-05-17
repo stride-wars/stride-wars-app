@@ -11,6 +11,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // HexCreate is the builder for creating a Hex entity.
@@ -27,14 +28,14 @@ func (hc *HexCreate) SetID(i int64) *HexCreate {
 }
 
 // AddHexinfluenceIDs adds the "hexinfluences" edge to the HexInfluence entity by IDs.
-func (hc *HexCreate) AddHexinfluenceIDs(ids ...int) *HexCreate {
+func (hc *HexCreate) AddHexinfluenceIDs(ids ...uuid.UUID) *HexCreate {
 	hc.mutation.AddHexinfluenceIDs(ids...)
 	return hc
 }
 
 // AddHexinfluences adds the "hexinfluences" edges to the HexInfluence entity.
 func (hc *HexCreate) AddHexinfluences(h ...*HexInfluence) *HexCreate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -42,14 +43,14 @@ func (hc *HexCreate) AddHexinfluences(h ...*HexInfluence) *HexCreate {
 }
 
 // AddHexleaderboardIDs adds the "hexleaderboards" edge to the HexLeaderboard entity by IDs.
-func (hc *HexCreate) AddHexleaderboardIDs(ids ...int) *HexCreate {
+func (hc *HexCreate) AddHexleaderboardIDs(ids ...uuid.UUID) *HexCreate {
 	hc.mutation.AddHexleaderboardIDs(ids...)
 	return hc
 }
 
 // AddHexleaderboards adds the "hexleaderboards" edges to the HexLeaderboard entity.
 func (hc *HexCreate) AddHexleaderboards(h ...*HexLeaderboard) *HexCreate {
-	ids := make([]int, len(h))
+	ids := make([]uuid.UUID, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
 	}
@@ -130,7 +131,7 @@ func (hc *HexCreate) createSpec() (*Hex, *sqlgraph.CreateSpec) {
 			Columns: []string{hex.HexinfluencesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -146,7 +147,7 @@ func (hc *HexCreate) createSpec() (*Hex, *sqlgraph.CreateSpec) {
 			Columns: []string{hex.HexleaderboardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
