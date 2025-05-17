@@ -59,14 +59,14 @@ func (uu *UserUpdate) SetNillableUsername(s *string) *UserUpdate {
 	return uu
 }
 
-// AddActivityIDs adds the "activity" edge to the Activity entity by IDs.
+// AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
 func (uu *UserUpdate) AddActivityIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddActivityIDs(ids...)
 	return uu
 }
 
-// AddActivity adds the "activity" edges to the Activity entity.
-func (uu *UserUpdate) AddActivity(a ...*Activity) *UserUpdate {
+// AddActivities adds the "activities" edges to the Activity entity.
+func (uu *UserUpdate) AddActivities(a ...*Activity) *UserUpdate {
 	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
@@ -109,20 +109,20 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
 }
 
-// ClearActivity clears all "activity" edges to the Activity entity.
-func (uu *UserUpdate) ClearActivity() *UserUpdate {
-	uu.mutation.ClearActivity()
+// ClearActivities clears all "activities" edges to the Activity entity.
+func (uu *UserUpdate) ClearActivities() *UserUpdate {
+	uu.mutation.ClearActivities()
 	return uu
 }
 
-// RemoveActivityIDs removes the "activity" edge to Activity entities by IDs.
+// RemoveActivityIDs removes the "activities" edge to Activity entities by IDs.
 func (uu *UserUpdate) RemoveActivityIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.RemoveActivityIDs(ids...)
 	return uu
 }
 
-// RemoveActivity removes "activity" edges to Activity entities.
-func (uu *UserUpdate) RemoveActivity(a ...*Activity) *UserUpdate {
+// RemoveActivities removes "activities" edges to Activity entities.
+func (uu *UserUpdate) RemoveActivities(a ...*Activity) *UserUpdate {
 	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
@@ -214,12 +214,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
-	if uu.mutation.ActivityCleared() {
+	if uu.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),
@@ -227,12 +227,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedActivityIDs(); len(nodes) > 0 && !uu.mutation.ActivityCleared() {
+	if nodes := uu.mutation.RemovedActivitiesIDs(); len(nodes) > 0 && !uu.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),
@@ -243,12 +243,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.ActivityIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.ActivitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),
@@ -397,14 +397,14 @@ func (uuo *UserUpdateOne) SetNillableUsername(s *string) *UserUpdateOne {
 	return uuo
 }
 
-// AddActivityIDs adds the "activity" edge to the Activity entity by IDs.
+// AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
 func (uuo *UserUpdateOne) AddActivityIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddActivityIDs(ids...)
 	return uuo
 }
 
-// AddActivity adds the "activity" edges to the Activity entity.
-func (uuo *UserUpdateOne) AddActivity(a ...*Activity) *UserUpdateOne {
+// AddActivities adds the "activities" edges to the Activity entity.
+func (uuo *UserUpdateOne) AddActivities(a ...*Activity) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
@@ -447,20 +447,20 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
-// ClearActivity clears all "activity" edges to the Activity entity.
-func (uuo *UserUpdateOne) ClearActivity() *UserUpdateOne {
-	uuo.mutation.ClearActivity()
+// ClearActivities clears all "activities" edges to the Activity entity.
+func (uuo *UserUpdateOne) ClearActivities() *UserUpdateOne {
+	uuo.mutation.ClearActivities()
 	return uuo
 }
 
-// RemoveActivityIDs removes the "activity" edge to Activity entities by IDs.
+// RemoveActivityIDs removes the "activities" edge to Activity entities by IDs.
 func (uuo *UserUpdateOne) RemoveActivityIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.RemoveActivityIDs(ids...)
 	return uuo
 }
 
-// RemoveActivity removes "activity" edges to Activity entities.
-func (uuo *UserUpdateOne) RemoveActivity(a ...*Activity) *UserUpdateOne {
+// RemoveActivities removes "activities" edges to Activity entities.
+func (uuo *UserUpdateOne) RemoveActivities(a ...*Activity) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
@@ -582,12 +582,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
-	if uuo.mutation.ActivityCleared() {
+	if uuo.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),
@@ -595,12 +595,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedActivityIDs(); len(nodes) > 0 && !uuo.mutation.ActivityCleared() {
+	if nodes := uuo.mutation.RemovedActivitiesIDs(); len(nodes) > 0 && !uuo.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),
@@ -611,12 +611,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.ActivityIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.ActivitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),

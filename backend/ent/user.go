@@ -29,8 +29,8 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// Activity holds the value of the activity edge.
-	Activity []*Activity `json:"activity,omitempty"`
+	// Activities holds the value of the activities edge.
+	Activities []*Activity `json:"activities,omitempty"`
 	// Friendship holds the value of the friendship edge.
 	Friendship []*Friendship `json:"friendship,omitempty"`
 	// Hexinfluence holds the value of the hexinfluence edge.
@@ -40,13 +40,13 @@ type UserEdges struct {
 	loadedTypes [3]bool
 }
 
-// ActivityOrErr returns the Activity value or an error if the edge
+// ActivitiesOrErr returns the Activities value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) ActivityOrErr() ([]*Activity, error) {
+func (e UserEdges) ActivitiesOrErr() ([]*Activity, error) {
 	if e.loadedTypes[0] {
-		return e.Activity, nil
+		return e.Activities, nil
 	}
-	return nil, &NotLoadedError{edge: "activity"}
+	return nil, &NotLoadedError{edge: "activities"}
 }
 
 // FriendshipOrErr returns the Friendship value or an error if the edge
@@ -122,9 +122,9 @@ func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
 }
 
-// QueryActivity queries the "activity" edge of the User entity.
-func (u *User) QueryActivity() *ActivityQuery {
-	return NewUserClient(u.config).QueryActivity(u)
+// QueryActivities queries the "activities" edge of the User entity.
+func (u *User) QueryActivities() *ActivityQuery {
+	return NewUserClient(u.config).QueryActivities(u)
 }
 
 // QueryFriendship queries the "friendship" edge of the User entity.

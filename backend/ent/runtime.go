@@ -6,6 +6,7 @@ import (
 	"stride-wars-app/ent/activity"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/ent/user"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -16,6 +17,10 @@ import (
 func init() {
 	activityFields := model.Activity{}.Fields()
 	_ = activityFields
+	// activityDescCreatedAt is the schema descriptor for created_at field.
+	activityDescCreatedAt := activityFields[5].Descriptor()
+	// activity.DefaultCreatedAt holds the default value on creation for the created_at field.
+	activity.DefaultCreatedAt = activityDescCreatedAt.Default.(time.Time)
 	// activityDescID is the schema descriptor for id field.
 	activityDescID := activityFields[0].Descriptor()
 	// activity.DefaultID holds the default value on creation for the id field.

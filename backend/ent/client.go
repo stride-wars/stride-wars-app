@@ -355,15 +355,15 @@ func (c *ActivityClient) GetX(ctx context.Context, id uuid.UUID) *Activity {
 	return obj
 }
 
-// QueryUsers queries the users edge of a Activity.
-func (c *ActivityClient) QueryUsers(a *Activity) *UserQuery {
+// QueryUser queries the user edge of a Activity.
+func (c *ActivityClient) QueryUser(a *Activity) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := a.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(activity.Table, activity.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, activity.UsersTable, activity.UsersColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, activity.UserTable, activity.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -622,7 +622,7 @@ func (c *HexClient) UpdateOne(h *Hex) *HexUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *HexClient) UpdateOneID(id string) *HexUpdateOne {
+func (c *HexClient) UpdateOneID(id int64) *HexUpdateOne {
 	mutation := newHexMutation(c.config, OpUpdateOne, withHexID(id))
 	return &HexUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -639,7 +639,7 @@ func (c *HexClient) DeleteOne(h *Hex) *HexDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *HexClient) DeleteOneID(id string) *HexDeleteOne {
+func (c *HexClient) DeleteOneID(id int64) *HexDeleteOne {
 	builder := c.Delete().Where(hex.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -656,12 +656,12 @@ func (c *HexClient) Query() *HexQuery {
 }
 
 // Get returns a Hex entity by its id.
-func (c *HexClient) Get(ctx context.Context, id string) (*Hex, error) {
+func (c *HexClient) Get(ctx context.Context, id int64) (*Hex, error) {
 	return c.Query().Where(hex.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *HexClient) GetX(ctx context.Context, id string) *Hex {
+func (c *HexClient) GetX(ctx context.Context, id int64) *Hex {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1148,15 +1148,15 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
-// QueryActivity queries the activity edge of a User.
-func (c *UserClient) QueryActivity(u *User) *ActivityQuery {
+// QueryActivities queries the activities edge of a User.
+func (c *UserClient) QueryActivities(u *User) *ActivityQuery {
 	query := (&ActivityClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(activity.Table, activity.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ActivityTable, user.ActivityColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ActivitiesTable, user.ActivitiesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

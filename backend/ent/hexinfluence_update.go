@@ -32,15 +32,15 @@ func (hiu *HexInfluenceUpdate) Where(ps ...predicate.HexInfluence) *HexInfluence
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hiu *HexInfluenceUpdate) SetH3Index(s string) *HexInfluenceUpdate {
-	hiu.mutation.SetH3Index(s)
+func (hiu *HexInfluenceUpdate) SetH3Index(i int64) *HexInfluenceUpdate {
+	hiu.mutation.SetH3Index(i)
 	return hiu
 }
 
 // SetNillableH3Index sets the "h3_index" field if the given value is not nil.
-func (hiu *HexInfluenceUpdate) SetNillableH3Index(s *string) *HexInfluenceUpdate {
-	if s != nil {
-		hiu.SetH3Index(*s)
+func (hiu *HexInfluenceUpdate) SetNillableH3Index(i *int64) *HexInfluenceUpdate {
+	if i != nil {
+		hiu.SetH3Index(*i)
 	}
 	return hiu
 }
@@ -95,7 +95,7 @@ func (hiu *HexInfluenceUpdate) SetNillableLastUpdated(t *time.Time) *HexInfluenc
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hiu *HexInfluenceUpdate) SetHexID(id string) *HexInfluenceUpdate {
+func (hiu *HexInfluenceUpdate) SetHexID(id int64) *HexInfluenceUpdate {
 	hiu.mutation.SetHexID(id)
 	return hiu
 }
@@ -200,7 +200,7 @@ func (hiu *HexInfluenceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hexinfluence.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -213,7 +213,7 @@ func (hiu *HexInfluenceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{hexinfluence.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -271,15 +271,15 @@ type HexInfluenceUpdateOne struct {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hiuo *HexInfluenceUpdateOne) SetH3Index(s string) *HexInfluenceUpdateOne {
-	hiuo.mutation.SetH3Index(s)
+func (hiuo *HexInfluenceUpdateOne) SetH3Index(i int64) *HexInfluenceUpdateOne {
+	hiuo.mutation.SetH3Index(i)
 	return hiuo
 }
 
 // SetNillableH3Index sets the "h3_index" field if the given value is not nil.
-func (hiuo *HexInfluenceUpdateOne) SetNillableH3Index(s *string) *HexInfluenceUpdateOne {
-	if s != nil {
-		hiuo.SetH3Index(*s)
+func (hiuo *HexInfluenceUpdateOne) SetNillableH3Index(i *int64) *HexInfluenceUpdateOne {
+	if i != nil {
+		hiuo.SetH3Index(*i)
 	}
 	return hiuo
 }
@@ -334,7 +334,7 @@ func (hiuo *HexInfluenceUpdateOne) SetNillableLastUpdated(t *time.Time) *HexInfl
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hiuo *HexInfluenceUpdateOne) SetHexID(id string) *HexInfluenceUpdateOne {
+func (hiuo *HexInfluenceUpdateOne) SetHexID(id int64) *HexInfluenceUpdateOne {
 	hiuo.mutation.SetHexID(id)
 	return hiuo
 }
@@ -469,7 +469,7 @@ func (hiuo *HexInfluenceUpdateOne) sqlSave(ctx context.Context) (_node *HexInflu
 			Columns: []string{hexinfluence.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -482,7 +482,7 @@ func (hiuo *HexInfluenceUpdateOne) sqlSave(ctx context.Context) (_node *HexInflu
 			Columns: []string{hexinfluence.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

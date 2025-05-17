@@ -13,7 +13,7 @@ type HexLeaderboard struct {
 
 func (HexLeaderboard) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("h3_index").Unique(),
+		field.Int64("h3_index").Unique(),
 		field.JSON("top_users", map[string][]uuid.UUID{}),
 	}
 }

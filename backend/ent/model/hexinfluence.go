@@ -13,7 +13,7 @@ type HexInfluence struct {
 
 func (HexInfluence) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("h3_index"),
+		field.Int64("h3_index"),
 		field.UUID("user_id", uuid.UUID{}),
 		field.Float("score"),
 		field.Time("last_updated"),

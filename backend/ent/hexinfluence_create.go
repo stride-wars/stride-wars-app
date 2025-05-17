@@ -24,8 +24,8 @@ type HexInfluenceCreate struct {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hic *HexInfluenceCreate) SetH3Index(s string) *HexInfluenceCreate {
-	hic.mutation.SetH3Index(s)
+func (hic *HexInfluenceCreate) SetH3Index(i int64) *HexInfluenceCreate {
+	hic.mutation.SetH3Index(i)
 	return hic
 }
 
@@ -48,7 +48,7 @@ func (hic *HexInfluenceCreate) SetLastUpdated(t time.Time) *HexInfluenceCreate {
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hic *HexInfluenceCreate) SetHexID(id string) *HexInfluenceCreate {
+func (hic *HexInfluenceCreate) SetHexID(id int64) *HexInfluenceCreate {
 	hic.mutation.SetHexID(id)
 	return hic
 }
@@ -163,7 +163,7 @@ func (hic *HexInfluenceCreate) createSpec() (*HexInfluence, *sqlgraph.CreateSpec
 			Columns: []string{hexinfluence.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

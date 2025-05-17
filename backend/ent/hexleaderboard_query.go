@@ -298,7 +298,7 @@ func (hlq *HexLeaderboardQuery) WithHex(opts ...func(*HexQuery)) *HexLeaderboard
 // Example:
 //
 //	var v []struct {
-//		H3Index string `json:"h3_index,omitempty"`
+//		H3Index int64 `json:"h3_index,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -321,7 +321,7 @@ func (hlq *HexLeaderboardQuery) GroupBy(field string, fields ...string) *HexLead
 // Example:
 //
 //	var v []struct {
-//		H3Index string `json:"h3_index,omitempty"`
+//		H3Index int64 `json:"h3_index,omitempty"`
 //	}
 //
 //	client.HexLeaderboard.Query().
@@ -402,8 +402,8 @@ func (hlq *HexLeaderboardQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 }
 
 func (hlq *HexLeaderboardQuery) loadHex(ctx context.Context, query *HexQuery, nodes []*HexLeaderboard, init func(*HexLeaderboard), assign func(*HexLeaderboard, *Hex)) error {
-	ids := make([]string, 0, len(nodes))
-	nodeids := make(map[string][]*HexLeaderboard)
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*HexLeaderboard)
 	for i := range nodes {
 		fk := nodes[i].H3Index
 		if _, ok := nodeids[fk]; !ok {

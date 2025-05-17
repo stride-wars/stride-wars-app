@@ -49,14 +49,14 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 	return uc
 }
 
-// AddActivityIDs adds the "activity" edge to the Activity entity by IDs.
+// AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
 func (uc *UserCreate) AddActivityIDs(ids ...uuid.UUID) *UserCreate {
 	uc.mutation.AddActivityIDs(ids...)
 	return uc
 }
 
-// AddActivity adds the "activity" edges to the Activity entity.
-func (uc *UserCreate) AddActivity(a ...*Activity) *UserCreate {
+// AddActivities adds the "activities" edges to the Activity entity.
+func (uc *UserCreate) AddActivities(a ...*Activity) *UserCreate {
 	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
@@ -186,12 +186,12 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
-	if nodes := uc.mutation.ActivityIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.ActivitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ActivityTable,
-			Columns: []string{user.ActivityColumn},
+			Table:   user.ActivitiesTable,
+			Columns: []string{user.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID),

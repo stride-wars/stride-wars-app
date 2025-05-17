@@ -34,5 +34,5 @@ func (r UserRepository) CreateUser(ctx context.Context, user *model.User) (*ent.
 }
 
 func (r UserRepository) UpdateUsername(ctx context.Context, user *model.User) (int, error) {
-	return r.client.User.Update().SetUsername(user.Username).Save(ctx)
+	return r.client.User.Update().Where(entUser.IDEQ(user.ID)).SetUsername(user.Username).Save(ctx)
 }

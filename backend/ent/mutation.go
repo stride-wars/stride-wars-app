@@ -48,12 +48,12 @@ type ActivityMutation struct {
 	addduration_seconds *float64
 	distance_meters     *float64
 	adddistance_meters  *float64
-	h3_indexes          *[]string
-	appendh3_indexes    []string
+	h3_indexes          *[]int64
+	appendh3_indexes    []int64
 	created_at          *time.Time
 	clearedFields       map[string]struct{}
-	users               *uuid.UUID
-	clearedusers        bool
+	user                *uuid.UUID
+	cleareduser         bool
 	done                bool
 	oldValue            func(context.Context) (*Activity, error)
 	predicates          []predicate.Activity
@@ -165,12 +165,12 @@ func (m *ActivityMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 
 // SetUserID sets the "user_id" field.
 func (m *ActivityMutation) SetUserID(u uuid.UUID) {
-	m.users = &u
+	m.user = &u
 }
 
 // UserID returns the value of the "user_id" field in the mutation.
 func (m *ActivityMutation) UserID() (r uuid.UUID, exists bool) {
-	v := m.users
+	v := m.user
 	if v == nil {
 		return
 	}
@@ -196,7 +196,7 @@ func (m *ActivityMutation) OldUserID(ctx context.Context) (v uuid.UUID, err erro
 
 // ResetUserID resets all changes to the "user_id" field.
 func (m *ActivityMutation) ResetUserID() {
-	m.users = nil
+	m.user = nil
 }
 
 // SetDurationSeconds sets the "duration_seconds" field.
@@ -312,13 +312,13 @@ func (m *ActivityMutation) ResetDistanceMeters() {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (m *ActivityMutation) SetH3Indexes(s []string) {
-	m.h3_indexes = &s
+func (m *ActivityMutation) SetH3Indexes(i []int64) {
+	m.h3_indexes = &i
 	m.appendh3_indexes = nil
 }
 
 // H3Indexes returns the value of the "h3_indexes" field in the mutation.
-func (m *ActivityMutation) H3Indexes() (r []string, exists bool) {
+func (m *ActivityMutation) H3Indexes() (r []int64, exists bool) {
 	v := m.h3_indexes
 	if v == nil {
 		return
@@ -329,7 +329,7 @@ func (m *ActivityMutation) H3Indexes() (r []string, exists bool) {
 // OldH3Indexes returns the old "h3_indexes" field's value of the Activity entity.
 // If the Activity object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []string, err error) {
+func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldH3Indexes is only allowed on UpdateOne operations")
 	}
@@ -343,13 +343,13 @@ func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []string, err er
 	return oldValue.H3Indexes, nil
 }
 
-// AppendH3Indexes adds s to the "h3_indexes" field.
-func (m *ActivityMutation) AppendH3Indexes(s []string) {
-	m.appendh3_indexes = append(m.appendh3_indexes, s...)
+// AppendH3Indexes adds i to the "h3_indexes" field.
+func (m *ActivityMutation) AppendH3Indexes(i []int64) {
+	m.appendh3_indexes = append(m.appendh3_indexes, i...)
 }
 
 // AppendedH3Indexes returns the list of values that were appended to the "h3_indexes" field in this mutation.
-func (m *ActivityMutation) AppendedH3Indexes() ([]string, bool) {
+func (m *ActivityMutation) AppendedH3Indexes() ([]int64, bool) {
 	if len(m.appendh3_indexes) == 0 {
 		return nil, false
 	}
@@ -398,44 +398,31 @@ func (m *ActivityMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetUsersID sets the "users" edge to the User entity by id.
-func (m *ActivityMutation) SetUsersID(id uuid.UUID) {
-	m.users = &id
-}
-
-// ClearUsers clears the "users" edge to the User entity.
-func (m *ActivityMutation) ClearUsers() {
-	m.clearedusers = true
+// ClearUser clears the "user" edge to the User entity.
+func (m *ActivityMutation) ClearUser() {
+	m.cleareduser = true
 	m.clearedFields[activity.FieldUserID] = struct{}{}
 }
 
-// UsersCleared reports if the "users" edge to the User entity was cleared.
-func (m *ActivityMutation) UsersCleared() bool {
-	return m.clearedusers
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *ActivityMutation) UserCleared() bool {
+	return m.cleareduser
 }
 
-// UsersID returns the "users" edge ID in the mutation.
-func (m *ActivityMutation) UsersID() (id uuid.UUID, exists bool) {
-	if m.users != nil {
-		return *m.users, true
-	}
-	return
-}
-
-// UsersIDs returns the "users" edge IDs in the mutation.
+// UserIDs returns the "user" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// UsersID instead. It exists only for internal usage by the builders.
-func (m *ActivityMutation) UsersIDs() (ids []uuid.UUID) {
-	if id := m.users; id != nil {
+// UserID instead. It exists only for internal usage by the builders.
+func (m *ActivityMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetUsers resets all changes to the "users" edge.
-func (m *ActivityMutation) ResetUsers() {
-	m.users = nil
-	m.clearedusers = false
+// ResetUser resets all changes to the "user" edge.
+func (m *ActivityMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
 }
 
 // Where appends a list predicates to the ActivityMutation builder.
@@ -473,7 +460,7 @@ func (m *ActivityMutation) Type() string {
 // AddedFields().
 func (m *ActivityMutation) Fields() []string {
 	fields := make([]string, 0, 5)
-	if m.users != nil {
+	if m.user != nil {
 		fields = append(fields, activity.FieldUserID)
 	}
 	if m.duration_seconds != nil {
@@ -556,7 +543,7 @@ func (m *ActivityMutation) SetField(name string, value ent.Value) error {
 		m.SetDistanceMeters(v)
 		return nil
 	case activity.FieldH3Indexes:
-		v, ok := value.([]string)
+		v, ok := value.([]int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -667,8 +654,8 @@ func (m *ActivityMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ActivityMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.users != nil {
-		edges = append(edges, activity.EdgeUsers)
+	if m.user != nil {
+		edges = append(edges, activity.EdgeUser)
 	}
 	return edges
 }
@@ -677,8 +664,8 @@ func (m *ActivityMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ActivityMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case activity.EdgeUsers:
-		if id := m.users; id != nil {
+	case activity.EdgeUser:
+		if id := m.user; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -700,8 +687,8 @@ func (m *ActivityMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ActivityMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedusers {
-		edges = append(edges, activity.EdgeUsers)
+	if m.cleareduser {
+		edges = append(edges, activity.EdgeUser)
 	}
 	return edges
 }
@@ -710,8 +697,8 @@ func (m *ActivityMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ActivityMutation) EdgeCleared(name string) bool {
 	switch name {
-	case activity.EdgeUsers:
-		return m.clearedusers
+	case activity.EdgeUser:
+		return m.cleareduser
 	}
 	return false
 }
@@ -720,8 +707,8 @@ func (m *ActivityMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *ActivityMutation) ClearEdge(name string) error {
 	switch name {
-	case activity.EdgeUsers:
-		m.ClearUsers()
+	case activity.EdgeUser:
+		m.ClearUser()
 		return nil
 	}
 	return fmt.Errorf("unknown Activity unique edge %s", name)
@@ -731,8 +718,8 @@ func (m *ActivityMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ActivityMutation) ResetEdge(name string) error {
 	switch name {
-	case activity.EdgeUsers:
-		m.ResetUsers()
+	case activity.EdgeUser:
+		m.ResetUser()
 		return nil
 	}
 	return fmt.Errorf("unknown Activity edge %s", name)
@@ -1309,7 +1296,7 @@ type HexMutation struct {
 	config
 	op                     Op
 	typ                    string
-	id                     *string
+	id                     *int64
 	clearedFields          map[string]struct{}
 	hexinfluences          map[int]struct{}
 	removedhexinfluences   map[int]struct{}
@@ -1342,7 +1329,7 @@ func newHexMutation(c config, op Op, opts ...hexOption) *HexMutation {
 }
 
 // withHexID sets the ID field of the mutation.
-func withHexID(id string) hexOption {
+func withHexID(id int64) hexOption {
 	return func(m *HexMutation) {
 		var (
 			err   error
@@ -1394,13 +1381,13 @@ func (m HexMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Hex entities.
-func (m *HexMutation) SetID(id string) {
+func (m *HexMutation) SetID(id int64) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *HexMutation) ID() (id string, exists bool) {
+func (m *HexMutation) ID() (id int64, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1411,12 +1398,12 @@ func (m *HexMutation) ID() (id string, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *HexMutation) IDs(ctx context.Context) ([]string, error) {
+func (m *HexMutation) IDs(ctx context.Context) ([]int64, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []string{id}, nil
+			return []int64{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1760,7 +1747,7 @@ type HexInfluenceMutation struct {
 	addscore      *float64
 	last_updated  *time.Time
 	clearedFields map[string]struct{}
-	hex           *string
+	hex           *int64
 	clearedhex    bool
 	users         *uuid.UUID
 	clearedusers  bool
@@ -1868,12 +1855,12 @@ func (m *HexInfluenceMutation) IDs(ctx context.Context) ([]int, error) {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (m *HexInfluenceMutation) SetH3Index(s string) {
-	m.hex = &s
+func (m *HexInfluenceMutation) SetH3Index(i int64) {
+	m.hex = &i
 }
 
 // H3Index returns the value of the "h3_index" field in the mutation.
-func (m *HexInfluenceMutation) H3Index() (r string, exists bool) {
+func (m *HexInfluenceMutation) H3Index() (r int64, exists bool) {
 	v := m.hex
 	if v == nil {
 		return
@@ -1884,7 +1871,7 @@ func (m *HexInfluenceMutation) H3Index() (r string, exists bool) {
 // OldH3Index returns the old "h3_index" field's value of the HexInfluence entity.
 // If the HexInfluence object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexInfluenceMutation) OldH3Index(ctx context.Context) (v string, err error) {
+func (m *HexInfluenceMutation) OldH3Index(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldH3Index is only allowed on UpdateOne operations")
 	}
@@ -2032,7 +2019,7 @@ func (m *HexInfluenceMutation) ResetLastUpdated() {
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by id.
-func (m *HexInfluenceMutation) SetHexID(id string) {
+func (m *HexInfluenceMutation) SetHexID(id int64) {
 	m.hex = &id
 }
 
@@ -2048,7 +2035,7 @@ func (m *HexInfluenceMutation) HexCleared() bool {
 }
 
 // HexID returns the "hex" edge ID in the mutation.
-func (m *HexInfluenceMutation) HexID() (id string, exists bool) {
+func (m *HexInfluenceMutation) HexID() (id int64, exists bool) {
 	if m.hex != nil {
 		return *m.hex, true
 	}
@@ -2058,7 +2045,7 @@ func (m *HexInfluenceMutation) HexID() (id string, exists bool) {
 // HexIDs returns the "hex" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // HexID instead. It exists only for internal usage by the builders.
-func (m *HexInfluenceMutation) HexIDs() (ids []string) {
+func (m *HexInfluenceMutation) HexIDs() (ids []int64) {
 	if id := m.hex; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2201,7 +2188,7 @@ func (m *HexInfluenceMutation) OldField(ctx context.Context, name string) (ent.V
 func (m *HexInfluenceMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case hexinfluence.FieldH3Index:
-		v, ok := value.(string)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2408,7 +2395,7 @@ type HexLeaderboardMutation struct {
 	id            *int
 	top_users     *map[string][]uuid.UUID
 	clearedFields map[string]struct{}
-	hex           *string
+	hex           *int64
 	clearedhex    bool
 	done          bool
 	oldValue      func(context.Context) (*HexLeaderboard, error)
@@ -2514,12 +2501,12 @@ func (m *HexLeaderboardMutation) IDs(ctx context.Context) ([]int, error) {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (m *HexLeaderboardMutation) SetH3Index(s string) {
-	m.hex = &s
+func (m *HexLeaderboardMutation) SetH3Index(i int64) {
+	m.hex = &i
 }
 
 // H3Index returns the value of the "h3_index" field in the mutation.
-func (m *HexLeaderboardMutation) H3Index() (r string, exists bool) {
+func (m *HexLeaderboardMutation) H3Index() (r int64, exists bool) {
 	v := m.hex
 	if v == nil {
 		return
@@ -2530,7 +2517,7 @@ func (m *HexLeaderboardMutation) H3Index() (r string, exists bool) {
 // OldH3Index returns the old "h3_index" field's value of the HexLeaderboard entity.
 // If the HexLeaderboard object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexLeaderboardMutation) OldH3Index(ctx context.Context) (v string, err error) {
+func (m *HexLeaderboardMutation) OldH3Index(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldH3Index is only allowed on UpdateOne operations")
 	}
@@ -2586,7 +2573,7 @@ func (m *HexLeaderboardMutation) ResetTopUsers() {
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by id.
-func (m *HexLeaderboardMutation) SetHexID(id string) {
+func (m *HexLeaderboardMutation) SetHexID(id int64) {
 	m.hex = &id
 }
 
@@ -2602,7 +2589,7 @@ func (m *HexLeaderboardMutation) HexCleared() bool {
 }
 
 // HexID returns the "hex" edge ID in the mutation.
-func (m *HexLeaderboardMutation) HexID() (id string, exists bool) {
+func (m *HexLeaderboardMutation) HexID() (id int64, exists bool) {
 	if m.hex != nil {
 		return *m.hex, true
 	}
@@ -2612,7 +2599,7 @@ func (m *HexLeaderboardMutation) HexID() (id string, exists bool) {
 // HexIDs returns the "hex" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // HexID instead. It exists only for internal usage by the builders.
-func (m *HexLeaderboardMutation) HexIDs() (ids []string) {
+func (m *HexLeaderboardMutation) HexIDs() (ids []int64) {
 	if id := m.hex; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2701,7 +2688,7 @@ func (m *HexLeaderboardMutation) OldField(ctx context.Context, name string) (ent
 func (m *HexLeaderboardMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case hexleaderboard.FieldH3Index:
-		v, ok := value.(string)
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2721,13 +2708,16 @@ func (m *HexLeaderboardMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *HexLeaderboardMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *HexLeaderboardMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
 	return nil, false
 }
 
@@ -2856,9 +2846,9 @@ type UserMutation struct {
 	external_user       *uuid.UUID
 	username            *string
 	clearedFields       map[string]struct{}
-	activity            map[uuid.UUID]struct{}
-	removedactivity     map[uuid.UUID]struct{}
-	clearedactivity     bool
+	activities          map[uuid.UUID]struct{}
+	removedactivities   map[uuid.UUID]struct{}
+	clearedactivities   bool
 	friendship          map[int]struct{}
 	removedfriendship   map[int]struct{}
 	clearedfriendship   bool
@@ -3046,58 +3036,58 @@ func (m *UserMutation) ResetUsername() {
 	m.username = nil
 }
 
-// AddActivityIDs adds the "activity" edge to the Activity entity by ids.
+// AddActivityIDs adds the "activities" edge to the Activity entity by ids.
 func (m *UserMutation) AddActivityIDs(ids ...uuid.UUID) {
-	if m.activity == nil {
-		m.activity = make(map[uuid.UUID]struct{})
+	if m.activities == nil {
+		m.activities = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.activity[ids[i]] = struct{}{}
+		m.activities[ids[i]] = struct{}{}
 	}
 }
 
-// ClearActivity clears the "activity" edge to the Activity entity.
-func (m *UserMutation) ClearActivity() {
-	m.clearedactivity = true
+// ClearActivities clears the "activities" edge to the Activity entity.
+func (m *UserMutation) ClearActivities() {
+	m.clearedactivities = true
 }
 
-// ActivityCleared reports if the "activity" edge to the Activity entity was cleared.
-func (m *UserMutation) ActivityCleared() bool {
-	return m.clearedactivity
+// ActivitiesCleared reports if the "activities" edge to the Activity entity was cleared.
+func (m *UserMutation) ActivitiesCleared() bool {
+	return m.clearedactivities
 }
 
-// RemoveActivityIDs removes the "activity" edge to the Activity entity by IDs.
+// RemoveActivityIDs removes the "activities" edge to the Activity entity by IDs.
 func (m *UserMutation) RemoveActivityIDs(ids ...uuid.UUID) {
-	if m.removedactivity == nil {
-		m.removedactivity = make(map[uuid.UUID]struct{})
+	if m.removedactivities == nil {
+		m.removedactivities = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.activity, ids[i])
-		m.removedactivity[ids[i]] = struct{}{}
+		delete(m.activities, ids[i])
+		m.removedactivities[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedActivity returns the removed IDs of the "activity" edge to the Activity entity.
-func (m *UserMutation) RemovedActivityIDs() (ids []uuid.UUID) {
-	for id := range m.removedactivity {
+// RemovedActivities returns the removed IDs of the "activities" edge to the Activity entity.
+func (m *UserMutation) RemovedActivitiesIDs() (ids []uuid.UUID) {
+	for id := range m.removedactivities {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ActivityIDs returns the "activity" edge IDs in the mutation.
-func (m *UserMutation) ActivityIDs() (ids []uuid.UUID) {
-	for id := range m.activity {
+// ActivitiesIDs returns the "activities" edge IDs in the mutation.
+func (m *UserMutation) ActivitiesIDs() (ids []uuid.UUID) {
+	for id := range m.activities {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetActivity resets all changes to the "activity" edge.
-func (m *UserMutation) ResetActivity() {
-	m.activity = nil
-	m.clearedactivity = false
-	m.removedactivity = nil
+// ResetActivities resets all changes to the "activities" edge.
+func (m *UserMutation) ResetActivities() {
+	m.activities = nil
+	m.clearedactivities = false
+	m.removedactivities = nil
 }
 
 // AddFriendshipIDs adds the "friendship" edge to the Friendship entity by ids.
@@ -3359,8 +3349,8 @@ func (m *UserMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.activity != nil {
-		edges = append(edges, user.EdgeActivity)
+	if m.activities != nil {
+		edges = append(edges, user.EdgeActivities)
 	}
 	if m.friendship != nil {
 		edges = append(edges, user.EdgeFriendship)
@@ -3375,9 +3365,9 @@ func (m *UserMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeActivity:
-		ids := make([]ent.Value, 0, len(m.activity))
-		for id := range m.activity {
+	case user.EdgeActivities:
+		ids := make([]ent.Value, 0, len(m.activities))
+		for id := range m.activities {
 			ids = append(ids, id)
 		}
 		return ids
@@ -3400,8 +3390,8 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.removedactivity != nil {
-		edges = append(edges, user.EdgeActivity)
+	if m.removedactivities != nil {
+		edges = append(edges, user.EdgeActivities)
 	}
 	if m.removedfriendship != nil {
 		edges = append(edges, user.EdgeFriendship)
@@ -3416,9 +3406,9 @@ func (m *UserMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeActivity:
-		ids := make([]ent.Value, 0, len(m.removedactivity))
-		for id := range m.removedactivity {
+	case user.EdgeActivities:
+		ids := make([]ent.Value, 0, len(m.removedactivities))
+		for id := range m.removedactivities {
 			ids = append(ids, id)
 		}
 		return ids
@@ -3441,8 +3431,8 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.clearedactivity {
-		edges = append(edges, user.EdgeActivity)
+	if m.clearedactivities {
+		edges = append(edges, user.EdgeActivities)
 	}
 	if m.clearedfriendship {
 		edges = append(edges, user.EdgeFriendship)
@@ -3457,8 +3447,8 @@ func (m *UserMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
-	case user.EdgeActivity:
-		return m.clearedactivity
+	case user.EdgeActivities:
+		return m.clearedactivities
 	case user.EdgeFriendship:
 		return m.clearedfriendship
 	case user.EdgeHexinfluence:
@@ -3479,8 +3469,8 @@ func (m *UserMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
-	case user.EdgeActivity:
-		m.ResetActivity()
+	case user.EdgeActivities:
+		m.ResetActivities()
 		return nil
 	case user.EdgeFriendship:
 		m.ResetFriendship()

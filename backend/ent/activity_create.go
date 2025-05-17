@@ -41,14 +41,22 @@ func (ac *ActivityCreate) SetDistanceMeters(f float64) *ActivityCreate {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (ac *ActivityCreate) SetH3Indexes(s []string) *ActivityCreate {
-	ac.mutation.SetH3Indexes(s)
+func (ac *ActivityCreate) SetH3Indexes(i []int64) *ActivityCreate {
+	ac.mutation.SetH3Indexes(i)
 	return ac
 }
 
 // SetCreatedAt sets the "created_at" field.
 func (ac *ActivityCreate) SetCreatedAt(t time.Time) *ActivityCreate {
 	ac.mutation.SetCreatedAt(t)
+	return ac
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (ac *ActivityCreate) SetNillableCreatedAt(t *time.Time) *ActivityCreate {
+	if t != nil {
+		ac.SetCreatedAt(*t)
+	}
 	return ac
 }
 
@@ -66,15 +74,9 @@ func (ac *ActivityCreate) SetNillableID(u *uuid.UUID) *ActivityCreate {
 	return ac
 }
 
-// SetUsersID sets the "users" edge to the User entity by ID.
-func (ac *ActivityCreate) SetUsersID(id uuid.UUID) *ActivityCreate {
-	ac.mutation.SetUsersID(id)
-	return ac
-}
-
-// SetUsers sets the "users" edge to the User entity.
-func (ac *ActivityCreate) SetUsers(u *User) *ActivityCreate {
-	return ac.SetUsersID(u.ID)
+// SetUser sets the "user" edge to the User entity.
+func (ac *ActivityCreate) SetUser(u *User) *ActivityCreate {
+	return ac.SetUserID(u.ID)
 }
 
 // Mutation returns the ActivityMutation object of the builder.
@@ -112,6 +114,10 @@ func (ac *ActivityCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (ac *ActivityCreate) defaults() {
+	if _, ok := ac.mutation.CreatedAt(); !ok {
+		v := activity.DefaultCreatedAt
+		ac.mutation.SetCreatedAt(v)
+	}
 	if _, ok := ac.mutation.ID(); !ok {
 		v := activity.DefaultID()
 		ac.mutation.SetID(v)
@@ -135,8 +141,8 @@ func (ac *ActivityCreate) check() error {
 	if _, ok := ac.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Activity.created_at"`)}
 	}
-	if len(ac.mutation.UsersIDs()) == 0 {
-		return &ValidationError{Name: "users", err: errors.New(`ent: missing required edge "Activity.users"`)}
+	if len(ac.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Activity.user"`)}
 	}
 	return nil
 }
@@ -189,12 +195,12 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 		_spec.SetField(activity.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if nodes := ac.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := ac.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   activity.UsersTable,
-			Columns: []string{activity.UsersColumn},
+			Table:   activity.UserTable,
+			Columns: []string{activity.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),

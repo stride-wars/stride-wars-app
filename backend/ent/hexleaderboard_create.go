@@ -22,8 +22,8 @@ type HexLeaderboardCreate struct {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hlc *HexLeaderboardCreate) SetH3Index(s string) *HexLeaderboardCreate {
-	hlc.mutation.SetH3Index(s)
+func (hlc *HexLeaderboardCreate) SetH3Index(i int64) *HexLeaderboardCreate {
+	hlc.mutation.SetH3Index(i)
 	return hlc
 }
 
@@ -34,7 +34,7 @@ func (hlc *HexLeaderboardCreate) SetTopUsers(m map[string][]uuid.UUID) *HexLeade
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hlc *HexLeaderboardCreate) SetHexID(id string) *HexLeaderboardCreate {
+func (hlc *HexLeaderboardCreate) SetHexID(id int64) *HexLeaderboardCreate {
 	hlc.mutation.SetHexID(id)
 	return hlc
 }
@@ -125,7 +125,7 @@ func (hlc *HexLeaderboardCreate) createSpec() (*HexLeaderboard, *sqlgraph.Create
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

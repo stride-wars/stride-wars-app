@@ -88,14 +88,14 @@ func (au *ActivityUpdate) AddDistanceMeters(f float64) *ActivityUpdate {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (au *ActivityUpdate) SetH3Indexes(s []string) *ActivityUpdate {
-	au.mutation.SetH3Indexes(s)
+func (au *ActivityUpdate) SetH3Indexes(i []int64) *ActivityUpdate {
+	au.mutation.SetH3Indexes(i)
 	return au
 }
 
-// AppendH3Indexes appends s to the "h3_indexes" field.
-func (au *ActivityUpdate) AppendH3Indexes(s []string) *ActivityUpdate {
-	au.mutation.AppendH3Indexes(s)
+// AppendH3Indexes appends i to the "h3_indexes" field.
+func (au *ActivityUpdate) AppendH3Indexes(i []int64) *ActivityUpdate {
+	au.mutation.AppendH3Indexes(i)
 	return au
 }
 
@@ -113,15 +113,9 @@ func (au *ActivityUpdate) SetNillableCreatedAt(t *time.Time) *ActivityUpdate {
 	return au
 }
 
-// SetUsersID sets the "users" edge to the User entity by ID.
-func (au *ActivityUpdate) SetUsersID(id uuid.UUID) *ActivityUpdate {
-	au.mutation.SetUsersID(id)
-	return au
-}
-
-// SetUsers sets the "users" edge to the User entity.
-func (au *ActivityUpdate) SetUsers(u *User) *ActivityUpdate {
-	return au.SetUsersID(u.ID)
+// SetUser sets the "user" edge to the User entity.
+func (au *ActivityUpdate) SetUser(u *User) *ActivityUpdate {
+	return au.SetUserID(u.ID)
 }
 
 // Mutation returns the ActivityMutation object of the builder.
@@ -129,9 +123,9 @@ func (au *ActivityUpdate) Mutation() *ActivityMutation {
 	return au.mutation
 }
 
-// ClearUsers clears the "users" edge to the User entity.
-func (au *ActivityUpdate) ClearUsers() *ActivityUpdate {
-	au.mutation.ClearUsers()
+// ClearUser clears the "user" edge to the User entity.
+func (au *ActivityUpdate) ClearUser() *ActivityUpdate {
+	au.mutation.ClearUser()
 	return au
 }
 
@@ -164,8 +158,8 @@ func (au *ActivityUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (au *ActivityUpdate) check() error {
-	if au.mutation.UsersCleared() && len(au.mutation.UsersIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Activity.users"`)
+	if au.mutation.UserCleared() && len(au.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Activity.user"`)
 	}
 	return nil
 }
@@ -205,12 +199,12 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := au.mutation.CreatedAt(); ok {
 		_spec.SetField(activity.FieldCreatedAt, field.TypeTime, value)
 	}
-	if au.mutation.UsersCleared() {
+	if au.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   activity.UsersTable,
-			Columns: []string{activity.UsersColumn},
+			Table:   activity.UserTable,
+			Columns: []string{activity.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -218,12 +212,12 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := au.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   activity.UsersTable,
-			Columns: []string{activity.UsersColumn},
+			Table:   activity.UserTable,
+			Columns: []string{activity.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -311,14 +305,14 @@ func (auo *ActivityUpdateOne) AddDistanceMeters(f float64) *ActivityUpdateOne {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (auo *ActivityUpdateOne) SetH3Indexes(s []string) *ActivityUpdateOne {
-	auo.mutation.SetH3Indexes(s)
+func (auo *ActivityUpdateOne) SetH3Indexes(i []int64) *ActivityUpdateOne {
+	auo.mutation.SetH3Indexes(i)
 	return auo
 }
 
-// AppendH3Indexes appends s to the "h3_indexes" field.
-func (auo *ActivityUpdateOne) AppendH3Indexes(s []string) *ActivityUpdateOne {
-	auo.mutation.AppendH3Indexes(s)
+// AppendH3Indexes appends i to the "h3_indexes" field.
+func (auo *ActivityUpdateOne) AppendH3Indexes(i []int64) *ActivityUpdateOne {
+	auo.mutation.AppendH3Indexes(i)
 	return auo
 }
 
@@ -336,15 +330,9 @@ func (auo *ActivityUpdateOne) SetNillableCreatedAt(t *time.Time) *ActivityUpdate
 	return auo
 }
 
-// SetUsersID sets the "users" edge to the User entity by ID.
-func (auo *ActivityUpdateOne) SetUsersID(id uuid.UUID) *ActivityUpdateOne {
-	auo.mutation.SetUsersID(id)
-	return auo
-}
-
-// SetUsers sets the "users" edge to the User entity.
-func (auo *ActivityUpdateOne) SetUsers(u *User) *ActivityUpdateOne {
-	return auo.SetUsersID(u.ID)
+// SetUser sets the "user" edge to the User entity.
+func (auo *ActivityUpdateOne) SetUser(u *User) *ActivityUpdateOne {
+	return auo.SetUserID(u.ID)
 }
 
 // Mutation returns the ActivityMutation object of the builder.
@@ -352,9 +340,9 @@ func (auo *ActivityUpdateOne) Mutation() *ActivityMutation {
 	return auo.mutation
 }
 
-// ClearUsers clears the "users" edge to the User entity.
-func (auo *ActivityUpdateOne) ClearUsers() *ActivityUpdateOne {
-	auo.mutation.ClearUsers()
+// ClearUser clears the "user" edge to the User entity.
+func (auo *ActivityUpdateOne) ClearUser() *ActivityUpdateOne {
+	auo.mutation.ClearUser()
 	return auo
 }
 
@@ -400,8 +388,8 @@ func (auo *ActivityUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (auo *ActivityUpdateOne) check() error {
-	if auo.mutation.UsersCleared() && len(auo.mutation.UsersIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Activity.users"`)
+	if auo.mutation.UserCleared() && len(auo.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Activity.user"`)
 	}
 	return nil
 }
@@ -458,12 +446,12 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 	if value, ok := auo.mutation.CreatedAt(); ok {
 		_spec.SetField(activity.FieldCreatedAt, field.TypeTime, value)
 	}
-	if auo.mutation.UsersCleared() {
+	if auo.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   activity.UsersTable,
-			Columns: []string{activity.UsersColumn},
+			Table:   activity.UserTable,
+			Columns: []string{activity.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -471,12 +459,12 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := auo.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   activity.UsersTable,
-			Columns: []string{activity.UsersColumn},
+			Table:   activity.UserTable,
+			Columns: []string{activity.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
