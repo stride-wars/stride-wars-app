@@ -4,9 +4,14 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"os/signal"
 	"stride-wars-app/ent"
+	"stride-wars-app/internal/handler"
+	"stride-wars-app/internal/repository"
 	"stride-wars-app/internal/service"
 	"stride-wars-app/pkg/errors"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -19,8 +24,11 @@ type Application struct {
 	Logger         *zap.Logger
 	SupabaseClient *supabase.Client
 	EntClient      *ent.Client
-	Router         *http.Handler
-	Services       *service.Service
+	Router         http.Handler // use interface, NOT pointer
+
+	Services     *service.Services
+	Handlers     *handler.Handlers
+	Repositories *repository.Repositories
 }
 
 func New() (*Application, error) {
@@ -32,29 +40,26 @@ func New() (*Application, error) {
 	return &Application{Logger: logger}, nil
 }
 
-func (a *Application) Start() error {
+func (a *Application) Start(ctx context.Context) error {
 	if err := a.initializeSupabaseClient(); err != nil {
 		return err
 	}
 
-	if err := a.initializeEntClient(); err != nil {
+	if err := a.initializeEntClient(ctx); err != nil {
 		return err
 	}
+
+	a.Repositories = repository.Provide(a.EntClient)
+	a.Services = service.Provide(a.Repositories, a.SupabaseClient, a.Logger)
+	a.Handlers = handler.Provide(a.Services, a.Logger)
 
 	if err := a.initializeRouter(); err != nil {
 		return err
 	}
 
-	a.initializeServices()
+	err := a.initializeRouter()
 
-	a.setupMuxRoutes()
-
-	return nil
-}
-
-func (a *Application) initializeServices() {
-	services := service.Provide(a.EntClient, a.SupabaseClient, a.Logger)
-	a.Services = services
+	return err
 }
 
 func (a *Application) initializeSupabaseClient() error {
@@ -66,15 +71,13 @@ func (a *Application) initializeSupabaseClient() error {
 	return nil
 }
 
-func (a *Application) initializeEntClient() error {
+func (a *Application) initializeEntClient(ctx context.Context) error {
 	client, err := ent.Open("postgres", os.Getenv("SUPABASE_CONN_STRING"))
 	if err != nil {
 		return errors.WrapErr(err, "Failed to initialize Ent client")
 	}
 
-	// Ensure the schema is migrated
-	// it's okay in development, but later on we might use ent/migrate
-	if err := client.Schema.Create(context.Background()); err != nil {
+	if err := client.Schema.Create(ctx); err != nil {
 		return errors.WrapErr(err, "Failed to create Ent schema")
 	}
 
@@ -84,21 +87,45 @@ func (a *Application) initializeEntClient() error {
 
 func (a *Application) initializeRouter() error {
 	m := mux.NewRouter()
+
+	m.HandleFunc("/api/auth/signup", a.Handlers.AuthHandler.SignUp).Methods("POST")
+	m.HandleFunc("/api/auth/signin", a.Handlers.AuthHandler.SignIn).Methods("POST")
+
 	a.Router = applyCors(m)
 	return nil
 }
 
-func (a *Application) setupMuxRoutes() {
-	// Will require mux route setup later on similar to this:
-	// a.Router.HandleFunc("/hex", a.CreateHexHandler).Methods("POST")
-}
-
 func (a *Application) StartHTTPServer() error {
 	a.Logger.Info("Starting HTTP server")
-	if err := http.ListenAndServe(":8080", *a.Router); err != nil {
-		return errors.WrapErr(err, "Failed when starting HTTP server")
+
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: a.Router,
 	}
-	return nil
+	errChan := make(chan error, 1)
+
+	go func() {
+		a.Logger.Info("HTTP server listening on :8080")
+		errChan <- server.ListenAndServe()
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case sig := <-sigChan:
+		a.Logger.Info("Received signal", zap.String("signal", sig.String()))
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			return errors.WrapErr(err, "Failed to gracefully shutdown HTTP server")
+		}
+		a.Logger.Info("HTTP server shut down gracefully")
+		return nil
+
+	case err := <-errChan:
+		return errors.WrapErr(err, "HTTP server encountered error")
+	}
 }
 
 func (a *Application) Stop() error {
@@ -111,15 +138,12 @@ func (a *Application) Stop() error {
 	return nil
 }
 
-// applyCors sets up CORS middleware for the router.
-// might require different CORS for different origins?
-func applyCors(router *mux.Router) *http.Handler {
+func applyCors(handler http.Handler) http.Handler {
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"}, // TODO restrict this for specific domains
+		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	})
 
-	r := c.Handler(router)
-	return &r
+	return c.Handler(handler)
 }

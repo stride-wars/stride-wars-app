@@ -7,7 +7,7 @@ generate:
 
 .PHONY: run
 run:
-	go run cmd/server/main.go
+	go run cmd/main.go
 
 .PHONY: test
 test:

@@ -25,6 +25,10 @@ func (r UserRepository) FindByIDs(ctx context.Context, ids []uuid.UUID) ([]*ent.
 	return r.client.User.Query().Where(entUser.IDIn(ids...)).All(ctx)
 }
 
+func (r UserRepository) FindByExternalUserID(ctx context.Context, uuid uuid.UUID) (*ent.User, error) {
+	return r.client.User.Query().Where(entUser.ExternalUserEQ(uuid)).First(ctx)
+}
+
 func (r UserRepository) FindByUsername(ctx context.Context, username string) (*ent.User, error) {
 	return r.client.User.Query().Where(entUser.UsernameEQ(username)).First(ctx)
 }
