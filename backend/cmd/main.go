@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"log"
-	"os"
 	"os/signal"
 	app "stride-wars-app/internal"
 	"stride-wars-app/pkg/errors"
@@ -13,22 +13,33 @@ import (
 )
 
 func main() {
+	if err := loadEnvs(); err != nil {
+		log.Printf("Warning: %v\n", err)
+	}
+
 	app, err := initializeApplication()
 	if err != nil {
 		log.Fatalf("Failed to initialize application: %s", err.Error())
 	}
 	app.Logger.Info("Application initialized.")
 
-	if err := loadEnvs(); err != nil {
-		app.Logger.Fatal("Failed to load environment variables", zap.Error(err))
-	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	if err := startApplication(app); err != nil {
+	if err := startApplication(ctx, app); err != nil {
 		app.Logger.Fatal("Failed to start application", zap.Error(err))
 	}
-	app.Logger.Info("Application started.")
 
-	waitForShutdown(app)
+	app.Logger.Info("Application running...")
+
+	<-ctx.Done()
+
+	app.Logger.Info("Shutting down...")
+	if err := app.Stop(); err != nil {
+		app.Logger.Fatal("Failed to gracefully shutdown application", zap.Error(err))
+	}
+
+	app.Logger.Info("Application stopped")
 }
 
 func initializeApplication() (*app.Application, error) {
@@ -46,29 +57,16 @@ func loadEnvs() error {
 	return nil
 }
 
-func startApplication(app *app.Application) error {
-	if err := app.Start(); err != nil {
+func startApplication(ctx context.Context, app *app.Application) error {
+	if err := app.Start(ctx); err != nil {
 		return errors.WrapErr(err, "Failed to start application")
 	}
 
-	if err := app.StartHTTPServer(); err != nil {
-		return errors.WrapErr(err, "Failed to start HTTP server")
-	}
+	go func() {
+		if err := app.StartHTTPServer(); err != nil {
+			app.Logger.Fatal("Failed to start HTTP server", zap.Error(err))
+		}
+	}()
 
-	app.Logger.Info("Application running...")
 	return nil
-}
-
-func waitForShutdown(app *app.Application) {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	<-sigs
-
-	app.Logger.Info("Shutting down...")
-	if err := app.Stop(); err != nil {
-		app.Logger.Fatal("Failed to gracefully shutdown application", zap.Error(err))
-	}
-
-	app.Logger.Info("Application stopped")
 }

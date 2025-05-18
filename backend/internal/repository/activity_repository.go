@@ -13,7 +13,7 @@ type ActivityRepository struct {
 	client *ent.Client
 }
 
-func NewActivityRepository(client *ent.Client) IActivityRepository {
+func NewActivityRepository(client *ent.Client) ActivityRepository {
 	return ActivityRepository{client: client}
 }
 
