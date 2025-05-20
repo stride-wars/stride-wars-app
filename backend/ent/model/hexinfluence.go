@@ -1,18 +1,19 @@
 package model
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"time"
 )
 
 type HexInfluence struct {
-	ID uuid.UUID
-	H3Index   int64
-	UserID    uuid.UUID
-	Score     float64
+	ID          uuid.UUID
+	H3Index     int64
+	UserID      uuid.UUID
+	Score       float64
 	LastUpdated time.Time
 	ent.Schema
 }

@@ -35,7 +35,6 @@ func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, created_hex)
 
-
 		username := "alice"
 		externalID := uuid.New()
 
@@ -44,10 +43,10 @@ func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
 			ExternalUser: externalID,
 		}
 		created_user, err := user_repo.CreateUser(ctx, new_user)
-		require.NoError(t, err) 
+		require.NoError(t, err)
 
 		userID := created_user.ID
-		h3_index := int64(617700169958293503) 
+		h3_index := int64(617700169958293503)
 		last_updated := time.Now().Add(-14 * 24 * time.Hour)
 		score := 10.0
 
@@ -62,7 +61,7 @@ func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
 
 		rows_changed, err := influence_repo.UpdateHexInfluence(ctx, created.UserID, created.H3Index)
 		require.NoError(t, err)
-		updated_influence , err := influence_repo.FindByUserIDAndHexID(ctx, created.UserID, created.H3Index)
+		updated_influence, err := influence_repo.FindByUserIDAndHexID(ctx, created.UserID, created.H3Index)
 		require.NoError(t, err)
 
 		require.Equal(t, 1, rows_changed)
@@ -73,9 +72,8 @@ func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
 		require.WithinDuration(t,
 			time.Now(),
 			updated_influence.LastUpdated, // actual
-			time.Second*2,     // tolerance
+			time.Second*2,                 // tolerance
 		)
 
 	})
 }
-

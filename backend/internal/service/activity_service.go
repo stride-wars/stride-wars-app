@@ -11,29 +11,28 @@ import (
 )
 
 type ActivityService struct {
-	repository             repository.ActivityRepository
-	hexRepository            repository.HexRepository 
-	hexInfluenceRepository repository.HexInfluenceRepository
+	repository               repository.ActivityRepository
+	hexRepository            repository.HexRepository
+	hexInfluenceRepository   repository.HexInfluenceRepository
 	hexLeaderboardRepository repository.HexLeaderboardRepository
-	logger                 *zap.Logger
+	logger                   *zap.Logger
 }
 
 func NewActivityService(
 	activityRepo repository.ActivityRepository,
-	hexRepo repository.HexRepository, 
+	hexRepo repository.HexRepository,
 	hexInfluenceRepo repository.HexInfluenceRepository,
-	hexLeaderboardRepo repository.HexLeaderboardRepository, 
+	hexLeaderboardRepo repository.HexLeaderboardRepository,
 	logger *zap.Logger,
 ) *ActivityService {
 	return &ActivityService{
 		repository:               activityRepo,
-		hexRepository:            hexRepo, 
+		hexRepository:            hexRepo,
 		hexInfluenceRepository:   hexInfluenceRepo,
-		hexLeaderboardRepository: hexLeaderboardRepo, 
+		hexLeaderboardRepository: hexLeaderboardRepo,
 		logger:                   logger,
 	}
 }
-
 
 func (as *ActivityService) FindByID(ctx context.Context, uuid uuid.UUID) (*ent.Activity, error) {
 	return as.repository.FindByID(ctx, uuid)
@@ -45,8 +44,6 @@ func (as *ActivityService) FindByUserID(ctx context.Context, userID uuid.UUID) (
 	return as.repository.FindByUserID(ctx, userID)
 }
 
-
-
 func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *model.Activity) (*ent.Activity, error) {
 
 	createdActivity, err := as.repository.CreateActivity(ctx, activityInput)
@@ -55,7 +52,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *mo
 	}
 
 	userID := activityInput.UserID
-	h3Indexes := activityInput.H3Indexes 
+	h3Indexes := activityInput.H3Indexes
 
 	if len(h3Indexes) == 0 {
 		as.logger.Info("Activity contains no H3 indexes; skipping hex influence and leaderboard updates.", zap.Stringer("activityID", createdActivity.ID))
@@ -64,10 +61,10 @@ func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *mo
 
 	hexService := NewHexService(as.hexRepository, as.logger)
 	hexInfluenceService := NewHexInfluenceService(as.hexInfluenceRepository, as.logger)
-	hexLeaderboardService := NewHexLeaderboardService(as.hexLeaderboardRepository,as.hexInfluenceRepository, as.logger)
+	hexLeaderboardService := NewHexLeaderboardService(as.hexLeaderboardRepository, as.hexInfluenceRepository, as.logger)
 
 	as.logger.Debug("Checking and creating hexes if necessary", zap.Any("h3Indexes", h3Indexes))
-	existingHexEntities, err := hexService.FindByIDs(ctx, h3Indexes) 
+	existingHexEntities, err := hexService.FindByIDs(ctx, h3Indexes)
 	if err != nil {
 		as.logger.Warn("Failed to pre-fetch existing hexes by IDs. Will attempt creation individually.",
 			zap.Error(err), zap.Any("h3Indexes", h3Indexes))

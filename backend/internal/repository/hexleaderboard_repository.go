@@ -7,12 +7,12 @@ import (
 	"stride-wars-app/ent/model"
 
 	"github.com/google/uuid"
-	
 )
 
 type HexLeaderboardRepository struct {
 	client *ent.Client
 }
+
 func NewHexLeaderboardRepository(client *ent.Client) HexLeaderboardRepository {
 	return HexLeaderboardRepository{client: client}
 }

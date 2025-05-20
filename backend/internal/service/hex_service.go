@@ -1,8 +1,10 @@
 package service
+
 import (
 	"context"
 	"stride-wars-app/ent"
 	"stride-wars-app/internal/repository"
+
 	"go.uber.org/zap"
 )
 
@@ -10,6 +12,7 @@ type HexService struct {
 	repository repository.HexRepository
 	logger     *zap.Logger
 }
+
 func NewHexService(repository repository.HexRepository, logger *zap.Logger) *HexService {
 	return &HexService{
 		repository: repository,

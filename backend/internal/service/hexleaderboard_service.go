@@ -1,29 +1,34 @@
-package service	
+package service
+
 import (
-	"context"	
+	"context"
+	"sort"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"sort"
 )
+
 type HexLeaderboardService struct {
 	hexLeaderboardRepository repository.HexLeaderboardRepository
-	hexInfluenceRepository repository.HexInfluenceRepository
-	logger     *zap.Logger
+	hexInfluenceRepository   repository.HexInfluenceRepository
+	logger                   *zap.Logger
 }
+
 func NewHexLeaderboardService(hexLeaderboardRepository repository.HexLeaderboardRepository, hexInfluenceRepository repository.HexInfluenceRepository, logger *zap.Logger) *HexLeaderboardService {
 	return &HexLeaderboardService{
 		hexLeaderboardRepository: hexLeaderboardRepository,
 		hexInfluenceRepository:   hexInfluenceRepository,
-		logger:     logger,
+		logger:                   logger,
 	}
 }
 func (hls *HexLeaderboardService) FindByID(ctx context.Context, id uuid.UUID) (*ent.HexLeaderboard, error) {
 	return hls.hexLeaderboardRepository.FindByID(ctx, id)
 }
-//find by h3 index
+
+// find by h3 index
 func (hls *HexLeaderboardService) FindByH3Index(ctx context.Context, h3_index int64) (*ent.HexLeaderboard, error) {
 	return hls.hexLeaderboardRepository.FindByH3Index(ctx, h3_index)
 }
@@ -34,14 +39,15 @@ func (hls *HexLeaderboardService) UpdateHexLeaderboard(ctx context.Context, hexL
 	return hls.hexLeaderboardRepository.UpdateHexLeaderboard(ctx, hexLeaderboard)
 }
 func (hls *HexLeaderboardService) FindByH3Indexes(ctx context.Context, h3Indexes []int64) ([]*ent.HexLeaderboard, error) {
-	return hls.hexLeaderboardRepository.FindByH3Indexes(ctx, h3Indexes) 
+	return hls.hexLeaderboardRepository.FindByH3Indexes(ctx, h3Indexes)
 }
+
 // Ads a given user to the leaderboard of a hexagon with the given hexID - if the user has enough points to go into top 5.
 func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (int, error) {
 	hexLeaderboard, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return 0, nil 
+			return 0, nil
 		}
 		return 0, err
 	}
@@ -91,14 +97,14 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 		}
 	}
 	if !inTop {
-		return 0, nil 
+		return 0, nil
 	}
 
 	hexLeaderboard.TopUsers = newTopUsers
 	updatedModel := &model.HexLeaderboard{
-		ID:        hexLeaderboard.ID,
-		H3Index:   hexLeaderboard.H3Index,
-		TopUsers:  newTopUsers,
+		ID:       hexLeaderboard.ID,
+		H3Index:  hexLeaderboard.H3Index,
+		TopUsers: newTopUsers,
 	}
 
 	_, err = hls.hexLeaderboardRepository.UpdateHexLeaderboard(ctx, updatedModel)
@@ -112,6 +118,5 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 		}
 	}
 
-	return 0, nil 
+	return 0, nil
 }
-

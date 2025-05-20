@@ -1,18 +1,20 @@
 package service
+
 import (
 	"context"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
-
 
 type HexInfluenceService struct {
 	repository repository.HexInfluenceRepository
 	logger     *zap.Logger
 }
+
 func NewHexInfluenceService(repository repository.HexInfluenceRepository, logger *zap.Logger) *HexInfluenceService {
 	return &HexInfluenceService{
 		repository: repository,
@@ -40,7 +42,7 @@ func (his *HexInfluenceService) UpdateHexInfluence(ctx context.Context, userID u
 func (his *HexInfluenceService) FindByUserIDAndHexID(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
 	return his.repository.FindByUserIDAndHexID(ctx, userID, hexID)
 }
-func (his *HexInfluenceService) UpdateHexInfluences(ctx context.Context, userID uuid.UUID,hexIDs []int64) (int, error) {
+func (his *HexInfluenceService) UpdateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []int64) (int, error) {
 	return his.repository.UpdateHexInfluences(ctx, userID, hexIDs)
 }
 func (his *HexInfluenceService) UpdateOrCreateHexInfluence(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
