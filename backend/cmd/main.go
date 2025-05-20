@@ -62,11 +62,16 @@ func startApplication(ctx context.Context, app *app.Application) error {
 		return errors.WrapErr(err, "Failed to start application")
 	}
 
+	serverErrChan := make(chan error, 1)
 	go func() {
-		if err := app.StartHTTPServer(); err != nil {
-			app.Logger.Fatal("Failed to start HTTP server", zap.Error(err))
-		}
+		serverErrChan <- app.StartHTTPServer()
 	}()
 
-	return nil
+	// Wait for either context cancellation or server error
+	select {
+	case err := <-serverErrChan:
+		return errors.WrapErr(err, "HTTP server error")
+	case <-ctx.Done():
+		return nil
+	}
 }

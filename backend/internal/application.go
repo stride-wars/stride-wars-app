@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"stride-wars-app/ent"
+	"stride-wars-app/internal/api/router"
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/repository"
 	"stride-wars-app/internal/service"
@@ -13,18 +14,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-	"github.com/rs/cors"
 	"github.com/supabase-community/supabase-go"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Application struct {
 	Logger         *zap.Logger
 	SupabaseClient *supabase.Client
 	EntClient      *ent.Client
-	Router         http.Handler // use interface, NOT pointer
+	Router         http.Handler
 
 	Services     *service.Services
 	Handlers     *handler.Handlers
@@ -32,7 +32,13 @@ type Application struct {
 }
 
 func New() (*Application, error) {
-	logger, err := zap.NewProduction()
+	config := zap.NewProductionConfig()
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	config.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	config.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
+
+	logger, err := config.Build()
 	if err != nil {
 		return nil, errors.WrapErr(err, "Failed to initialize zap logger")
 	}
@@ -57,9 +63,7 @@ func (a *Application) Start(ctx context.Context) error {
 		return err
 	}
 
-	err := a.initializeRouter()
-
-	return err
+	return nil
 }
 
 func (a *Application) initializeSupabaseClient() error {
@@ -86,12 +90,9 @@ func (a *Application) initializeEntClient(ctx context.Context) error {
 }
 
 func (a *Application) initializeRouter() error {
-	m := mux.NewRouter()
-
-	m.HandleFunc("/api/auth/signup", a.Handlers.AuthHandler.SignUp).Methods("POST")
-	m.HandleFunc("/api/auth/signin", a.Handlers.AuthHandler.SignIn).Methods("POST")
-
-	a.Router = applyCors(m)
+	router := router.New(a.Logger)
+	router.Setup(a.Handlers.AuthHandler, a.Services.AuthService)
+	a.Router = router.Handler()
 	return nil
 }
 
@@ -103,11 +104,16 @@ func (a *Application) StartHTTPServer() error {
 		Handler: a.Router,
 	}
 	errChan := make(chan error, 1)
+	readyChan := make(chan struct{})
 
 	go func() {
 		a.Logger.Info("HTTP server listening on :8080")
+		close(readyChan) // Signal that the server is about to start
 		errChan <- server.ListenAndServe()
 	}()
+
+	// Wait for the server to be ready
+	<-readyChan
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -136,14 +142,4 @@ func (a *Application) Stop() error {
 	a.Logger.Info("Database connection closed.")
 	a.Logger.Info("Application stopped gracefully.")
 	return nil
-}
-
-func applyCors(handler http.Handler) http.Handler {
-	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{"Content-Type", "Authorization"},
-	})
-
-	return c.Handler(handler)
 }
