@@ -22,6 +22,9 @@ func NewHexInfluenceService(repository repository.HexInfluenceRepository, logger
 func (his *HexInfluenceService) FindByID(ctx context.Context, id uuid.UUID) (*ent.HexInfluence, error) {
 	return his.repository.FindByID(ctx, id)
 }
+func (his *HexInfluenceService) FindByIDs(ctx context.Context, ids []uuid.UUID) ([]*ent.HexInfluence, error) {
+	return his.repository.FindByIDs(ctx, ids)
+}
 func (his *HexInfluenceService) FindByUserID(ctx context.Context, userID uuid.UUID) ([]*ent.HexInfluence, error) {
 	return his.repository.FindByUserID(ctx, userID)
 }
@@ -39,4 +42,10 @@ func (his *HexInfluenceService) FindByUserIDAndHexID(ctx context.Context, userID
 }
 func (his *HexInfluenceService) UpdateHexInfluences(ctx context.Context, userID uuid.UUID,hexIDs []int64) (int, error) {
 	return his.repository.UpdateHexInfluences(ctx, userID, hexIDs)
+}
+func (his *HexInfluenceService) UpdateOrCreateHexInfluence(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
+	return his.repository.UpdateOrCreateHexInfluence(ctx, userID, hexID)
+}
+func (his *HexInfluenceService) UpdateOrCreateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []int64) ([]*ent.HexInfluence, error) {
+	return his.repository.UpdateOrCreateHexInfluences(ctx, userID, hexIDs)
 }

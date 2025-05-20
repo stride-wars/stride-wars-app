@@ -21,9 +21,15 @@ func Provide(entClient *ent.Client, supabaseClient *supabase.Client, logger *zap
 	return &Service{
 		UserService: NewUserService(repository.NewUserRepository(entClient), logger),
 		AuthService: NewAuthService(supabaseClient, logger),
-		ActivityService: NewActivityService(repository.NewActivityRepository(entClient), logger),
+		ActivityService: NewActivityService(repository.NewActivityRepository(entClient),
+		repository.NewHexRepository(entClient),
+		repository.NewHexInfluenceRepository(entClient),
+		repository.NewHexLeaderboardRepository(entClient),
+		 logger),
 		HexService: NewHexService(repository.NewHexRepository(entClient), logger),
-		HexLeaderboardService: NewHexLeaderboardService(repository.NewHexLeaderboardRepository(entClient), logger),
+		HexLeaderboardService: NewHexLeaderboardService(repository.NewHexLeaderboardRepository(entClient),
+		repository.NewHexInfluenceRepository(entClient),
+		 logger),
 		HexInfluenceService: NewHexInfluenceService(repository.NewHexInfluenceRepository(entClient), logger),
 	}
 }

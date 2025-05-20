@@ -7,6 +7,7 @@ import (
 	"stride-wars-app/ent/model"
 
 	"github.com/google/uuid"
+	
 )
 
 type HexLeaderboardRepository struct {
@@ -18,8 +19,8 @@ func NewHexLeaderboardRepository(client *ent.Client) HexLeaderboardRepository {
 func (r HexLeaderboardRepository) FindByID(ctx context.Context, id uuid.UUID) (*ent.HexLeaderboard, error) {
 	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.IDEQ(id)).First(ctx)
 }
-func (r HexLeaderboardRepository) FindByH3Index(ctx context.Context, hexID int64) ([]*ent.HexLeaderboard, error) {
-	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.H3IndexEQ(hexID)).All(ctx)
+func (r HexLeaderboardRepository) FindByH3Index(ctx context.Context, hexID int64) (*ent.HexLeaderboard, error) {
+	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.H3IndexEQ(hexID)).First(ctx)
 }
 func (r HexLeaderboardRepository) CreateHexLeaderboard(ctx context.Context, hexLeaderboard *model.HexLeaderboard) (*ent.HexLeaderboard, error) {
 	return r.client.HexLeaderboard.Create().

@@ -20,11 +20,12 @@ func NewHexInfluenceRepository(client *ent.Client) HexInfluenceRepository {
 func (r HexInfluenceRepository) FindByID(ctx context.Context, uuid uuid.UUID) (*ent.HexInfluence, error) {
 	return r.client.HexInfluence.Query().Where(entHexInfluence.IDEQ(uuid)).First(ctx)
 }
-
+func (r HexInfluenceRepository) FindByIDs(ctx context.Context, ids []uuid.UUID) ([]*ent.HexInfluence, error) {
+	return r.client.HexInfluence.Query().Where(entHexInfluence.IDIn(ids...)).All(ctx)
+}
 func (r HexInfluenceRepository) FindByUserID(ctx context.Context, userID uuid.UUID) ([]*ent.HexInfluence, error) {
 	return r.client.HexInfluence.Query().Where(entHexInfluence.UserIDEQ(userID)).All(ctx)
 }
-
 func (r HexInfluenceRepository) FindByUserIDAndHexID(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
 	return r.client.HexInfluence.Query().Where(
 		entHexInfluence.H3IndexEQ(hexID),
@@ -80,5 +81,32 @@ func (r HexInfluenceRepository) UpdateHexInfluences(ctx context.Context,userID u
         }
     
     return totalUpdated, nil
+}
+func (r HexInfluenceRepository) UpdateOrCreateHexInfluence(ctx context.Context,  userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
+	updatedInfluence, err := r.UpdateHexInfluence(ctx, userID, hexID)
+	if err != nil {
+		return nil, err
+	}
+	if updatedInfluence == 0 {
+		newInfluence := &model.HexInfluence{
+			UserID:      userID,
+			H3Index:     hexID,
+			Score:       1.0,
+			LastUpdated: time.Now(),
+		}
+		return r.CreateHexInfluence(ctx, newInfluence)
+	}
+	return r.FindByUserIDAndHexID(ctx, userID, hexID)
+} 
+func (r HexInfluenceRepository) UpdateOrCreateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []int64) ([]*ent.HexInfluence, error) {
+	updatedInfluences := make([]*ent.HexInfluence, 0, len(hexIDs))
+	for _, h3id := range hexIDs {
+		influence, err := r.UpdateOrCreateHexInfluence(ctx, userID, h3id)
+		if err != nil {
+			return nil, err
+		}
+		updatedInfluences = append(updatedInfluences, influence)
+	}
+	return updatedInfluences, nil
 }
 
