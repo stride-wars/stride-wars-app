@@ -26,7 +26,8 @@ export function useAuth() {
       const data = await response.json();
       Alert.alert('Success', `User registered: ${data.email}`);
     } catch (err) {
-      Alert.alert('Error', err.message);
+      // I will add some better error later
+      Alert.alert('Error');
     }
   };
 
@@ -48,14 +49,14 @@ export function useAuth() {
       const data = await response.json();
       Alert.alert('Success', `Logged in as: ${data.email}`);
     } catch (err) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error');
     }
   };
 
   return {
     email,
     setEmail,
-    username, s
+    username, 
     setUsername,
     password,
     setPassword,
