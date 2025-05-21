@@ -51,7 +51,7 @@ func (a *Application) Start(ctx context.Context) error {
 
 	a.Repositories = repository.Provide(a.EntClient)
 	a.Services = service.Provide(a.Repositories, a.SupabaseClient, a.Logger)
-	a.Handlers = handler.Provide(a.Services, a.Logger)
+	a.Handlers = handler.Provide(a.Services, a.Logger, a.EntClient)
 
 	if err := a.initializeRouter(); err != nil {
 		return err
@@ -90,6 +90,7 @@ func (a *Application) initializeRouter() error {
 
 	m.HandleFunc("/api/auth/signup", a.Handlers.AuthHandler.SignUp).Methods("POST")
 	m.HandleFunc("/api/auth/signin", a.Handlers.AuthHandler.SignIn).Methods("POST")
+	m.HandleFunc("/api/data", a.Handlers.HexDataHandler.ReceiveHexData).Methods("POST")
 
 	a.Router = applyCors(m)
 	return nil
