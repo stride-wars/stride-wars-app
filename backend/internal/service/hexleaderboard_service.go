@@ -122,7 +122,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 	return 0, nil
 }
 
-//func AddUserToLeaderboardOrCreate 
+// func AddUserToLeaderboardOrCreate
 func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (int, error) {
 	// Try to find the leaderboard
 	_, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)

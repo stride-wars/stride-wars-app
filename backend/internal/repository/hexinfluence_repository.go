@@ -6,8 +6,8 @@ import (
 	entHexInfluence "stride-wars-app/ent/hexinfluence"
 	"stride-wars-app/ent/model"
 
-	"time"
 	"math"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -95,7 +95,7 @@ func (r HexInfluenceRepository) UpdateOrCreateHexInfluence(ctx context.Context, 
 		// ent.ErrNotFound means no update happened — fall through to create
 	}
 	if updatedInfluence == 0 {
-		//log that it attempts to create a hexinfluence
+		// log that it attempts to create a hexinfluence
 		newInfluence := &model.HexInfluence{
 			UserID:      userID,
 			H3Index:     hexID,

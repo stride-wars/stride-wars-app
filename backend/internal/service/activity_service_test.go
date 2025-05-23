@@ -7,17 +7,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"entgo.io/ent/dialect/sql/schema"
 	"stride-wars-app/ent/enttest"
+
+	"entgo.io/ent/dialect/sql/schema"
 	_ "github.com/mattn/go-sqlite3"
 
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
-	"stride-wars-app/internal/service" 
+	"stride-wars-app/internal/service"
+
+	"fmt"
 
 	"github.com/google/uuid"
-	"fmt"
 )
 
 // setupTest initializes an in-memory SQLite ent client, applies schema,
@@ -51,7 +53,7 @@ func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivitySer
 
 func TestFindByID(t *testing.T) {
 	ctx, client, svc := setupTest(t)
-	
+
 	username := "karolnawrocki"
 	externalID := uuid.New()
 	user_repo := repository.NewUserRepository(client)
@@ -101,13 +103,10 @@ func TestFindByUserID(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-
 	results, err := svc.FindByUserID(ctx, created_user.ID)
 	require.NoError(t, err)
 	require.Len(t, results, 2)
 }
-
-
 
 func TestCreateOneActivity_WithH3Indexes(t *testing.T) {
 	ctx, client, svc := setupTest(t)
@@ -140,7 +139,7 @@ func TestCreateOneActivity_WithH3Indexes(t *testing.T) {
 	hex_repo := repository.NewHexRepository((client))
 	// Verify hexes created
 	for _, idx := range indexes {
-		hex, err := hex_repo.FindByID(ctx,idx)
+		hex, err := hex_repo.FindByID(ctx, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hex.ID)
 	}
@@ -153,10 +152,10 @@ func TestCreateOneActivity_WithH3Indexes(t *testing.T) {
 	}
 	// Verify influences created
 	for _, idx := range indexes {
-		hx_influence, err := hexinfluence_repo.FindByUserIDAndHexID(ctx,created.UserID,idx)
+		hx_influence, err := hexinfluence_repo.FindByUserIDAndHexID(ctx, created.UserID, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hx_influence.H3Index)
-		require.Equal(t,1.0,hx_influence.Score)
+		require.Equal(t, 1.0, hx_influence.Score)
 	}
 
 }
@@ -185,28 +184,25 @@ func TestCreateTwoActivities_WithTheSameH3Indexes(t *testing.T) {
 	first_activity, err := svc.CreateActivity(ctx, input)
 	require.NoError(t, err)
 
-	svc.CreateActivity(ctx, input)
-	require.NoError(t, err)
-
-
+	_, a_err := svc.CreateActivity(ctx, input)
+	require.NoError(t, a_err)
 
 	hex_repo := repository.NewHexRepository((client))
 	// Verify hexes created
 	for _, idx := range indexes {
-		hex, err := hex_repo.FindByID(ctx,idx)
+		hex, err := hex_repo.FindByID(ctx, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hex.ID)
 	}
 
 	hexinfluence_repo := repository.NewHexInfluenceRepository(client)
 
-
 	// Verify influences created
 	for _, idx := range indexes {
-		hx_influence, err := hexinfluence_repo.FindByUserIDAndHexID(ctx,first_activity.UserID,idx)
+		hx_influence, err := hexinfluence_repo.FindByUserIDAndHexID(ctx, first_activity.UserID, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hx_influence.H3Index)
-		require.Equal(t,2.0,hx_influence.Score)
+		require.Equal(t, 2.0, hx_influence.Score)
 	}
 
 }
@@ -252,7 +248,7 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 
 	for _, user := range createdUsers {
 
-			activity := &model.Activity{
+		activity := &model.Activity{
 			UserID:    user.ID,
 			Duration:  150.0,
 			Distance:  2500.0,
@@ -274,12 +270,11 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 			infl, err := hexInfluenceRepo.FindByUserIDAndHexID(ctx, user.ID, idx)
 			require.NoError(t, err)
 			require.Equal(t, idx, infl.H3Index)
-			require.Equal(t, 2.0, infl.Score)  
-			
-			
-			leaderboard, l_err := hexLeadearboardRepo.FindByH3Index(ctx,idx)
-			require.NoError(t,l_err)
-			require.Equal(t,5,len(leaderboard.TopUsers))
+			require.Equal(t, 2.0, infl.Score)
+
+			leaderboard, l_err := hexLeadearboardRepo.FindByH3Index(ctx, idx)
+			require.NoError(t, l_err)
+			require.Equal(t, 5, len(leaderboard.TopUsers))
 		}
 	}
 }
@@ -317,13 +312,11 @@ func TestIfActivitiesAffectLeaderboardsIncremetally(t *testing.T) {
 		_, err = svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
 
-		leaderboard, l_err := hexLeadearboardRepo.FindByH3Index(ctx,indexes[0])
-		require.NoError(t,l_err)
+		leaderboard, l_err := hexLeadearboardRepo.FindByH3Index(ctx, indexes[0])
+		require.NoError(t, l_err)
 		temp := len(leaderboard.TopUsers)
-		require.Equal(t,i+1,temp)
+		require.Equal(t, i+1, temp)
 	}
-
-
 
 }
 
@@ -361,8 +354,8 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 			H3Indexes: indexes,
 		}
 		if name != "andrzejleper" {
-		_, err = svc.CreateActivity(ctx, activity)
-		require.NoError(t, err)
+			_, err = svc.CreateActivity(ctx, activity)
+			require.NoError(t, err)
 		}
 	}
 	leper := createdUsers[5]
@@ -377,15 +370,15 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 		_, err := svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
 
-		position, l_err := hexLeadearboardRepo.GetUserPositionInLeaderboard(ctx,indexes[0],leper.ID)
-		require.NoError(t,l_err)
+		position, l_err := hexLeadearboardRepo.GetUserPositionInLeaderboard(ctx, indexes[0], leper.ID)
+		require.NoError(t, l_err)
 		expected_postion := 0
 		if i == 0 {
 			expected_postion = -1
 		} else {
 			expected_postion = 1
 		}
-		require.Equal(t,expected_postion,position)
+		require.Equal(t, expected_postion, position)
 	}
 
 }
