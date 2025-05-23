@@ -7,6 +7,7 @@ import (
 	"stride-wars-app/ent/model"
 
 	"time"
+	"math"
 
 	"github.com/google/uuid"
 )
@@ -57,7 +58,7 @@ func (r HexInfluenceRepository) UpdateHexInfluence(ctx context.Context, userID u
 
 	new_update_time := time.Now()
 	multiplyer := 1 - 0.1*new_update_time.Sub(hexInfluence.LastUpdated).Hours()/24.0/7.0
-	multiplyer = float64(int(multiplyer*10)) / 10.0
+	multiplyer = math.Round(multiplyer*10) / 10
 	if multiplyer < 0.0 {
 		multiplyer = 0.1
 	}
@@ -86,9 +87,15 @@ func (r HexInfluenceRepository) UpdateHexInfluences(ctx context.Context, userID 
 func (r HexInfluenceRepository) UpdateOrCreateHexInfluence(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
 	updatedInfluence, err := r.UpdateHexInfluence(ctx, userID, hexID)
 	if err != nil {
-		return nil, err
+		// Check if the error is due to no rows being updated (i.e., not found)
+		if !ent.IsNotFound(err) {
+			// Real error — return it
+			return nil, err
+		}
+		// ent.ErrNotFound means no update happened — fall through to create
 	}
 	if updatedInfluence == 0 {
+		//log that it attempts to create a hexinfluence
 		newInfluence := &model.HexInfluence{
 			UserID:      userID,
 			H3Index:     hexID,

@@ -99,7 +99,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *mo
 		}
 
 		// Add user to leaderboard
-		_, err = hexLeaderboardService.AddUserToLeaderboard(ctx, h3Index, userID)
+		_, err = hexLeaderboardService.AddUserToLeaderboardOrCreateLeaderboard(ctx, h3Index, userID)
 		if err != nil {
 			as.logger.Error("Failed to add user to leaderboard.", zap.Error(err), zap.Int64("h3Index", h3Index))
 			continue

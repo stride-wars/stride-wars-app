@@ -43,6 +43,7 @@ func (hls *HexLeaderboardService) FindByH3Indexes(ctx context.Context, h3Indexes
 }
 
 // Ads a given user to the leaderboard of a hexagon with the given hexID - if the user has enough points to go into top 5.
+// Return users position in the leaderboard - 0 otherwise
 func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (int, error) {
 	hexLeaderboard, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
 	if err != nil {
@@ -119,4 +120,50 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 	}
 
 	return 0, nil
+}
+
+//func AddUserToLeaderboardOrCreate 
+func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (int, error) {
+	// Try to find the leaderboard
+	_, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			// Attempt to get influence score first
+			hexInfluence, infErr := hls.hexInfluenceRepository.FindByUserIDAndHexID(ctx, userID, hexID)
+			if infErr != nil {
+				return 0, infErr
+			}
+			if hexInfluence == nil {
+				return 0, nil
+			}
+
+			// Create leaderboard with current user as first entry
+			leaderboard := &model.HexLeaderboard{
+				H3Index: hexID,
+				TopUsers: []model.TopUser{
+					{UserID: userID, Score: hexInfluence.Score},
+				},
+			}
+
+			_, err = hls.hexLeaderboardRepository.CreateHexLeaderboard(ctx, leaderboard)
+			if err != nil {
+				return 0, err
+			}
+
+			return 1, nil // user is the first and only one in the leaderboard
+		}
+		return 0, err // real error
+	}
+
+	// If leaderboard exists, attempt to add user
+	position, err := hls.AddUserToLeaderboard(ctx, hexID, userID)
+	if err != nil {
+		return 0, err
+	}
+	return position, nil
+}
+
+// Return users position in a particualr hex's leaderboard, returns -1 if the user is not in the leaderboard / in case of an error
+func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (int, error) {
+	return hls.hexLeaderboardRepository.GetUserPositionInLeaderboard(ctx, hexID, userID)
 }

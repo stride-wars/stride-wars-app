@@ -47,7 +47,7 @@ func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
 
 		userID := created_user.ID
 		h3_index := int64(617700169958293503)
-		last_updated := time.Now().Add(-14 * 24 * time.Hour)
+		last_updated := time.Now().Add(-15 * 24 * time.Hour)
 		score := 10.0
 
 		new_hex_influence := &model.HexInfluence{
@@ -66,7 +66,7 @@ func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
 
 		require.Equal(t, 1, rows_changed)
 		require.Equal(t, created.ID, updated_influence.ID)
-		require.Equal(t, 8.0, updated_influence.Score)
+		require.Equal(t, 9.0, updated_influence.Score)
 		require.Equal(t, created.UserID, updated_influence.UserID)
 		require.Equal(t, created.H3Index, h3_index)
 		require.WithinDuration(t,
