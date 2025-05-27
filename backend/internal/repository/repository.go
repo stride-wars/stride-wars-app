@@ -11,10 +11,10 @@ import (
 type Repositories struct {
 	UserRepository     UserRepository
 	ActivityRepository ActivityRepository
-	//HexRepository *HexRepository
-	//HexInfluenceRepository *HexInfluenceRepository
-	//HexLeaderboardRepository *HexLeaderboardRepository
-	//FriendshipRepository *FriendshipRepository
+	// HexRepository *HexRepository
+	// HexInfluenceRepository *HexInfluenceRepository
+	// HexLeaderboardRepository *HexLeaderboardRepository
+	// FriendshipRepository *FriendshipRepository
 }
 
 func Provide(client *ent.Client) *Repositories {

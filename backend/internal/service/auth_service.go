@@ -11,6 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type Claims struct {
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+}
+
 type AuthService struct {
 	supabaseClient *supabase.Client
 	logger         *zap.Logger
@@ -58,19 +63,18 @@ func (a *AuthService) SignUp(ctx context.Context, req SignUpRequest) (*SignUpRes
 		return nil, err
 	}
 
+	// Check if user exists
 	u, err := a.userService.FindByUsername(ctx, req.Username)
-	if u != nil {
-		return nil, errors.New("User already exists")
-	}
-	if err != nil {
+	if err != nil && !errors.IsNotFound(err) {
 		return nil, err
+	}
+	if u != nil {
+		return nil, errors.New("Username already exists!")
 	}
 
 	supabaseSignUp := types.SignupRequest{
-		Email:         req.Email,
-		Password:      "",
-		Data:          nil,
-		SecurityEmbed: types.SecurityEmbed{},
+		Email:    req.Email,
+		Password: req.Password,
 	}
 
 	supabaseResp, err := a.supabaseClient.Auth.Signup(supabaseSignUp)
@@ -80,20 +84,25 @@ func (a *AuthService) SignUp(ctx context.Context, req SignUpRequest) (*SignUpRes
 
 	user := &model.User{
 		Username:     req.Username,
-		ExternalUser: supabaseResp.User.ID,
+		ExternalUser: supabaseResp.ID,
 	}
 	internalUser, err := a.userService.CreateUser(ctx, user)
 	if err != nil {
-		a.logger.Error("Failed to sign up", zap.Error(err))
+		return nil, err
+	}
+
+	// Create a new session by signing in after signup
+	signInResp, err := a.supabaseClient.Auth.SignInWithEmailPassword(req.Email, req.Password)
+	if err != nil {
 		return nil, err
 	}
 
 	resp := &SignUpResponse{
-		Session:      supabaseResp.Session,
+		Session:      signInResp.Session,
 		UserID:       internalUser.ID.String(),
 		Username:     internalUser.Username,
-		ExternalUser: supabaseResp.User.ID.String(),
-		Email:        supabaseResp.User.Email,
+		ExternalUser: supabaseResp.ID.String(),
+		Email:        supabaseResp.Email,
 	}
 
 	return resp, nil
@@ -102,20 +111,29 @@ func (a *AuthService) SignUp(ctx context.Context, req SignUpRequest) (*SignUpRes
 func (a *AuthService) SignIn(ctx context.Context, req SignInRequest) (*SignInResponse, error) {
 	supabaseResp, err := a.supabaseClient.Auth.SignInWithEmailPassword(req.Email, req.Password)
 	if err != nil {
+		// Check if the error is due to unconfirmed email
+		if err.Error() == "response status code 400: {\"code\":400,\"error_code\":\"email_not_confirmed\",\"msg\":\"Email not confirmed\"}" {
+			return nil, errors.New("Please check your email for a confirmation link. If you haven't received it, try signing up again.")
+		}
+
 		return nil, err
 	}
 
-	internalUser, err := a.userService.FindByExternalUserID(ctx, supabaseResp.User.ID)
+	supabaseUser := supabaseResp.User
+	internalUser, err := a.userService.FindByExternalUserID(ctx, supabaseUser.ID)
 	if err != nil {
-		a.logger.Error("Failed to sign in", zap.Error(err))
+		if errors.IsNotFound(err) {
+			return nil, errors.New("User not found. Please sign up first.")
+		}
 		return nil, err
 	}
 
 	resp := &SignInResponse{
-		Session:  supabaseResp.Session,
-		UserID:   internalUser.ID.String(),
-		Username: internalUser.Username,
-		Email:    supabaseResp.User.Email,
+		Session:      supabaseResp.Session,
+		UserID:       internalUser.ID.String(),
+		Username:     internalUser.Username,
+		ExternalUser: supabaseUser.ID.String(),
+		Email:        supabaseUser.Email,
 	}
 
 	return resp, nil
@@ -135,4 +153,30 @@ func (a *AuthService) validateSignUp(req SignUpRequest) error {
 	}
 
 	return nil
+}
+
+func (a *AuthService) ValidateToken(ctx context.Context, token string) (*Claims, error) {
+	user, err := a.supabaseClient.Auth.GetUser()
+	if err != nil {
+		return nil, err
+	}
+
+	supabaseUser := user.User
+	internalUser, err := a.userService.FindByExternalUserID(ctx, supabaseUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Claims{
+		UserID: internalUser.ID.String(),
+		Email:  supabaseUser.Email,
+	}, nil
+}
+
+func (a *AuthService) ValidateSession(token string) (*types.User, error) {
+	user, err := a.supabaseClient.Auth.GetUser()
+	if err != nil {
+		return nil, err
+	}
+	return &user.User, nil
 }
