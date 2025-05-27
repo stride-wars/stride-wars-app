@@ -115,10 +115,7 @@ func (a *AuthService) SignIn(ctx context.Context, req SignInRequest) (*SignInRes
 		if err.Error() == "response status code 400: {\"code\":400,\"error_code\":\"email_not_confirmed\",\"msg\":\"Email not confirmed\"}" {
 			return nil, errors.New("Please check your email for a confirmation link. If you haven't received it, try signing up again.")
 		}
-		// Check if the error is due to invalid credentials
-		if err.Error() == "response status code 400: {\"code\":400,\"error_code\":\"invalid_grant\",\"msg\":\"Invalid login credentials\"}" {
-			return nil, errors.New("Invalid email or password")
-		}
+
 		return nil, err
 	}
 

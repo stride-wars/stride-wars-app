@@ -38,6 +38,11 @@ class ApiClient {
 
       return session;
     } catch (error) {
+      console.error('Failed to refresh token:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name,
+      });
       await this.signOut();
       return null;
     }
