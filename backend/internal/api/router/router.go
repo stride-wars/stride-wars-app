@@ -28,6 +28,8 @@ func New(logger *zap.Logger) *Router {
 func (r *Router) Setup(
 	authHandler *handler.AuthHandler,
 	authService *service.AuthService,
+	userHandler *handler.UserHandler,
+	userService *service.UserService,
 ) {
 	// CORS must be first to handle preflight requests
 	r.router.Use(middleware.CORS())
@@ -81,6 +83,11 @@ func (r *Router) Setup(
 	auth := api.PathPrefix("/auth").Subrouter()
 	auth.HandleFunc("/signup", authHandler.SignUp).Methods("POST")
 	auth.HandleFunc("/signin", authHandler.SignIn).Methods("POST")
+
+	users := api.PathPrefix("/user").Subrouter()
+	users.HandleFunc("/{username}", userHandler.GetUserByUsername).Methods("GET")
+	users.HandleFunc("/{username}", userHandler.UpdateUsername).Methods("PUT")
+	users.HandleFunc("/{user-id}",userHandler.GetUserByID).Methods("GET")
 }
 
 // Handler returns the HTTP handler for the router

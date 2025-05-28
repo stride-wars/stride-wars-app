@@ -19,7 +19,7 @@ func NewHexDataHandler(logger *zap.Logger, entClient *ent.Client) *HexDataHandle
 
 func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ID string `json:"id"`
+		ID int64
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -32,7 +32,7 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		// Check if it's a duplicate key error
 		if ent.IsConstraintError(err) {
-			h.Logger.Info("Hex already exists", zap.String("id", req.ID))
+			h.Logger.Info("Hex already exists", zap.Int64("id", req.ID))
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"status":"already exists"}`))
 			return
@@ -42,7 +42,7 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.Logger.Info("Saved hex", zap.String("id", hex.ID))
+	h.Logger.Info("Saved hex", zap.Int64("id", hex.ID))
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
 }
