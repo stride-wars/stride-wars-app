@@ -34,7 +34,7 @@ export function useAuth() {
 
   const validateForm = (isLogin: boolean = false) => {
     const newErrors: Record<string, string> = {};
-    
+
     const emailError = validateEmail(email);
     if (emailError) newErrors.email = emailError;
 
@@ -82,16 +82,16 @@ export function useAuth() {
     try {
       const response = await api.signIn(email, password);
       console.log('%c Login Response:', 'color: #4CAF50; font-weight: bold', response);
-      
+
       if (response.error) {
         throw new Error(response.error);
       }
-      
+
       if (!response.data) {
         console.log('%c No data in response', 'color: #FF9800; font-weight: bold');
         throw new Error('Invalid email or password');
       }
-      
+
       // Store auth data
       await AsyncStorage.setItem('access_token', response.data.session.access_token);
       await AsyncStorage.setItem('refresh_token', response.data.session.refresh_token);

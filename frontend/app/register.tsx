@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { api } from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    username,
+    setUsername,
+    handleRegister,
+  } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const validateEmail = (email: string) => {
@@ -36,51 +44,16 @@ export default function RegisterScreen() {
     return '';
   };
 
-  const handleRegister = async () => {
-    const emailError = validateEmail(email);
-    const usernameError = validateUsername(username);
-    const passwordError = validatePassword(password);
-    const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
-
-    if (emailError || usernameError || passwordError || confirmPasswordError) {
-      Alert.alert('Error', [emailError, usernameError, passwordError, confirmPasswordError].filter(Boolean).join('\n'));
-      return;
-    }
-
+  const onRegister = async () => {
     setLoading(true);
-    try {
-      const response = await api.signUp(username, email, password);
-      
-      if (response.error) {
-        Alert.alert('Error', response.error);
-        return;
-      }
-
-      if (response.data) {
-        // Store auth data
-        await AsyncStorage.setItem('access_token', response.data.session.access_token);
-        await AsyncStorage.setItem('refresh_token', response.data.session.refresh_token);
-        await AsyncStorage.setItem('user', JSON.stringify({
-          id: response.data.user_id,
-          username: response.data.username,
-          email: response.data.email,
-          external_user: response.data.external_user
-        }));
-        
-        // Navigate to home screen
-        router.replace('/');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    await handleRegister()
+    setLoading(false)
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
-      
+
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -90,7 +63,7 @@ export default function RegisterScreen() {
         keyboardType="email-address"
         autoComplete="email"
       />
-      
+
       <TextInput
         style={styles.input}
         placeholder="Username"
@@ -117,18 +90,18 @@ export default function RegisterScreen() {
         secureTextEntry
         autoComplete="password-new"
       />
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.button}
-        onPress={handleRegister}
+        onPress={onRegister}
         disabled={loading}
       >
         <Text style={styles.buttonText}>
           {loading ? 'Creating Account...' : 'Register'}
         </Text>
       </TouchableOpacity>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.linkButton}
         onPress={() => router.push('/login')}
       >
