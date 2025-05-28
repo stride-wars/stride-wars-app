@@ -75,7 +75,7 @@ func (r *Router) Setup(
 
 	// Test route
 	api.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Router is working!"))
+		_, _ = w.Write([]byte("Router is working!"))
 	}).Methods("GET")
 
 	auth := api.PathPrefix("/auth").Subrouter()

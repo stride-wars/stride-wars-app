@@ -6,9 +6,10 @@ import (
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
 
+	"errors"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"errors"
 )
 
 type ActivityService struct {
@@ -48,8 +49,8 @@ func (as *ActivityService) FindByUserID(ctx context.Context, userID uuid.UUID) (
 func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *model.Activity) (*ent.Activity, error) {
 
 	if len(activityInput.H3Indexes) == 0 {
-        return nil, errors.New("activity must contain at least one H3 index")
-    }
+		return nil, errors.New("activity must contain at least one H3 index")
+	}
 
 	createdActivity, err := as.repository.CreateActivity(ctx, activityInput)
 	if err != nil {
@@ -58,7 +59,6 @@ func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *mo
 
 	userID := activityInput.UserID
 	h3Indexes := activityInput.H3Indexes
-
 
 	hexService := NewHexService(as.hexRepository, as.logger)
 	hexInfluenceService := NewHexInfluenceService(as.hexInfluenceRepository, as.logger)

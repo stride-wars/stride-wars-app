@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"go.uber.org/zap"
 	"stride-wars-app/internal/service"
+
+	"go.uber.org/zap"
 )
 
 type Handlers struct {

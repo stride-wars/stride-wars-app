@@ -374,13 +374,13 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 		require.NoError(t, err)
 
 		if i == 0 {
-    	// we expected “not found” → nil pointer
-    		require.Nil(t, positionPtr, "user should not be on the leaderboard for i == 0")
+			// we expected “not found” → nil pointer
+			require.Nil(t, positionPtr, "user should not be on the leaderboard for i == 0")
 		} else {
-    	// we expected position 1 → non-nil, value == 1
-    		require.NotNil(t, positionPtr, "user should be on the leaderboard for i != 0")
-    		require.Equal(t, 1, *positionPtr, "expected position 1")
-}
+			// we expected position 1 → non-nil, value == 1
+			require.NotNil(t, positionPtr, "user should be on the leaderboard for i != 0")
+			require.Equal(t, 1, *positionPtr, "expected position 1")
+		}
 
 	}
 
