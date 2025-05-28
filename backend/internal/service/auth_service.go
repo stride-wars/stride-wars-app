@@ -42,6 +42,7 @@ type SignInRequest struct {
 }
 
 type SignInResponse struct {
+	Data         string        `json:"data"`
 	Session      types.Session `json:"session"`
 	UserID       string        `json:"user_id"`
 	ExternalUser string        `json:"external_user"`
