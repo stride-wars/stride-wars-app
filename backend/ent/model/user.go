@@ -25,7 +25,7 @@ func (User) Fields() []ent.Field {
 
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("activity", Activity.Type).Ref("users"),
+		edge.From("activities", Activity.Type).Ref("user"),
 		edge.From("friendship", Friendship.Type).Ref("users"),
 		edge.From("hexinfluence", HexInfluence.Type).Ref("users"),
 	}

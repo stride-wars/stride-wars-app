@@ -24,7 +24,7 @@ type ActivityQuery struct {
 	order      []activity.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Activity
-	withUsers  *UserQuery
+	withUser   *UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,8 +61,8 @@ func (aq *ActivityQuery) Order(o ...activity.OrderOption) *ActivityQuery {
 	return aq
 }
 
-// QueryUsers chains the current query on the "users" edge.
-func (aq *ActivityQuery) QueryUsers() *UserQuery {
+// QueryUser chains the current query on the "user" edge.
+func (aq *ActivityQuery) QueryUser() *UserQuery {
 	query := (&UserClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
@@ -75,7 +75,7 @@ func (aq *ActivityQuery) QueryUsers() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(activity.Table, activity.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, activity.UsersTable, activity.UsersColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, activity.UserTable, activity.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -275,21 +275,21 @@ func (aq *ActivityQuery) Clone() *ActivityQuery {
 		order:      append([]activity.OrderOption{}, aq.order...),
 		inters:     append([]Interceptor{}, aq.inters...),
 		predicates: append([]predicate.Activity{}, aq.predicates...),
-		withUsers:  aq.withUsers.Clone(),
+		withUser:   aq.withUser.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
 	}
 }
 
-// WithUsers tells the query-builder to eager-load the nodes that are connected to
-// the "users" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *ActivityQuery) WithUsers(opts ...func(*UserQuery)) *ActivityQuery {
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *ActivityQuery) WithUser(opts ...func(*UserQuery)) *ActivityQuery {
 	query := (&UserClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	aq.withUsers = query
+	aq.withUser = query
 	return aq
 }
 
@@ -372,7 +372,7 @@ func (aq *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Act
 		nodes       = []*Activity{}
 		_spec       = aq.querySpec()
 		loadedTypes = [1]bool{
-			aq.withUsers != nil,
+			aq.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -393,16 +393,16 @@ func (aq *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Act
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := aq.withUsers; query != nil {
-		if err := aq.loadUsers(ctx, query, nodes, nil,
-			func(n *Activity, e *User) { n.Edges.Users = e }); err != nil {
+	if query := aq.withUser; query != nil {
+		if err := aq.loadUser(ctx, query, nodes, nil,
+			func(n *Activity, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (aq *ActivityQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *User)) error {
+func (aq *ActivityQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *User)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Activity)
 	for i := range nodes {
@@ -457,7 +457,7 @@ func (aq *ActivityQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if aq.withUsers != nil {
+		if aq.withUser != nil {
 			_spec.Node.AddColumnOnce(activity.FieldUserID)
 		}
 	}

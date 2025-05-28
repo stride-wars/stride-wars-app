@@ -17,21 +17,21 @@ const (
 	FieldExternalUser = "external_user"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
-	// EdgeActivity holds the string denoting the activity edge name in mutations.
-	EdgeActivity = "activity"
+	// EdgeActivities holds the string denoting the activities edge name in mutations.
+	EdgeActivities = "activities"
 	// EdgeFriendship holds the string denoting the friendship edge name in mutations.
 	EdgeFriendship = "friendship"
 	// EdgeHexinfluence holds the string denoting the hexinfluence edge name in mutations.
 	EdgeHexinfluence = "hexinfluence"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// ActivityTable is the table that holds the activity relation/edge.
-	ActivityTable = "activities"
-	// ActivityInverseTable is the table name for the Activity entity.
+	// ActivitiesTable is the table that holds the activities relation/edge.
+	ActivitiesTable = "activities"
+	// ActivitiesInverseTable is the table name for the Activity entity.
 	// It exists in this package in order to avoid circular dependency with the "activity" package.
-	ActivityInverseTable = "activities"
-	// ActivityColumn is the table column denoting the activity relation/edge.
-	ActivityColumn = "user_id"
+	ActivitiesInverseTable = "activities"
+	// ActivitiesColumn is the table column denoting the activities relation/edge.
+	ActivitiesColumn = "user_id"
 	// FriendshipTable is the table that holds the friendship relation/edge.
 	FriendshipTable = "friendships"
 	// FriendshipInverseTable is the table name for the Friendship entity.
@@ -88,17 +88,17 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUsername, opts...).ToFunc()
 }
 
-// ByActivityCount orders the results by activity count.
-func ByActivityCount(opts ...sql.OrderTermOption) OrderOption {
+// ByActivitiesCount orders the results by activities count.
+func ByActivitiesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newActivityStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newActivitiesStep(), opts...)
 	}
 }
 
-// ByActivity orders the results by activity terms.
-func ByActivity(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByActivities orders the results by activities terms.
+func ByActivities(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newActivityStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newActivitiesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -129,11 +129,11 @@ func ByHexinfluence(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newHexinfluenceStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newActivityStep() *sqlgraph.Step {
+func newActivitiesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ActivityInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, ActivityTable, ActivityColumn),
+		sqlgraph.To(ActivitiesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ActivitiesTable, ActivitiesColumn),
 	)
 }
 func newFriendshipStep() *sqlgraph.Step {

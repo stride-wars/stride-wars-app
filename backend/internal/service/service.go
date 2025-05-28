@@ -8,15 +8,29 @@ import (
 )
 
 type Services struct {
-	UserService *UserService
-	AuthService *AuthService
+	UserService           *UserService
+	AuthService           *AuthService
+	ActivityService       *ActivityService
+	HexService            *HexService
+	HexLeaderboardService *HexLeaderboardService
+	HexInfluenceService   *HexInfluenceService
 }
 
 func Provide(repositories *repository.Repositories, supabaseClient *supabase.Client, logger *zap.Logger) *Services {
 	userService := NewUserService(repositories.UserRepository, logger)
 
 	return &Services{
-		UserService: userService,
+		UserService: NewUserService(repositories.UserRepository, logger),
 		AuthService: NewAuthService(supabaseClient, logger, userService),
+		ActivityService: NewActivityService(repositories.ActivityRepository,
+			repositories.HexRepository,
+			repositories.HexInfluenceRepository,
+			repositories.HexLeaderboardRepository,
+			logger),
+		HexService: NewHexService(repositories.HexRepository, logger),
+		HexLeaderboardService: NewHexLeaderboardService(repositories.HexLeaderboardRepository,
+			repositories.HexInfluenceRepository,
+			logger),
+		HexInfluenceService: NewHexInfluenceService(repositories.HexInfluenceRepository, logger),
 	}
 }

@@ -131,8 +131,8 @@ func (hiq *HexInfluenceQuery) FirstX(ctx context.Context) *HexInfluence {
 
 // FirstID returns the first HexInfluence ID from the query.
 // Returns a *NotFoundError when no HexInfluence ID was found.
-func (hiq *HexInfluenceQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (hiq *HexInfluenceQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = hiq.Limit(1).IDs(setContextOp(ctx, hiq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -144,7 +144,7 @@ func (hiq *HexInfluenceQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hiq *HexInfluenceQuery) FirstIDX(ctx context.Context) int {
+func (hiq *HexInfluenceQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := hiq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -182,8 +182,8 @@ func (hiq *HexInfluenceQuery) OnlyX(ctx context.Context) *HexInfluence {
 // OnlyID is like Only, but returns the only HexInfluence ID in the query.
 // Returns a *NotSingularError when more than one HexInfluence ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hiq *HexInfluenceQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (hiq *HexInfluenceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = hiq.Limit(2).IDs(setContextOp(ctx, hiq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -199,7 +199,7 @@ func (hiq *HexInfluenceQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hiq *HexInfluenceQuery) OnlyIDX(ctx context.Context) int {
+func (hiq *HexInfluenceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := hiq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -227,7 +227,7 @@ func (hiq *HexInfluenceQuery) AllX(ctx context.Context) []*HexInfluence {
 }
 
 // IDs executes the query and returns a list of HexInfluence IDs.
-func (hiq *HexInfluenceQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (hiq *HexInfluenceQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if hiq.ctx.Unique == nil && hiq.path != nil {
 		hiq.Unique(true)
 	}
@@ -239,7 +239,7 @@ func (hiq *HexInfluenceQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hiq *HexInfluenceQuery) IDsX(ctx context.Context) []int {
+func (hiq *HexInfluenceQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := hiq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -335,7 +335,7 @@ func (hiq *HexInfluenceQuery) WithUsers(opts ...func(*UserQuery)) *HexInfluenceQ
 // Example:
 //
 //	var v []struct {
-//		H3Index string `json:"h3_index,omitempty"`
+//		H3Index int64 `json:"h3_index,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -358,7 +358,7 @@ func (hiq *HexInfluenceQuery) GroupBy(field string, fields ...string) *HexInflue
 // Example:
 //
 //	var v []struct {
-//		H3Index string `json:"h3_index,omitempty"`
+//		H3Index int64 `json:"h3_index,omitempty"`
 //	}
 //
 //	client.HexInfluence.Query().
@@ -446,8 +446,8 @@ func (hiq *HexInfluenceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 }
 
 func (hiq *HexInfluenceQuery) loadHex(ctx context.Context, query *HexQuery, nodes []*HexInfluence, init func(*HexInfluence), assign func(*HexInfluence, *Hex)) error {
-	ids := make([]string, 0, len(nodes))
-	nodeids := make(map[string][]*HexInfluence)
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*HexInfluence)
 	for i := range nodes {
 		fk := nodes[i].H3Index
 		if _, ok := nodeids[fk]; !ok {
@@ -514,7 +514,7 @@ func (hiq *HexInfluenceQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (hiq *HexInfluenceQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(hexinfluence.Table, hexinfluence.Columns, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(hexinfluence.Table, hexinfluence.Columns, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID))
 	_spec.From = hiq.sql
 	if unique := hiq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

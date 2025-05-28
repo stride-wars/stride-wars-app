@@ -10,9 +10,15 @@ type Hex struct {
 	ent.Schema
 }
 
+func (Hex) ID() ent.Field {
+	return field.Int64("id").
+		Immutable()
+}
+
 func (Hex) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Unique(),
+		field.Int64("id").
+			Immutable(),
 	}
 }
 

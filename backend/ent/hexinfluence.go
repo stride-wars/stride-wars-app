@@ -19,9 +19,9 @@ import (
 type HexInfluence struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// H3Index holds the value of the "h3_index" field.
-	H3Index string `json:"h3_index,omitempty"`
+	H3Index int64 `json:"h3_index,omitempty"`
 	// UserID holds the value of the "user_id" field.
 	UserID uuid.UUID `json:"user_id,omitempty"`
 	// Score holds the value of the "score" field.
@@ -74,13 +74,11 @@ func (*HexInfluence) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case hexinfluence.FieldScore:
 			values[i] = new(sql.NullFloat64)
-		case hexinfluence.FieldID:
-			values[i] = new(sql.NullInt64)
 		case hexinfluence.FieldH3Index:
-			values[i] = new(sql.NullString)
+			values[i] = new(sql.NullInt64)
 		case hexinfluence.FieldLastUpdated:
 			values[i] = new(sql.NullTime)
-		case hexinfluence.FieldUserID:
+		case hexinfluence.FieldID, hexinfluence.FieldUserID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -98,16 +96,16 @@ func (hi *HexInfluence) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case hexinfluence.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				hi.ID = *value
 			}
-			hi.ID = int(value.Int64)
 		case hexinfluence.FieldH3Index:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field h3_index", values[i])
 			} else if value.Valid {
-				hi.H3Index = value.String
+				hi.H3Index = value.Int64
 			}
 		case hexinfluence.FieldUserID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
@@ -174,7 +172,7 @@ func (hi *HexInfluence) String() string {
 	builder.WriteString("HexInfluence(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", hi.ID))
 	builder.WriteString("h3_index=")
-	builder.WriteString(hi.H3Index)
+	builder.WriteString(fmt.Sprintf("%v", hi.H3Index))
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", hi.UserID))

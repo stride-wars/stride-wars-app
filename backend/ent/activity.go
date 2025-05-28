@@ -27,7 +27,7 @@ type Activity struct {
 	// DistanceMeters holds the value of the "distance_meters" field.
 	DistanceMeters float64 `json:"distance_meters,omitempty"`
 	// H3Indexes holds the value of the "h3_indexes" field.
-	H3Indexes []string `json:"h3_indexes,omitempty"`
+	H3Indexes []int64 `json:"h3_indexes,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -38,22 +38,22 @@ type Activity struct {
 
 // ActivityEdges holds the relations/edges for other nodes in the graph.
 type ActivityEdges struct {
-	// Users holds the value of the users edge.
-	Users *User `json:"users,omitempty"`
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// UsersOrErr returns the Users value or an error if the edge
+// UserOrErr returns the User value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ActivityEdges) UsersOrErr() (*User, error) {
-	if e.Users != nil {
-		return e.Users, nil
+func (e ActivityEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
 	} else if e.loadedTypes[0] {
 		return nil, &NotFoundError{label: user.Label}
 	}
-	return nil, &NotLoadedError{edge: "users"}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -135,9 +135,9 @@ func (a *Activity) Value(name string) (ent.Value, error) {
 	return a.selectValues.Get(name)
 }
 
-// QueryUsers queries the "users" edge of the Activity entity.
-func (a *Activity) QueryUsers() *UserQuery {
-	return NewActivityClient(a.config).QueryUsers(a)
+// QueryUser queries the "user" edge of the Activity entity.
+func (a *Activity) QueryUser() *UserQuery {
+	return NewActivityClient(a.config).QueryUser(a)
 }
 
 // Update returns a builder for updating this Activity.

@@ -27,7 +27,7 @@ type UserQuery struct {
 	order            []user.OrderOption
 	inters           []Interceptor
 	predicates       []predicate.User
-	withActivity     *ActivityQuery
+	withActivities   *ActivityQuery
 	withFriendship   *FriendshipQuery
 	withHexinfluence *HexInfluenceQuery
 	// intermediate query (i.e. traversal path).
@@ -66,8 +66,8 @@ func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	return uq
 }
 
-// QueryActivity chains the current query on the "activity" edge.
-func (uq *UserQuery) QueryActivity() *ActivityQuery {
+// QueryActivities chains the current query on the "activities" edge.
+func (uq *UserQuery) QueryActivities() *ActivityQuery {
 	query := (&ActivityClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
@@ -80,7 +80,7 @@ func (uq *UserQuery) QueryActivity() *ActivityQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(activity.Table, activity.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ActivityTable, user.ActivityColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ActivitiesTable, user.ActivitiesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -324,7 +324,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		order:            append([]user.OrderOption{}, uq.order...),
 		inters:           append([]Interceptor{}, uq.inters...),
 		predicates:       append([]predicate.User{}, uq.predicates...),
-		withActivity:     uq.withActivity.Clone(),
+		withActivities:   uq.withActivities.Clone(),
 		withFriendship:   uq.withFriendship.Clone(),
 		withHexinfluence: uq.withHexinfluence.Clone(),
 		// clone intermediate query.
@@ -333,14 +333,14 @@ func (uq *UserQuery) Clone() *UserQuery {
 	}
 }
 
-// WithActivity tells the query-builder to eager-load the nodes that are connected to
-// the "activity" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithActivity(opts ...func(*ActivityQuery)) *UserQuery {
+// WithActivities tells the query-builder to eager-load the nodes that are connected to
+// the "activities" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithActivities(opts ...func(*ActivityQuery)) *UserQuery {
 	query := (&ActivityClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withActivity = query
+	uq.withActivities = query
 	return uq
 }
 
@@ -445,7 +445,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
 		loadedTypes = [3]bool{
-			uq.withActivity != nil,
+			uq.withActivities != nil,
 			uq.withFriendship != nil,
 			uq.withHexinfluence != nil,
 		}
@@ -468,10 +468,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := uq.withActivity; query != nil {
-		if err := uq.loadActivity(ctx, query, nodes,
-			func(n *User) { n.Edges.Activity = []*Activity{} },
-			func(n *User, e *Activity) { n.Edges.Activity = append(n.Edges.Activity, e) }); err != nil {
+	if query := uq.withActivities; query != nil {
+		if err := uq.loadActivities(ctx, query, nodes,
+			func(n *User) { n.Edges.Activities = []*Activity{} },
+			func(n *User, e *Activity) { n.Edges.Activities = append(n.Edges.Activities, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -492,7 +492,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	return nodes, nil
 }
 
-func (uq *UserQuery) loadActivity(ctx context.Context, query *ActivityQuery, nodes []*User, init func(*User), assign func(*User, *Activity)) error {
+func (uq *UserQuery) loadActivities(ctx context.Context, query *ActivityQuery, nodes []*User, init func(*User), assign func(*User, *Activity)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
@@ -506,7 +506,7 @@ func (uq *UserQuery) loadActivity(ctx context.Context, query *ActivityQuery, nod
 		query.ctx.AppendFieldOnce(activity.FieldUserID)
 	}
 	query.Where(predicate.Activity(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.ActivityColumn), fks...))
+		s.Where(sql.InValues(s.C(user.ActivitiesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

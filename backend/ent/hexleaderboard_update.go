@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"stride-wars-app/ent/hex"
 	"stride-wars-app/ent/hexleaderboard"
+	"stride-wars-app/ent/model"
 	"stride-wars-app/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 )
 
 // HexLeaderboardUpdate is the builder for updating HexLeaderboard entities.
@@ -30,27 +31,33 @@ func (hlu *HexLeaderboardUpdate) Where(ps ...predicate.HexLeaderboard) *HexLeade
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hlu *HexLeaderboardUpdate) SetH3Index(s string) *HexLeaderboardUpdate {
-	hlu.mutation.SetH3Index(s)
+func (hlu *HexLeaderboardUpdate) SetH3Index(i int64) *HexLeaderboardUpdate {
+	hlu.mutation.SetH3Index(i)
 	return hlu
 }
 
 // SetNillableH3Index sets the "h3_index" field if the given value is not nil.
-func (hlu *HexLeaderboardUpdate) SetNillableH3Index(s *string) *HexLeaderboardUpdate {
-	if s != nil {
-		hlu.SetH3Index(*s)
+func (hlu *HexLeaderboardUpdate) SetNillableH3Index(i *int64) *HexLeaderboardUpdate {
+	if i != nil {
+		hlu.SetH3Index(*i)
 	}
 	return hlu
 }
 
 // SetTopUsers sets the "top_users" field.
-func (hlu *HexLeaderboardUpdate) SetTopUsers(m map[string][]uuid.UUID) *HexLeaderboardUpdate {
-	hlu.mutation.SetTopUsers(m)
+func (hlu *HexLeaderboardUpdate) SetTopUsers(mu []model.TopUser) *HexLeaderboardUpdate {
+	hlu.mutation.SetTopUsers(mu)
+	return hlu
+}
+
+// AppendTopUsers appends mu to the "top_users" field.
+func (hlu *HexLeaderboardUpdate) AppendTopUsers(mu []model.TopUser) *HexLeaderboardUpdate {
+	hlu.mutation.AppendTopUsers(mu)
 	return hlu
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hlu *HexLeaderboardUpdate) SetHexID(id string) *HexLeaderboardUpdate {
+func (hlu *HexLeaderboardUpdate) SetHexID(id int64) *HexLeaderboardUpdate {
 	hlu.mutation.SetHexID(id)
 	return hlu
 }
@@ -110,7 +117,7 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 	if err := hlu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	if ps := hlu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -121,6 +128,11 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 	if value, ok := hlu.mutation.TopUsers(); ok {
 		_spec.SetField(hexleaderboard.FieldTopUsers, field.TypeJSON, value)
 	}
+	if value, ok := hlu.mutation.AppendedTopUsers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, hexleaderboard.FieldTopUsers, value)
+		})
+	}
 	if hlu.mutation.HexCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -129,7 +141,7 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -142,7 +154,7 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -171,27 +183,33 @@ type HexLeaderboardUpdateOne struct {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hluo *HexLeaderboardUpdateOne) SetH3Index(s string) *HexLeaderboardUpdateOne {
-	hluo.mutation.SetH3Index(s)
+func (hluo *HexLeaderboardUpdateOne) SetH3Index(i int64) *HexLeaderboardUpdateOne {
+	hluo.mutation.SetH3Index(i)
 	return hluo
 }
 
 // SetNillableH3Index sets the "h3_index" field if the given value is not nil.
-func (hluo *HexLeaderboardUpdateOne) SetNillableH3Index(s *string) *HexLeaderboardUpdateOne {
-	if s != nil {
-		hluo.SetH3Index(*s)
+func (hluo *HexLeaderboardUpdateOne) SetNillableH3Index(i *int64) *HexLeaderboardUpdateOne {
+	if i != nil {
+		hluo.SetH3Index(*i)
 	}
 	return hluo
 }
 
 // SetTopUsers sets the "top_users" field.
-func (hluo *HexLeaderboardUpdateOne) SetTopUsers(m map[string][]uuid.UUID) *HexLeaderboardUpdateOne {
-	hluo.mutation.SetTopUsers(m)
+func (hluo *HexLeaderboardUpdateOne) SetTopUsers(mu []model.TopUser) *HexLeaderboardUpdateOne {
+	hluo.mutation.SetTopUsers(mu)
+	return hluo
+}
+
+// AppendTopUsers appends mu to the "top_users" field.
+func (hluo *HexLeaderboardUpdateOne) AppendTopUsers(mu []model.TopUser) *HexLeaderboardUpdateOne {
+	hluo.mutation.AppendTopUsers(mu)
 	return hluo
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hluo *HexLeaderboardUpdateOne) SetHexID(id string) *HexLeaderboardUpdateOne {
+func (hluo *HexLeaderboardUpdateOne) SetHexID(id int64) *HexLeaderboardUpdateOne {
 	hluo.mutation.SetHexID(id)
 	return hluo
 }
@@ -264,7 +282,7 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 	if err := hluo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(hexleaderboard.Table, hexleaderboard.Columns, sqlgraph.NewFieldSpec(hexleaderboard.FieldID, field.TypeUUID))
 	id, ok := hluo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "HexLeaderboard.id" for update`)}
@@ -292,6 +310,11 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 	if value, ok := hluo.mutation.TopUsers(); ok {
 		_spec.SetField(hexleaderboard.FieldTopUsers, field.TypeJSON, value)
 	}
+	if value, ok := hluo.mutation.AppendedTopUsers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, hexleaderboard.FieldTopUsers, value)
+		})
+	}
 	if hluo.mutation.HexCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -300,7 +323,7 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -313,7 +336,7 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

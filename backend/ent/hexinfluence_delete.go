@@ -40,7 +40,7 @@ func (hid *HexInfluenceDelete) ExecX(ctx context.Context) int {
 }
 
 func (hid *HexInfluenceDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(hexinfluence.Table, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(hexinfluence.Table, sqlgraph.NewFieldSpec(hexinfluence.FieldID, field.TypeUUID))
 	if ps := hid.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

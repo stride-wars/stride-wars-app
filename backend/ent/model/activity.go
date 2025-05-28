@@ -14,7 +14,7 @@ type Activity struct {
 	UserID    uuid.UUID
 	Duration  float64
 	Distance  float64
-	H3Indexes []string
+	H3Indexes []int64
 	CreatedAt time.Time
 	ent.Schema
 }
@@ -25,13 +25,17 @@ func (Activity) Fields() []ent.Field {
 		field.UUID("user_id", uuid.UUID{}),
 		field.Float("duration_seconds"),
 		field.Float("distance_meters"),
-		field.Strings("h3_indexes"),
-		field.Time("created_at"),
+		field.JSON("h3_indexes", []int64{}),
+		field.Time("created_at").Default(time.Now()),
 	}
 }
 
 func (Activity) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("users", User.Type).Unique().Field("user_id").Required(),
+		// This *creates* the FK on activity.user_id → user.id
+		edge.To("user", User.Type).
+			Field("user_id").
+			Unique().
+			Required(),
 	}
 }

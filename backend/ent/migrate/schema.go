@@ -24,7 +24,7 @@ var (
 		PrimaryKey: []*schema.Column{ActivitiesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "activities_users_users",
+				Symbol:     "activities_users_user",
 				Columns:    []*schema.Column{ActivitiesColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
@@ -60,7 +60,7 @@ var (
 	}
 	// HexesColumns holds the columns for the "hexes" table.
 	HexesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString, Unique: true},
+		{Name: "id", Type: field.TypeInt64, Increment: true},
 	}
 	// HexesTable holds the schema information for the "hexes" table.
 	HexesTable = &schema.Table{
@@ -70,10 +70,10 @@ var (
 	}
 	// HexInfluencesColumns holds the columns for the "hex_influences" table.
 	HexInfluencesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "score", Type: field.TypeFloat64},
 		{Name: "last_updated", Type: field.TypeTime},
-		{Name: "h3_index", Type: field.TypeString},
+		{Name: "h3_index", Type: field.TypeInt64},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// HexInfluencesTable holds the schema information for the "hex_influences" table.
@@ -98,9 +98,9 @@ var (
 	}
 	// HexLeaderboardsColumns holds the columns for the "hex_leaderboards" table.
 	HexLeaderboardsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "top_users", Type: field.TypeJSON},
-		{Name: "h3_index", Type: field.TypeString},
+		{Name: "h3_index", Type: field.TypeInt64},
 	}
 	// HexLeaderboardsTable holds the schema information for the "hex_leaderboards" table.
 	HexLeaderboardsTable = &schema.Table{
