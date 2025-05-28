@@ -1,4 +1,4 @@
-import { h3IndexToSplitLong,  latLngToCell} from "h3-js";
+import {latLngToCell} from "h3-js";
 
 interface LocationData {
   latitude: number;
@@ -11,7 +11,7 @@ const res = 9; // the size of hexes
 export const sendLocationData = async (location: LocationData): Promise<void> => {
   try {
     const cellId = String(latLngToCell(location.latitude, location.longitude, res));
-    //console.log('cellId:', cellId, typeof cellId);
+    console.log('cellId:', cellId, typeof cellId);
     const response = await fetch('http://localhost:8080/api/data', {
       method: 'POST',
       headers: {
