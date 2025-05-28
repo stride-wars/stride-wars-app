@@ -12,6 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// DecayRatePerWeek is the fraction by which a score decays each week.
+const DecayRatePerWeek = 0.1
+
+// HoursPerWeek is the total number of hours in one week.
+const HoursPerWeek = 24.0 * 7.0
+
+
 type HexInfluenceRepository struct {
 	client *ent.Client
 }
@@ -56,18 +63,21 @@ func (r HexInfluenceRepository) UpdateHexInfluence(ctx context.Context, userID u
 		return 0, nil
 	}
 
-	new_update_time := time.Now()
-	multiplyer := 1 - 0.1*new_update_time.Sub(hexInfluence.LastUpdated).Hours()/24.0/7.0
-	multiplyer = math.Round(multiplyer*10) / 10
-	if multiplyer < 0.0 {
-		multiplyer = 0.1
-	}
+    now := time.Now()
+    // Calculate how much to multiply the old score by, based on hours elapsed:
+    elapsedHours := now.Sub(hexInfluence.LastUpdated).Hours()
+    multiplier := 1 - DecayRatePerWeek*(elapsedHours/HoursPerWeek)
+    // Round to one decimal place:
+    multiplier = math.Round(multiplier*10) / 10
+    if multiplier < 0 {
+        multiplier = 0.1
+    }
 
-	new_score := hexInfluence.Score*multiplyer + 1.0
+	new_score := hexInfluence.Score*multiplier + 1.0
 
 	return r.client.HexInfluence.Update().
 		Where(entHexInfluence.IDEQ(hexInfluence.ID)).
-		SetLastUpdated(new_update_time).
+		SetLastUpdated(now).
 		SetScore(new_score).
 		Save(ctx)
 }

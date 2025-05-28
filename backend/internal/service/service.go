@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service struct {
+type Services struct {
 	UserService           *UserService
 	AuthService           *AuthService
 	ActivityService       *ActivityService
@@ -16,19 +16,21 @@ type Service struct {
 	HexInfluenceService   *HexInfluenceService
 }
 
-func Provide(entClient *ent.Client, supabaseClient *supabase.Client, logger *zap.Logger) *Service {
-	return &Service{
-		UserService: NewUserService(repository.NewUserRepository(entClient), logger),
-		AuthService: NewAuthService(supabaseClient, logger),
-		ActivityService: NewActivityService(repository.NewActivityRepository(entClient),
-			repository.NewHexRepository(entClient),
-			repository.NewHexInfluenceRepository(entClient),
-			repository.NewHexLeaderboardRepository(entClient),
+func Provide(repositories *repository.Repositories, supabaseClient *supabase.Client, logger *zap.Logger) *Services {
+	userService := NewUserService(repositories.UserRepository, logger)
+
+	return &Services{
+		UserService: NewUserService(repositories.UserRepository, logger),
+		AuthService: NewAuthService(supabaseClient, logger, userService),
+		ActivityService: NewActivityService(repositories.ActivityRepository,
+			repositories.HexRepository,
+			repositories.HexInfluenceRepository,
+			repositories.HexLeaderboardRepository,
 			logger),
-		HexService: NewHexService(repository.NewHexRepository(entClient), logger),
-		HexLeaderboardService: NewHexLeaderboardService(repository.NewHexLeaderboardRepository(entClient),
-			repository.NewHexInfluenceRepository(entClient),
+		HexService: NewHexService(repositories.HexRepository, logger),
+		HexLeaderboardService: NewHexLeaderboardService(repositories.HexLeaderboardRepository,
+			repositories.HexInfluenceRepository,
 			logger),
-		HexInfluenceService: NewHexInfluenceService(repository.NewHexInfluenceRepository(entClient), logger),
+		HexInfluenceService: NewHexInfluenceService(repositories.HexInfluenceRepository, logger),
 	}
 }

@@ -35,21 +35,22 @@ func (r HexLeaderboardRepository) FindByH3Indexes(ctx context.Context, h3Indexes
 	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.H3IndexIn(h3Indexes...)).All(ctx)
 }
 
-// Return users position in a particualr hex's leaderboard, returns -1 if the user is not in the leaderboard / in case of an error
-func (r HexLeaderboardRepository) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (int, error) {
+// Return users position in a particular hex's leaderboard, returns nil if the user is not in the leaderboard / in case of an error
+func (r HexLeaderboardRepository) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
 	hexLeaderboard, err := r.FindByH3Index(ctx, hexID)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	if hexLeaderboard == nil {
-		return -1, nil
+		return nil, nil
 	}
 
 	topUsers := hexLeaderboard.TopUsers
-	for i, user := range topUsers {
+	for idx, user := range topUsers {
 		if user.UserID == userID {
-			return i + 1, nil
+			pos := idx + 1
+			return &pos, nil
 		}
 	}
-	return -1, nil
+	return nil, nil
 }

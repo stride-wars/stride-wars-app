@@ -324,7 +324,7 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 	ctx, client, svc := setupTest(t)
 
 	userRepo := repository.NewUserRepository(client)
-	hexLeadearboardRepo := repository.NewHexLeaderboardRepository(client)
+	hexLeaderboardRepo := repository.NewHexLeaderboardRepository(client)
 
 	usernames := []string{
 		"grzegorzbraun",
@@ -370,15 +370,18 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 		_, err := svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
 
-		position, l_err := hexLeadearboardRepo.GetUserPositionInLeaderboard(ctx, indexes[0], leper.ID)
-		require.NoError(t, l_err)
-		expected_postion := 0
+		positionPtr, err := hexLeaderboardRepo.GetUserPositionInLeaderboard(ctx, indexes[0], leper.ID)
+		require.NoError(t, err)
+
 		if i == 0 {
-			expected_postion = -1
+    	// we expected “not found” → nil pointer
+    		require.Nil(t, positionPtr, "user should not be on the leaderboard for i == 0")
 		} else {
-			expected_postion = 1
-		}
-		require.Equal(t, expected_postion, position)
+    	// we expected position 1 → non-nil, value == 1
+    		require.NotNil(t, positionPtr, "user should be on the leaderboard for i != 0")
+    		require.Equal(t, 1, *positionPtr, "expected position 1")
+}
+
 	}
 
 }

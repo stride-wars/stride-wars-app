@@ -11,9 +11,9 @@ import (
 type Repositories struct {
 	UserRepository     UserRepository
 	ActivityRepository ActivityRepository
-	// HexRepository *HexRepository
-	// HexInfluenceRepository *HexInfluenceRepository
-	// HexLeaderboardRepository *HexLeaderboardRepository
+	HexRepository HexRepository
+	HexInfluenceRepository HexInfluenceRepository
+	HexLeaderboardRepository HexLeaderboardRepository
 	// FriendshipRepository *FriendshipRepository
 }
 
@@ -21,6 +21,9 @@ func Provide(client *ent.Client) *Repositories {
 	return &Repositories{
 		UserRepository:     NewUserRepository(client),
 		ActivityRepository: NewActivityRepository(client),
+		HexRepository: NewHexRepository(client),
+		HexInfluenceRepository: NewHexInfluenceRepository(client),
+		HexLeaderboardRepository: NewHexLeaderboardRepository(client),
 	}
 }
 
