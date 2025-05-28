@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../hooks/useAuth'; // import the hook
+
 
 interface User {
   id: string;
@@ -13,6 +15,8 @@ export default function IndexScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const { handleLogout } = useAuth();
+
 
   useEffect(() => {
     checkAuth();
@@ -43,6 +47,9 @@ export default function IndexScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
           <Text style={styles.welcomeText}>
             Welcome, {user.username}!
           </Text>
@@ -127,5 +134,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
+  },
+  logoutButton: {
+    marginTop: 24,
+    backgroundColor: '#ff3b30',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

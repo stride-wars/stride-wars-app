@@ -111,6 +111,18 @@ export function useAuth() {
     }
   };
 
+const handleLogout = async () => {
+  try {
+    await AsyncStorage.removeItem('access_token');
+    await AsyncStorage.removeItem('refresh_token');
+    await AsyncStorage.removeItem('user');
+    router.replace('/login');
+  } catch (error) {
+    Alert.alert('Logout Error', 'An error occurred while logging out.');
+    console.error('Logout Error:', error);
+  }
+};
+
   return {
     email,
     setEmail,
@@ -123,5 +135,6 @@ export function useAuth() {
     errors,
     handleRegister,
     handleLogin,
+    handleLogout,
   };
 }
