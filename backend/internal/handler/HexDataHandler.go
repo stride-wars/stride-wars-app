@@ -34,7 +34,7 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		if ent.IsConstraintError(err) {
 			h.Logger.Info("Hex already exists", zap.Int64("id", req.ID))
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"already exists"}`))
+			_, _ = w.Write([]byte(`{"status":"already exists"}`))
 			return
 		}
 		h.Logger.Error("Failed to save hex", zap.Error(err))
@@ -44,5 +44,5 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 
 	h.Logger.Info("Saved hex", zap.Int64("id", hex.ID))
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }

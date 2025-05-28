@@ -30,6 +30,10 @@ func (r *Router) Setup(
 	authService *service.AuthService,
 	userHandler *handler.UserHandler,
 	userService *service.UserService,
+	activityHandler *handler.ActivityHandler,
+	activityService *service.ActivityService,
+	hexLeaderboardHandler *handler.HexLeaderboardHandler,
+	hexLeaderboardService *service.HexLeaderboardService,
 ) {
 	// CORS must be first to handle preflight requests
 	r.router.Use(middleware.CORS())
@@ -87,7 +91,13 @@ func (r *Router) Setup(
 	users := api.PathPrefix("/user").Subrouter()
 	users.HandleFunc("/{username}", userHandler.GetUserByUsername).Methods("GET")
 	users.HandleFunc("/{username}", userHandler.UpdateUsername).Methods("PUT")
-	users.HandleFunc("/{user-id}",userHandler.GetUserByID).Methods("GET")
+	users.HandleFunc("/{user-id}", userHandler.GetUserByID).Methods("GET")
+
+	activity := api.PathPrefix("/activity").Subrouter()
+	activity.HandleFunc("/create", activityHandler.CreateActivity).Methods("POST")
+
+	leaderboard := api.PathPrefix("/leaderboard").Subrouter()
+	leaderboard.HandleFunc("/{bbox}", hexLeaderboardHandler.GetAllLeaderboardsInsideBBBox).Methods("GET")
 }
 
 // Handler returns the HTTP handler for the router

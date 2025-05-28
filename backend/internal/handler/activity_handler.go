@@ -1,0 +1,60 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"stride-wars-app/ent/model"
+	"stride-wars-app/internal/api/middleware"
+	"stride-wars-app/internal/service"
+
+	"go.uber.org/zap"
+)
+
+type ActivityHandler struct {
+	activityService *service.ActivityService
+	logger          *zap.Logger
+}
+
+func NewActivityHandler(activityService *service.ActivityService, logger *zap.Logger) *ActivityHandler {
+	return &ActivityHandler{
+		activityService: activityService,
+		logger:          logger,
+	}
+}
+
+func (h *ActivityHandler) CreateActivity(w http.ResponseWriter, r *http.Request) {
+	data, ok := middleware.GetJSONBody(r)
+	if !ok {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	// Convert the generic data to JSON bytes
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
+		return
+	}
+
+	// Unmarshal into the request struct
+	var req service.CreateActivityRequest
+	if err := json.Unmarshal(jsonData, &req); err != nil {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
+		return
+	}
+
+	activity := &model.Activity{
+		UserID:    req.UserID,
+		H3Indexes: req.H3Indexes,
+		Duration:  req.Duration,
+		Distance:  req.Distance,
+	}
+	resp, err := h.activityService.CreateActivity(r.Context(), activity)
+	if err != nil {
+		h.logger.Error("create activity failed", zap.Error(err))
+		middleware.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	middleware.WriteJSON(w, http.StatusCreated, resp)
+}
