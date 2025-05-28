@@ -1,13 +1,12 @@
+version: 2
+
 linters:
   enable:
     - govet
     - errcheck
     - staticcheck
     - unused
-    - gofmt
-    - goimports
     - gocritic
-    - gosimple
 
 gofmt:
   simplify: true

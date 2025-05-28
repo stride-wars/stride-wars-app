@@ -10,7 +10,10 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("%s: %s", e.Msg, e.Err)
+	if e.Err == nil {
+		return e.Msg
+	}
+	return fmt.Sprintf("%s: %v", e.Msg, e.Err)
 }
 
 func (e *Error) Unwrap() error {
@@ -32,4 +35,12 @@ func New(msg string) error {
 	return &Error{
 		Msg: msg,
 	}
+}
+
+// IsNotFound checks if the error is a "not found" error
+func IsNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	return err.Error() == "ent: user not found"
 }

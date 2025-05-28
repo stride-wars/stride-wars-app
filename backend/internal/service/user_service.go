@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
-
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 type UserService struct {
@@ -21,6 +20,10 @@ func NewUserService(repository repository.UserRepository, logger *zap.Logger) *U
 
 func (us *UserService) FindByID(ctx context.Context, uuid uuid.UUID) (*ent.User, error) {
 	return us.repository.FindByID(ctx, uuid)
+}
+
+func (us *UserService) FindByExternalUserID(ctx context.Context, uuid uuid.UUID) (*ent.User, error) {
+	return us.repository.FindByExternalUserID(ctx, uuid)
 }
 
 func (us *UserService) FindByIDs(ctx context.Context, uuids []uuid.UUID) ([]*ent.User, error) {

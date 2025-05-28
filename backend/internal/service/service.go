@@ -1,7 +1,6 @@
 package service
 
 import (
-	"stride-wars-app/ent"
 	"stride-wars-app/internal/repository"
 
 	"github.com/supabase-community/supabase-go"
