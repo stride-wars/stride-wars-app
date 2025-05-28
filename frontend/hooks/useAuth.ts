@@ -93,8 +93,8 @@ export function useAuth() {
       }
 
       // Store auth data
-      await AsyncStorage.setItem('access_token', response.data.session.access_token);
-      await AsyncStorage.setItem('refresh_token', response.data.session.refresh_token);
+      await AsyncStorage.setItem('access_token', response.data.data.session.access_token);
+      await AsyncStorage.setItem('refresh_token', response.data.data.session.refresh_token);
       await AsyncStorage.setItem('user', JSON.stringify({
         id: response.data.user_id,
         username: response.data.username,
