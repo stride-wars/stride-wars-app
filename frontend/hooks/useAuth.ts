@@ -92,14 +92,15 @@ export function useAuth() {
         throw new Error('Invalid email or password');
       }
 
+      const {username, external_user, session, user_id, email: user_email} = response.data.data
       // Store auth data
-      await AsyncStorage.setItem('access_token', response.data.data.session.access_token);
-      await AsyncStorage.setItem('refresh_token', response.data.data.session.refresh_token);
+      await AsyncStorage.setItem('access_token', session.access_token);
+      await AsyncStorage.setItem('refresh_token', session.refresh_token);
       await AsyncStorage.setItem('user', JSON.stringify({
-        id: response.data.user_id,
-        username: response.data.username,
-        email: response.data.email,
-        external_user: response.data.external_user
+        id: user_id,
+        username,
+        email: user_email,
+        external_user,
       }));
       router.replace('/');
     } catch (error) {

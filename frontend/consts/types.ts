@@ -10,8 +10,11 @@ export interface SignInRequest {
 }
 
 export interface Data{
-  data: string
   session: Session
+  email: string;
+  external_user: string;
+  user_id: string;
+  username: string;
 }
 
 
