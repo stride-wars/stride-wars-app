@@ -69,7 +69,7 @@ export function useAuth() {
           email: response.data.email,
           external_user: response.data.external_user
         }));
-        router.replace('/');
+        router.replace('/(tabs)');
       }
     } catch (error) {
       handleError(error);
@@ -102,7 +102,7 @@ export function useAuth() {
         email: user_email,
         external_user,
       }));
-      router.replace('/');
+      router.replace('/(tabs)');
     } catch (error) {
       console.log('%c Login Error:', 'color: #F44336; font-weight: bold', error);
       if (error instanceof Error) {
@@ -112,17 +112,17 @@ export function useAuth() {
     }
   };
 
-const handleLogout = async () => {
-  try {
-    await AsyncStorage.removeItem('access_token');
-    await AsyncStorage.removeItem('refresh_token');
-    await AsyncStorage.removeItem('user');
-    router.replace('/login');
-  } catch (error) {
-    Alert.alert('Logout Error', 'An error occurred while logging out.');
-    console.error('Logout Error:', error);
-  }
-};
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('access_token');
+      await AsyncStorage.removeItem('refresh_token');
+      await AsyncStorage.removeItem('user');
+      router.replace('/login');
+    } catch (error) {
+      Alert.alert('Logout Error', 'An error occurred while logging out.');
+      console.error('Logout Error:', error);
+    }
+  };
 
   return {
     email,

@@ -32,6 +32,7 @@ export default function IndexScreen() {
       const userData = await AsyncStorage.getItem('user')
       if (userData) {
         setUser(JSON.parse(userData))
+        router.replace('/(tabs)')
       }
     } catch (error) {
       console.error('Error checking auth:', error)
