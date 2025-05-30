@@ -16,17 +16,8 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 )
 
-type GetUserByUsernameRequest struct {
-	Username string `json:"username"`
-}
 
-type GetUserByUserIDRequest struct {
-	UserID uuid.UUID
-}
 
-type ChangeUsernameRequest struct {
-	NewUsername string `json:"new_username"`
-}
 
 type UpdateUsernameRequest struct {
 	OldUsername string `json:"old_username"`
@@ -69,12 +60,12 @@ func (us *UserService) CreateUser(ctx context.Context, user *model.User) (*ent.U
 
 // TO DO: update username
 
-func (s *UserService) UpdateUsername(ctx context.Context, req *UpdateUsernameRequest) (*UpdateUsernameResponse, error) {
+func (s *UserService) UpdateUsername(ctx context.Context, req *UpdateUsernameRequest) (*ent.User, error) {
 	// 1) Fetch the existing user
 	usr, err := s.repository.FindByUsername(ctx, req.OldUsername)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return nil, ErrUserNotFound
+			return nil, err
 		}
 		return nil, err
 	}
@@ -93,12 +84,13 @@ func (s *UserService) UpdateUsername(ctx context.Context, req *UpdateUsernameReq
 		return nil, err
 	}
 	if rowsAffected == 0 {
-		return nil, ErrUserNotFound
+		return nil, err
 	}
 
 	// 4) Build response
-	return &UpdateUsernameResponse{
-		ID:          updatedUser.ID,
-		NewUsername: updatedUser.Username,
-	}, nil
+	updated_usr, err := s.repository.FindByUsername(ctx, req.NewUsername)
+	if err != nil {
+		return nil, err
+	}
+	return updated_usr, nil
 }

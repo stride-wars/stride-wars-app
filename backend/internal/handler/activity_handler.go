@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/service"
 
@@ -23,27 +22,17 @@ func NewActivityHandler(activityService *service.ActivityService, logger *zap.Lo
 }
 
 func (h *ActivityHandler) CreateActivity(w http.ResponseWriter, r *http.Request) {
-	data, ok := middleware.GetJSONBody(r)
-	if !ok {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
 
-	// Convert the generic data to JSON bytes
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
-		return
-	}
-
+	// Can't use middleware.ParseJSON because it maps int64 into float64 causing inaccurate h3indexes
 	// Unmarshal into the request struct
 	var req service.CreateActivityRequest
-	if err := json.Unmarshal(jsonData, &req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
 		return
 	}
 
-	activity := &model.Activity{
+
+	activity := service.CreateActivityRequest{
 		UserID:    req.UserID,
 		H3Indexes: req.H3Indexes,
 		Duration:  req.Duration,

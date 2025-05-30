@@ -2,12 +2,13 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/service"
 
 	"go.uber.org/zap"
+	"github.com/google/uuid"
+	"stride-wars-app/ent"
 )
 
 type UserHandler struct {
@@ -34,6 +35,10 @@ func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) 
 	resp, err := h.userService.FindByUsername(r.Context(), username)
 	if err != nil {
 		h.logger.Error("find user by username failed", zap.Error(err))
+		if ent.IsNotFound(err) {
+			middleware.WriteError(w, http.StatusNotFound, "user not found")
+			return
+		}
 		middleware.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -42,36 +47,38 @@ func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) 
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
 
+
 func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	data, ok := middleware.GetJSONBody(r)
-	if !ok {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+	// Extract the "id" query parameter
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		middleware.WriteError(w, http.StatusBadRequest, "Missing 'id' query parameter")
 		return
 	}
 
-	// Convert the generic data to JSON bytes
-	jsonData, err := json.Marshal(data)
+	// Validate UUID
+	userID, err := uuid.Parse(idStr)
 	if err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid UUID format for 'id'")
 		return
 	}
 
-	// Unmarshal into the request struct
-	var req service.GetUserByUserIDRequest
-	if err := json.Unmarshal(jsonData, &req); err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
-		return
-	}
-
-	resp, err := h.userService.FindByID(r.Context(), req.UserID)
+	// Call the service
+	resp, err := h.userService.FindByID(r.Context(), userID)
 	if err != nil {
 		h.logger.Error("find user by ID failed", zap.Error(err))
+		if ent.IsNotFound(err) {
+			middleware.WriteError(w, http.StatusNotFound, "user not found")
+			return
+		}
 		middleware.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	// Return the response
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
+
 
 func (h *UserHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
 	data, ok := middleware.GetJSONBody(r)
@@ -98,7 +105,7 @@ func (h *UserHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("update username failed", zap.Error(err))
 		switch {
-		case errors.Is(err, service.ErrUserNotFound):
+		case ent.IsNotFound(err):
 			middleware.WriteError(w, http.StatusNotFound, "user not found")
 		default:
 			middleware.WriteError(w, http.StatusInternalServerError, "could not update username")

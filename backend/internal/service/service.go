@@ -26,6 +26,7 @@ func Provide(repositories *repository.Repositories, supabaseClient *supabase.Cli
 			repositories.HexRepository,
 			repositories.HexInfluenceRepository,
 			repositories.HexLeaderboardRepository,
+			repositories.UserRepository,
 			logger),
 		HexService: NewHexService(repositories.HexRepository, logger),
 		HexLeaderboardService: NewHexLeaderboardService(repositories.HexLeaderboardRepository,

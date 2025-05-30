@@ -22,6 +22,11 @@ import (
 	"github.com/google/uuid"
 )
 
+var validH3Indexes = []int64{
+617420388352917503,
+618094571271487487,
+}
+
 // setupTest initializes an in-memory SQLite ent client, applies schema,
 // and returns an ActivityService wired with concrete repositories.
 func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivityService) {
@@ -39,6 +44,7 @@ func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivitySer
 	hexRepo := repository.NewHexRepository(client)
 	hexInfluenceRepo := repository.NewHexInfluenceRepository(client)
 	hexLeaderboardRepo := repository.NewHexLeaderboardRepository(client)
+	userRepo := repository.NewUserRepository(client)
 	logger := zap.NewExample()
 	// Create service
 	svc := service.NewActivityService(
@@ -46,6 +52,7 @@ func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivitySer
 		hexRepo,
 		hexInfluenceRepo,
 		hexLeaderboardRepo,
+		userRepo,
 		logger,
 	)
 	return context.Background(), client, svc
@@ -69,7 +76,7 @@ func TestFindByID(t *testing.T) {
 		SetUserID(created_user.ID).
 		SetDurationSeconds(120.5).
 		SetDistanceMeters(3000.0).
-		SetH3Indexes([]int64{}).
+		SetH3Indexes(validH3Indexes).
 		Save(ctx)
 	require.NoError(t, err)
 
@@ -98,7 +105,7 @@ func TestFindByUserID(t *testing.T) {
 			SetUserID(created_user.ID).
 			SetDurationSeconds(60).
 			SetDistanceMeters(1000).
-			SetH3Indexes([]int64{}).
+			SetH3Indexes(validH3Indexes).
 			Save(ctx)
 		require.NoError(t, err)
 	}
@@ -122,23 +129,22 @@ func TestCreateOneActivity_WithH3Indexes(t *testing.T) {
 	created_user, user_err := user_repo.CreateUser(ctx, new_user)
 	require.NoError(t, user_err)
 
-	indexes := []int64{12345, 67890}
-	input := &model.Activity{
+	input := service.CreateActivityRequest{
 		UserID:    created_user.ID,
 		Duration:  150.0,
 		Distance:  2500.0,
-		H3Indexes: indexes,
+		H3Indexes: validH3Indexes,
 	}
 	created, err := svc.CreateActivity(ctx, input)
 	require.NoError(t, err)
 	// Verify activity saved
 	stored, err := client.Activity.Get(ctx, created.ID)
 	require.NoError(t, err)
-	require.Equal(t, indexes, stored.H3Indexes)
+	require.Equal(t, validH3Indexes, stored.H3Indexes)
 
 	hex_repo := repository.NewHexRepository((client))
 	// Verify hexes created
-	for _, idx := range indexes {
+	for _, idx := range validH3Indexes {
 		hex, err := hex_repo.FindByID(ctx, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hex.ID)
@@ -151,7 +157,7 @@ func TestCreateOneActivity_WithH3Indexes(t *testing.T) {
 		t.Logf("HexInfluence: ID=%d, UserID=%d, Score=%f", hi.ID, hi.UserID, hi.Score)
 	}
 	// Verify influences created
-	for _, idx := range indexes {
+	for _, idx := range validH3Indexes {
 		hx_influence, err := hexinfluence_repo.FindByUserIDAndHexID(ctx, created.UserID, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hx_influence.H3Index)
@@ -174,12 +180,11 @@ func TestCreateTwoActivities_WithTheSameH3Indexes(t *testing.T) {
 	created_user, user_err := user_repo.CreateUser(ctx, new_user)
 	require.NoError(t, user_err)
 
-	indexes := []int64{12345, 67890}
-	input := &model.Activity{
+	input := service.CreateActivityRequest{
 		UserID:    created_user.ID,
 		Duration:  150.0,
 		Distance:  2500.0,
-		H3Indexes: indexes,
+		H3Indexes: validH3Indexes,
 	}
 	first_activity, err := svc.CreateActivity(ctx, input)
 	require.NoError(t, err)
@@ -189,7 +194,7 @@ func TestCreateTwoActivities_WithTheSameH3Indexes(t *testing.T) {
 
 	hex_repo := repository.NewHexRepository((client))
 	// Verify hexes created
-	for _, idx := range indexes {
+	for _, idx := range validH3Indexes {
 		hex, err := hex_repo.FindByID(ctx, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hex.ID)
@@ -198,7 +203,7 @@ func TestCreateTwoActivities_WithTheSameH3Indexes(t *testing.T) {
 	hexinfluence_repo := repository.NewHexInfluenceRepository(client)
 
 	// Verify influences created
-	for _, idx := range indexes {
+	for _, idx := range validH3Indexes {
 		hx_influence, err := hexinfluence_repo.FindByUserIDAndHexID(ctx, first_activity.UserID, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hx_influence.H3Index)
@@ -224,7 +229,6 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 		"andrzejleper",
 	}
 
-	indexes := []int64{12345, 67890}
 
 	var createdUsers []*ent.User
 	for _, name := range usernames {
@@ -236,11 +240,11 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 		require.NoError(t, err)
 		createdUsers = append(createdUsers, created)
 
-		activity := &model.Activity{
+		activity := service.CreateActivityRequest{
 			UserID:    created.ID,
 			Duration:  150.0,
 			Distance:  2500.0,
-			H3Indexes: indexes,
+			H3Indexes: validH3Indexes,
 		}
 		_, err = svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
@@ -248,17 +252,17 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 
 	for _, user := range createdUsers {
 
-		activity := &model.Activity{
+		activity := service.CreateActivityRequest{
 			UserID:    user.ID,
 			Duration:  150.0,
 			Distance:  2500.0,
-			H3Indexes: indexes,
+			H3Indexes: validH3Indexes,
 		}
 		_, err := svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
 	}
 	// Verify hexes were created
-	for _, idx := range indexes {
+	for _, idx := range validH3Indexes {
 		hex, err := hexRepo.FindByID(ctx, idx)
 		require.NoError(t, err)
 		require.Equal(t, idx, hex.ID)
@@ -266,7 +270,7 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 
 	// Verify each user's influence
 	for _, user := range createdUsers {
-		for _, idx := range indexes {
+		for _, idx := range validH3Indexes {
 			infl, err := hexInfluenceRepo.FindByUserIDAndHexID(ctx, user.ID, idx)
 			require.NoError(t, err)
 			require.Equal(t, idx, infl.H3Index)
@@ -293,7 +297,6 @@ func TestIfActivitiesAffectLeaderboardsIncremetally(t *testing.T) {
 		"robertbiedron",
 	}
 
-	indexes := []int64{12345, 67890}
 
 	for i, name := range usernames {
 		user := &model.User{
@@ -303,16 +306,16 @@ func TestIfActivitiesAffectLeaderboardsIncremetally(t *testing.T) {
 		created, err := userRepo.CreateUser(ctx, user)
 		require.NoError(t, err)
 
-		activity := &model.Activity{
+		activity := service.CreateActivityRequest{
 			UserID:    created.ID,
 			Duration:  150.0,
 			Distance:  2500.0,
-			H3Indexes: indexes,
+			H3Indexes: validH3Indexes,
 		}
 		_, err = svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
 
-		leaderboard, l_err := hexLeadearboardRepo.FindByH3Index(ctx, indexes[0])
+		leaderboard, l_err := hexLeadearboardRepo.FindByH3Index(ctx, validH3Indexes[0])
 		require.NoError(t, l_err)
 		temp := len(leaderboard.TopUsers)
 		require.Equal(t, i+1, temp)
@@ -335,7 +338,6 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 		"andrzejleper",
 	}
 
-	indexes := []int64{12345, 67890}
 
 	var createdUsers []*ent.User
 	for _, name := range usernames {
@@ -347,11 +349,11 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 		require.NoError(t, err)
 		createdUsers = append(createdUsers, created)
 
-		activity := &model.Activity{
+		activity := service.CreateActivityRequest{
 			UserID:    created.ID,
 			Duration:  150.0,
 			Distance:  2500.0,
-			H3Indexes: indexes,
+			H3Indexes: validH3Indexes,
 		}
 		if name != "andrzejleper" {
 			_, err = svc.CreateActivity(ctx, activity)
@@ -361,16 +363,16 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 	leper := createdUsers[5]
 
 	for i := range 5 {
-		activity := &model.Activity{
+		activity := service.CreateActivityRequest{
 			UserID:    leper.ID,
 			Duration:  150.0,
 			Distance:  2500.0,
-			H3Indexes: indexes,
+			H3Indexes: validH3Indexes,
 		}
 		_, err := svc.CreateActivity(ctx, activity)
 		require.NoError(t, err)
 
-		positionPtr, err := hexLeaderboardRepo.GetUserPositionInLeaderboard(ctx, indexes[0], leper.ID)
+		positionPtr, err := hexLeaderboardRepo.GetUserPositionInLeaderboard(ctx, validH3Indexes[0], leper.ID)
 		require.NoError(t, err)
 
 		if i == 0 {

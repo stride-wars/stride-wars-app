@@ -7,9 +7,11 @@ import (
 	"stride-wars-app/internal/repository"
 
 	"errors"
+	"strconv"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"github.com/uber/h3-go/v4"
 )
 
 type CreateActivityRequest struct {
@@ -20,7 +22,11 @@ type CreateActivityRequest struct {
 }
 
 type CreateActivityResponse struct {
-	ActivityID uuid.UUID `json:"activity_id"`
+	ID        uuid.UUID `json:"activity_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Duration   float64   `json:"duration"` // in seconds
+	Distance   float64   `json:"distance"` // in meters
+	H3Indexes  []int64   `json:"h3_indexes"`
 }
 
 type ActivityService struct {
@@ -28,6 +34,7 @@ type ActivityService struct {
 	hexRepository            repository.HexRepository
 	hexInfluenceRepository   repository.HexInfluenceRepository
 	hexLeaderboardRepository repository.HexLeaderboardRepository
+	userRepository           repository.UserRepository
 	logger                   *zap.Logger
 }
 
@@ -36,6 +43,7 @@ func NewActivityService(
 	hexRepo repository.HexRepository,
 	hexInfluenceRepo repository.HexInfluenceRepository,
 	hexLeaderboardRepo repository.HexLeaderboardRepository,
+	userRepo repository.UserRepository,
 	logger *zap.Logger,
 ) *ActivityService {
 	return &ActivityService{
@@ -43,8 +51,39 @@ func NewActivityService(
 		hexRepository:            hexRepo,
 		hexInfluenceRepository:   hexInfluenceRepo,
 		hexLeaderboardRepository: hexLeaderboardRepo,
+		userRepository:           userRepo,
 		logger:                   logger,
 	}
+}
+
+func (a *ActivityService) validateCreateActivity(req CreateActivityRequest) error {
+	if req.UserID == uuid.Nil {
+		return errors.New("UserID is required")
+	}
+
+	if req.Duration <= 0 {
+		return errors.New("duration must be positive")
+	}
+
+	if req.Distance <= 0 {
+		return errors.New("distance must be positive")
+	}
+
+	if len(req.H3Indexes) == 0 {
+		return errors.New("at least one H3 index is required")
+	}
+	for _, h3Index := range req.H3Indexes {
+		cell := h3.Cell(h3Index)
+		if !cell.IsValid() {
+			return errors.New("invalid H3 index: " + strconv.FormatInt(h3Index, 10))
+		}
+
+		if cell.Resolution() != 9 {
+			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution 9")
+		}
+    }
+
+	return nil
 }
 
 func (as *ActivityService) FindByID(ctx context.Context, uuid uuid.UUID) (*ent.Activity, error) {
@@ -57,10 +96,28 @@ func (as *ActivityService) FindByUserID(ctx context.Context, userID uuid.UUID) (
 	return as.repository.FindByUserID(ctx, userID)
 }
 
-func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *model.Activity) (*ent.Activity, error) {
+func (as *ActivityService) CreateActivity(ctx context.Context, req CreateActivityRequest) (*CreateActivityResponse, error) {
+	if err := as.validateCreateActivity(req); err != nil {
+		return nil, err
+	}
 
+	activityInput := &model.Activity{
+		UserID:    req.UserID,
+		Duration:  req.Duration,
+		Distance:  req.Distance,
+		H3Indexes: req.H3Indexes,
+	}
 	if len(activityInput.H3Indexes) == 0 {
 		return nil, errors.New("activity must contain at least one H3 index")
+	}
+	//validate if user exists
+	userService := NewUserService(as.userRepository, as.logger)
+	_, err := userService.FindByID(ctx, activityInput.UserID)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, err
+		}
+		return nil, err
 	}
 
 	createdActivity, err := as.repository.CreateActivity(ctx, activityInput)
@@ -120,5 +177,11 @@ func (as *ActivityService) CreateActivity(ctx context.Context, activityInput *mo
 	}
 	as.logger.Info("Finished processing all H3 indexes for activity.", zap.Stringer("activityID", createdActivity.ID))
 
-	return createdActivity, nil
+	return &CreateActivityResponse{
+		ID:        createdActivity.ID,
+		UserID:    createdActivity.UserID,
+		Duration:  createdActivity.DurationSeconds,
+		Distance:  createdActivity.DistanceMeters,
+		H3Indexes: createdActivity.H3Indexes,
+	}, nil
 }

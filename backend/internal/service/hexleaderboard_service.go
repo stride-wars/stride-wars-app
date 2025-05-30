@@ -19,11 +19,19 @@ type BoundingBox struct {
 	MaxLng float64 `json:"max_lng"`
 }
 
-type GetAllLeaderboardsInsideBBBoxRequest struct {
-	BoundingBox BoundingBox `json:"bounding_box"`
+type TopUserResponse struct {
+	UserID uuid.UUID `json:"user_id"`
+	Score  float64   `json:"score"`
 }
-type GetAllLeaderboardsInsideBBBoxResponse struct {
-	Leaderboards []*ent.HexLeaderboard `json:"leaderboards"`
+
+type HexLeaderboardResponse struct {
+	ID       uuid.UUID      `json:"id"`
+	H3Index  int64          `json:"h3_index"`
+	TopUsers []TopUserResponse `json:"top_users"`
+}
+
+type GetAllHexLeaderboardsInsideBBoxResponse struct {
+	Leaderboards []HexLeaderboardResponse `json:"leaderboards"`
 }
 
 type HexLeaderboardService struct {
@@ -186,7 +194,7 @@ func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Conte
 }
 
 // returns all existing hex leaderboards inside a given bounding box
-func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Context, bbox BoundingBox) ([]*ent.HexLeaderboard, error) {
+func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Context, bbox BoundingBox) (*GetAllHexLeaderboardsInsideBBoxResponse, error) {
 
 	verts := h3.GeoLoop{
 		{Lat: bbox.MinLat, Lng: bbox.MinLng},
@@ -216,5 +224,32 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 		hls.logger.Error("Failed to fetch hex leaderboards by H3 indexes", zap.Error(err))
 		return nil, err
 	}
-	return hexLeaderboards, nil
+	// Map the hex leaderboards to the response format
+    leaderboards := make([]HexLeaderboardResponse, 0, len(hexLeaderboards))
+
+    for _, hexLeaderboard := range hexLeaderboards {
+        topUsers := make([]TopUserResponse, 0, len(hexLeaderboard.TopUsers))
+        for _, user := range hexLeaderboard.TopUsers {
+            topUsers = append(topUsers, TopUserResponse{
+                UserID: user.UserID,
+                Score:  user.Score,
+            })
+        }
+
+        leaderboards = append(leaderboards, HexLeaderboardResponse{
+            ID:       hexLeaderboard.ID,
+            H3Index:  hexLeaderboard.H3Index,
+            TopUsers: topUsers,
+        })
+    }
+
+    // Optional: sort by H3Index
+    sort.Slice(leaderboards, func(i, j int) bool {
+        return leaderboards[i].H3Index < leaderboards[j].H3Index
+    })
+
+    // Return a single wrapper struct with all leaderboards inside
+    return &GetAllHexLeaderboardsInsideBBoxResponse{
+        Leaderboards: leaderboards,
+    }, nil
 }

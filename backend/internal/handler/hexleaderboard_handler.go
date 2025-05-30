@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"encoding/json"
+	"strconv"
 	"net/http"
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/service"
@@ -21,32 +21,63 @@ func NewHexLeaderboardHandler(hexLeaderboardService *service.HexLeaderboardServi
 	}
 }
 
-func (h *HexLeaderboardHandler) GetAllLeaderboardsInsideBBBox(w http.ResponseWriter, r *http.Request) {
-	data, ok := middleware.GetJSONBody(r)
-	if !ok {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+
+func (h HexLeaderboardHandler) GetAllLeaderboardsInsideBBBox(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	query := r.URL.Query()
+	
+	minLatStr := query.Get("min_lat")
+	minLngStr := query.Get("min_lng")
+	maxLatStr := query.Get("max_lat")
+	maxLngStr := query.Get("max_lng")
+	
+	// Validate that all required parameters are present
+	if minLatStr == "" || minLngStr == "" || maxLatStr == "" || maxLngStr == "" {
+		middleware.WriteError(w, http.StatusBadRequest, "Missing required parameters: min_lat, min_lng, max_lat, max_lng")
 		return
 	}
-
-	// Convert the generic data to JSON bytes
-	jsonData, err := json.Marshal(data)
+	
+	// Parse string parameters to float64
+	minLat, err := strconv.ParseFloat(minLatStr, 64)
 	if err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid min_lat parameter")
 		return
 	}
-
-	// Unmarshal into the request struct
-	var req service.GetAllLeaderboardsInsideBBBoxRequest
-	if err := json.Unmarshal(jsonData, &req); err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
+	
+	minLng, err := strconv.ParseFloat(minLngStr, 64)
+	if err != nil {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid min_lng parameter")
 		return
 	}
-	resp, err := h.hexLeaderboardService.GetAllLeaderboardsInsideBBBox(r.Context(), req.BoundingBox)
+	
+	maxLat, err := strconv.ParseFloat(maxLatStr, 64)
+	if err != nil {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid max_lat parameter")
+		return
+	}
+	
+	maxLng, err := strconv.ParseFloat(maxLngStr, 64)
+	if err != nil {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid max_lng parameter")
+		return
+	}
+	
+	// Create bounding box from parsed parameters
+	boundingBox := service.BoundingBox{
+		MinLat: minLat,
+		MinLng: minLng,
+		MaxLat: maxLat,
+		MaxLng: maxLng,
+	}
+	
+	// Call the service with the bounding box
+	resp, err := h.hexLeaderboardService.GetAllLeaderboardsInsideBBBox(r.Context(), boundingBox)
 	if err != nil {
 		h.logger.Error("get all leaderboards inside bbox failed", zap.Error(err))
-		middleware.WriteError(w, http.StatusBadRequest, err.Error())
+		middleware.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
+	
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
+
