@@ -89,15 +89,15 @@ func (r *Router) Setup(
 	auth.HandleFunc("/signin", authHandler.SignIn).Methods("POST")
 
 	users := api.PathPrefix("/user").Subrouter()
-	users.HandleFunc("/{username}", userHandler.GetUserByUsername).Methods("GET")
-	users.HandleFunc("/{username}", userHandler.UpdateUsername).Methods("PUT")
-	users.HandleFunc("/{user-id}", userHandler.GetUserByID).Methods("GET")
+	users.HandleFunc("/by-username", userHandler.GetUserByUsername).Methods("GET")
+	users.HandleFunc("/by-id", userHandler.GetUserByID).Methods("GET")
+	users.HandleFunc("/update", userHandler.UpdateUsername).Methods("PUT")
 
 	activity := api.PathPrefix("/activity").Subrouter()
 	activity.HandleFunc("/create", activityHandler.CreateActivity).Methods("POST")
 
 	leaderboard := api.PathPrefix("/leaderboard").Subrouter()
-	leaderboard.HandleFunc("/{bbox}", hexLeaderboardHandler.GetAllLeaderboardsInsideBBBox).Methods("GET")
+	leaderboard.HandleFunc("/by-bbox", hexLeaderboardHandler.GetAllLeaderboardsInsideBBBox).Methods("GET")
 }
 
 // Handler returns the HTTP handler for the router

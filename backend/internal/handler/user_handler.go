@@ -23,33 +23,22 @@ func NewUserHandler(userService *service.UserService, logger *zap.Logger) *UserH
 }
 
 func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
-	data, ok := middleware.GetJSONBody(r)
-	if !ok {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+	// Extract 'username' from query parameters
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		middleware.WriteError(w, http.StatusBadRequest, "Missing 'username' query parameter")
 		return
 	}
 
-	// Convert the generic data to JSON bytes
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
-		return
-	}
-
-	// Unmarshal into the request struct
-	var req service.GetUserByUsernameRequest
-	if err := json.Unmarshal(jsonData, &req); err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
-		return
-	}
-
-	resp, err := h.userService.FindByUsername(r.Context(), req.Username)
+	// Call the service with the username
+	resp, err := h.userService.FindByUsername(r.Context(), username)
 	if err != nil {
 		h.logger.Error("find user by username failed", zap.Error(err))
 		middleware.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	// Respond with JSON
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
 
