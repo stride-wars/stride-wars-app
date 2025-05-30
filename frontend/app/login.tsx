@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   SafeAreaView,
-  TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Image,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
 import { Snackbar } from '../components/Snackbar';
+import { Input } from '../components/Input';
+import { Button } from '../components/Button';
+import { Feather } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -39,51 +42,49 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.content}>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
+        <TouchableWithoutFeedback >
+          <View style={styles.inner}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../assets/images/stride_wars.png')} 
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <Text style={styles.appTitle}>Stride Wars</Text>
+              <Text style={styles.subtitle}>Conquer territory with every step</Text>
+            </View>
 
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="Enter your email"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                />
-                {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-              </View>
+            <View style={styles.formContainer}>
+              <Input
+                label="Email"
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                error={errors.email}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                leftIcon={<Feather name="user" size={20} color="#888" />}
+              />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoComplete="password"
-                />
-                {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-              </View>
+              <Input
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                error={errors.password}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="password"
+                leftIcon={<Feather name="lock" size={20} color="#888" />}
+              />
 
-              <TouchableOpacity
-                style={styles.loginButton}
-                onPress={handleLoginWithSnackbar}
-              >
-                <Text style={styles.loginButtonText}>Login</Text>
-              </TouchableOpacity>
+              <Button onPress={handleLoginWithSnackbar} style={styles.loginButton}>
+                <Feather name="log-in" size={20} color="#fff" style={{ marginRight: 8 }} />
+                Login
+              </Button>
 
-              <TouchableOpacity
-                style={styles.registerLink}
-                onPress={() => router.push('/register')}
-              >
+              <TouchableOpacity onPress={() => router.push('/register')} style={styles.registerLink}>
                 <Text style={styles.registerText}>
                   Don't have an account? <Text style={styles.registerTextBold}>Register</Text>
                 </Text>
@@ -105,76 +106,51 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#111827', // dark background
   },
   keyboardAvoid: {
     flex: 1,
   },
-  content: {
+  inner: {
     flex: 1,
     padding: 20,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
+  logoContainer: {
+    alignItems: 'center',
     marginBottom: 32,
   },
-  form: {
-    gap: 20,
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 12,
   },
-  inputContainer: {
-    gap: 8,
+  appTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FACC15', // yellow-500
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#f8f8f8',
-  },
-  inputError: {
-    borderColor: '#ff3b30',
-  },
-  errorText: {
-    color: '#ff3b30',
+  subtitle: {
     fontSize: 14,
+    color: '#9CA3AF', // gray-400
     marginTop: 4,
   },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+  formContainer: {
+    gap: 20,
   },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+  loginButton: {
+    marginTop: 10,
+    backgroundColor: '#2563EB', // blue-600
   },
   registerLink: {
     marginTop: 16,
     alignItems: 'center',
   },
   registerText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 14,
+    color: '#FACC15', // yellow-500
   },
   registerTextBold: {
-    color: '#007AFF',
     fontWeight: '600',
   },
 });

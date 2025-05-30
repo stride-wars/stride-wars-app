@@ -9,6 +9,15 @@ export interface SignInRequest {
   password: string;
 }
 
+export interface Data{
+  session: Session
+  email: string;
+  external_user: string;
+  user_id: string;
+  username: string;
+}
+
+
 export interface Session {
   access_token: string;
   refresh_token: string;
@@ -32,6 +41,7 @@ export interface SignUpResponse {
 }
 
 export interface SignInResponse {
+  data: Data;
   session: Session;
   user_id: string;
   external_user: string;

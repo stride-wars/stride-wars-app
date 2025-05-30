@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"stride-wars-app/ent"
 
 	"go.uber.org/zap"
@@ -26,11 +27,17 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Parse hex string ID to int64, base 16
+	tempID, err := strconv.ParseInt(req.ID, 16, 64)
+	if err != nil {
+		http.Error(w, "ID must be a valid hex string", http.StatusBadRequest)
+		return
+	}
+
 	hex, err := h.EntClient.Hex.Create().
-		SetID(req.ID).
+		SetID(tempID).
 		Save(r.Context())
 	if err != nil {
-		// Check if it's a duplicate key error
 		if ent.IsConstraintError(err) {
 			h.Logger.Info("Hex already exists", zap.Int64("id", req.ID))
 			w.WriteHeader(http.StatusOK)
@@ -42,7 +49,9 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.Logger.Info("Saved hex", zap.Int64("id", hex.ID))
+	// Convert saved int64 ID back to hex string for logging
+	tempID2 := strconv.FormatInt(hex.ID, 16)
+	h.Logger.Info("Saved hex", zap.String("id", tempID2))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }
