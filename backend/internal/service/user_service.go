@@ -16,9 +16,6 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 )
 
-
-
-
 type UpdateUsernameRequest struct {
 	OldUsername string `json:"old_username"`
 	NewUsername string `json:"new_username"`

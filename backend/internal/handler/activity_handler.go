@@ -31,7 +31,6 @@ func (h *ActivityHandler) CreateActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-
 	activity := service.CreateActivityRequest{
 		UserID:    req.UserID,
 		H3Indexes: req.H3Indexes,

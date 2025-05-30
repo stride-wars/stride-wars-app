@@ -7,28 +7,30 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"stride-wars-app/ent/enttest"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"stride-wars-app/ent/enttest"
 
 	"go.uber.org/zap"
 
+	"fmt"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/repository"
 	"stride-wars-app/internal/service"
-	"fmt"
 )
 
 var krakowH3Indexes = []int64{
 	617524104371896319,
 	617524104366653439,
 }
+
 type HexLeaderboardAPIResponse struct {
-    Success bool                                   `json:"success"`
-    Data    service.GetAllHexLeaderboardsInsideBBoxResponse `json:"data"`
+	Success bool                                            `json:"success"`
+	Data    service.GetAllHexLeaderboardsInsideBBoxResponse `json:"data"`
 }
 
 func setupTestHexLeaderboardHandler(t *testing.T) (context.Context, *ent.Client, *handler.HexLeaderboardHandler) {
@@ -46,7 +48,7 @@ func setupTestHexLeaderboardHandler(t *testing.T) (context.Context, *ent.Client,
 	logger := zap.NewExample()
 
 	// Create service
-	hexLeaderboardService := service.NewHexLeaderboardService(hexLeaderboardRepo,hexInfluenceRepo, logger)
+	hexLeaderboardService := service.NewHexLeaderboardService(hexLeaderboardRepo, hexInfluenceRepo, logger)
 
 	// Create handler
 	handler := handler.NewHexLeaderboardHandler(hexLeaderboardService, logger)
@@ -57,7 +59,7 @@ func setupTestHexLeaderboardHandler(t *testing.T) (context.Context, *ent.Client,
 // this test creates two activites, both for the same two hexes with different users
 func TestGetHexLeaderboardsInBBox(t *testing.T) {
 	ctx, client, handler := setupTestHexLeaderboardHandler(t)
-	//create two users
+	// create two users
 	repo := repository.NewUserRepository(client)
 	username := "alice"
 	externalID := uuid.New()
@@ -80,20 +82,19 @@ func TestGetHexLeaderboardsInBBox(t *testing.T) {
 
 	// Create activities for both users
 	activity1 := service.CreateActivityRequest{
-		UserID:      created_user.ID,
-		Duration:    3600, // 1 hour
-		Distance:    5000, // 5 km
-		H3Indexes:   krakowH3Indexes,
+		UserID:    created_user.ID,
+		Duration:  3600, // 1 hour
+		Distance:  5000, // 5 km
+		H3Indexes: krakowH3Indexes,
 	}
 	activity2 := service.CreateActivityRequest{
-		UserID:      created_user2.ID,
-		Duration:    7200, // 2 hours
-		Distance:    10000, // 10 km
-		H3Indexes:   krakowH3Indexes,
+		UserID:    created_user2.ID,
+		Duration:  7200,  // 2 hours
+		Distance:  10000, // 10 km
+		H3Indexes: krakowH3Indexes,
 	}
 
 	logger := zap.NewExample()
-
 
 	// Create the first activity
 	activityService := service.NewActivityService(
@@ -111,16 +112,16 @@ func TestGetHexLeaderboardsInBBox(t *testing.T) {
 	require.NoError(t, err)
 
 	bbox := service.BoundingBox{
-		MinLat: 49.9650,  // southern boundary
-		MinLng: 19.7500,  // western boundary
-		MaxLat: 50.1500,  // northern boundary
+		MinLat: 49.9650, // southern boundary
+		MinLng: 19.7500, // western boundary
+		MaxLat: 50.1500, // northern boundary
 		MaxLng: 20.1000,
 	}
 	// Prepare the request with the arguments from bounding box
 	req, err := http.NewRequest("GET",
-	fmt.Sprintf("/hexleaderboards?min_lat=%f&min_lng=%f&max_lat=%f&max_lng=%f",
-		bbox.MinLat, bbox.MinLng, bbox.MaxLat, bbox.MaxLng),
-	nil)
+		fmt.Sprintf("/hexleaderboards?min_lat=%f&min_lng=%f&max_lat=%f&max_lng=%f",
+			bbox.MinLat, bbox.MinLng, bbox.MaxLat, bbox.MaxLng),
+		nil)
 	require.NoError(t, err)
 	// Create a ResponseRecorder to capture the response
 	recorder := httptest.NewRecorder()

@@ -6,9 +6,10 @@ import (
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/service"
 
-	"go.uber.org/zap"
-	"github.com/google/uuid"
 	"stride-wars-app/ent"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type UserHandler struct {
@@ -47,7 +48,6 @@ func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) 
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
 
-
 func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	// Extract the "id" query parameter
 	idStr := r.URL.Query().Get("id")
@@ -78,7 +78,6 @@ func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	// Return the response
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
-
 
 func (h *UserHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
 	data, ok := middleware.GetJSONBody(r)

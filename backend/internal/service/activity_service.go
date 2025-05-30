@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"github.com/uber/h3-go/v4"
+	"go.uber.org/zap"
 )
 
 type CreateActivityRequest struct {
@@ -24,9 +24,9 @@ type CreateActivityRequest struct {
 type CreateActivityResponse struct {
 	ID        uuid.UUID `json:"activity_id"`
 	UserID    uuid.UUID `json:"user_id"`
-	Duration   float64   `json:"duration"` // in seconds
-	Distance   float64   `json:"distance"` // in meters
-	H3Indexes  []int64   `json:"h3_indexes"`
+	Duration  float64   `json:"duration"` // in seconds
+	Distance  float64   `json:"distance"` // in meters
+	H3Indexes []int64   `json:"h3_indexes"`
 }
 
 type ActivityService struct {
@@ -81,7 +81,7 @@ func (a *ActivityService) validateCreateActivity(req CreateActivityRequest) erro
 		if cell.Resolution() != 9 {
 			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution 9")
 		}
-    }
+	}
 
 	return nil
 }
@@ -110,7 +110,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req CreateActivit
 	if len(activityInput.H3Indexes) == 0 {
 		return nil, errors.New("activity must contain at least one H3 index")
 	}
-	//validate if user exists
+	// validate if user exists
 	userService := NewUserService(as.userRepository, as.logger)
 	_, err := userService.FindByID(ctx, activityInput.UserID)
 	if err != nil {

@@ -25,8 +25,8 @@ type TopUserResponse struct {
 }
 
 type HexLeaderboardResponse struct {
-	ID       uuid.UUID      `json:"id"`
-	H3Index  int64          `json:"h3_index"`
+	ID       uuid.UUID         `json:"id"`
+	H3Index  int64             `json:"h3_index"`
 	TopUsers []TopUserResponse `json:"top_users"`
 }
 
@@ -225,31 +225,31 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 		return nil, err
 	}
 	// Map the hex leaderboards to the response format
-    leaderboards := make([]HexLeaderboardResponse, 0, len(hexLeaderboards))
+	leaderboards := make([]HexLeaderboardResponse, 0, len(hexLeaderboards))
 
-    for _, hexLeaderboard := range hexLeaderboards {
-        topUsers := make([]TopUserResponse, 0, len(hexLeaderboard.TopUsers))
-        for _, user := range hexLeaderboard.TopUsers {
-            topUsers = append(topUsers, TopUserResponse{
-                UserID: user.UserID,
-                Score:  user.Score,
-            })
-        }
+	for _, hexLeaderboard := range hexLeaderboards {
+		topUsers := make([]TopUserResponse, 0, len(hexLeaderboard.TopUsers))
+		for _, user := range hexLeaderboard.TopUsers {
+			topUsers = append(topUsers, TopUserResponse{
+				UserID: user.UserID,
+				Score:  user.Score,
+			})
+		}
 
-        leaderboards = append(leaderboards, HexLeaderboardResponse{
-            ID:       hexLeaderboard.ID,
-            H3Index:  hexLeaderboard.H3Index,
-            TopUsers: topUsers,
-        })
-    }
+		leaderboards = append(leaderboards, HexLeaderboardResponse{
+			ID:       hexLeaderboard.ID,
+			H3Index:  hexLeaderboard.H3Index,
+			TopUsers: topUsers,
+		})
+	}
 
-    // Optional: sort by H3Index
-    sort.Slice(leaderboards, func(i, j int) bool {
-        return leaderboards[i].H3Index < leaderboards[j].H3Index
-    })
+	// Optional: sort by H3Index
+	sort.Slice(leaderboards, func(i, j int) bool {
+		return leaderboards[i].H3Index < leaderboards[j].H3Index
+	})
 
-    // Return a single wrapper struct with all leaderboards inside
-    return &GetAllHexLeaderboardsInsideBBoxResponse{
-        Leaderboards: leaderboards,
-    }, nil
+	// Return a single wrapper struct with all leaderboards inside
+	return &GetAllHexLeaderboardsInsideBBoxResponse{
+		Leaderboards: leaderboards,
+	}, nil
 }

@@ -23,8 +23,8 @@ import (
 )
 
 var validH3Indexes = []int64{
-617420388352917503,
-618094571271487487,
+	617420388352917503,
+	618094571271487487,
 }
 
 // setupTest initializes an in-memory SQLite ent client, applies schema,
@@ -229,7 +229,6 @@ func TestIfActivitiesAffectLeaderboardsCorrectly(t *testing.T) {
 		"andrzejleper",
 	}
 
-
 	var createdUsers []*ent.User
 	for _, name := range usernames {
 		user := &model.User{
@@ -297,7 +296,6 @@ func TestIfActivitiesAffectLeaderboardsIncremetally(t *testing.T) {
 		"robertbiedron",
 	}
 
-
 	for i, name := range usernames {
 		user := &model.User{
 			Username:     name,
@@ -337,7 +335,6 @@ func TestIfLeaderboardChangesCorrectly(t *testing.T) {
 		"robertbiedron",
 		"andrzejleper",
 	}
-
 
 	var createdUsers []*ent.User
 	for _, name := range usernames {
