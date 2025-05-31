@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/service"
-	"stride-wars-app/internal/utils"
+	util "stride-wars-app/internal/utils"
 
 	"go.uber.org/zap"
 )

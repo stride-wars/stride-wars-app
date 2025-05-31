@@ -4,9 +4,10 @@ import (
 	"net/http"
 
 	"stride-wars-app/internal/api/middleware"
+	"stride-wars-app/internal/constants"
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/service"
-	"stride-wars-app/internal/constants"
+
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )

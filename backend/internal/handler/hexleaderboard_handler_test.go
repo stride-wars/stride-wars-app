@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
+	"stride-wars-app/internal/dto"
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/repository"
 	"stride-wars-app/internal/service"
-	"stride-wars-app/internal/dto"
 )
 
 var krakowH3Indexes = []int64{
@@ -30,7 +30,7 @@ var krakowH3Indexes = []int64{
 }
 
 type HexLeaderboardAPIResponse struct {
-	Success bool                                            `json:"success"`
+	Success bool                                        `json:"success"`
 	Data    dto.GetAllHexLeaderboardsInsideBBoxResponse `json:"data"`
 }
 

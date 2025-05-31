@@ -46,7 +46,7 @@ func NewActivityService(
 	hexInfluenceRepo repository.HexInfluenceRepository,
 	hexLeaderboardRepo repository.HexLeaderboardRepository,
 	userRepo repository.UserRepository,
-	userService UserService, 
+	userService UserService,
 	logger *zap.Logger,
 ) *ActivityService {
 	return &ActivityService{

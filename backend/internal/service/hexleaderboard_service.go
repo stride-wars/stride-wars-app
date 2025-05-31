@@ -5,10 +5,10 @@ import (
 	"sort"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
-	"stride-wars-app/internal/repository"
-	"stride-wars-app/internal/mappers"
-	"stride-wars-app/internal/dto"
 	"stride-wars-app/internal/constants"
+	"stride-wars-app/internal/dto"
+	"stride-wars-app/internal/mappers"
+	"stride-wars-app/internal/repository"
 
 	"github.com/google/uuid"
 	"github.com/uber/h3-go/v4"
@@ -22,12 +22,11 @@ type BoundingBox struct {
 	MaxLng float64 `json:"max_lng"`
 }
 
-
 type HexLeaderboardService struct {
 	hexLeaderboardRepository repository.HexLeaderboardRepository
 	hexInfluenceRepository   repository.HexInfluenceRepository
 	logger                   *zap.Logger
-} 
+}
 
 func NewHexLeaderboardService(hexLeaderboardRepository repository.HexLeaderboardRepository, hexInfluenceRepository repository.HexInfluenceRepository, logger *zap.Logger) *HexLeaderboardService {
 	return &HexLeaderboardService{
@@ -181,8 +180,6 @@ func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx co
 func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
 	return hls.hexLeaderboardRepository.GetUserPositionInLeaderboard(ctx, hexID, userID)
 }
-
-
 
 // returns all existing hex leaderboards inside a given bounding box
 func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Context, bbox BoundingBox) (*dto.GetAllHexLeaderboardsInsideBBoxResponse, error) {
