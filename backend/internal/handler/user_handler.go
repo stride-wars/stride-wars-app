@@ -101,16 +101,17 @@ func (h *UserHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.userService.UpdateUsername(r.Context(), &req)
-	if err != nil {
-		h.logger.Error("update username failed", zap.Error(err))
-		switch {
-		case ent.IsNotFound(err):
-			middleware.WriteError(w, http.StatusNotFound, "user not found")
-		default:
-			middleware.WriteError(w, http.StatusInternalServerError, "could not update username")
-		}
+	if err == nil {
+		middleware.WriteJSON(w, http.StatusOK, resp)
 		return
 	}
 
-	middleware.WriteJSON(w, http.StatusOK, resp)
+	h.logger.Error("update username failed", zap.Error(err))
+	switch {
+	case ent.IsNotFound(err):
+		middleware.WriteError(w, http.StatusNotFound, "user not found")
+	default:
+		middleware.WriteError(w, http.StatusInternalServerError, "could not update username")
+	}
+
 }

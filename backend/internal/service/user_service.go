@@ -80,14 +80,14 @@ func (s *UserService) UpdateUsername(ctx context.Context, req *UpdateUsernameReq
 	if err != nil {
 		return nil, err
 	}
-	if rowsAffected == 0 {
+	if rowsAffected != 1 {
 		return nil, err
 	}
 
 	// 4) Build response
-	updated_usr, err := s.repository.FindByUsername(ctx, req.NewUsername)
+	updatedUsr, err := s.repository.FindByUsername(ctx, req.NewUsername)
 	if err != nil {
 		return nil, err
 	}
-	return updated_usr, nil
+	return updatedUsr, nil
 }

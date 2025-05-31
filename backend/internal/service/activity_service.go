@@ -4,6 +4,7 @@ import (
 	"context"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
+	"stride-wars-app/internal/constants"
 	"stride-wars-app/internal/repository"
 
 	"errors"
@@ -35,6 +36,7 @@ type ActivityService struct {
 	hexInfluenceRepository   repository.HexInfluenceRepository
 	hexLeaderboardRepository repository.HexLeaderboardRepository
 	userRepository           repository.UserRepository
+	userService              UserService
 	logger                   *zap.Logger
 }
 
@@ -44,6 +46,7 @@ func NewActivityService(
 	hexInfluenceRepo repository.HexInfluenceRepository,
 	hexLeaderboardRepo repository.HexLeaderboardRepository,
 	userRepo repository.UserRepository,
+	userService UserService, 
 	logger *zap.Logger,
 ) *ActivityService {
 	return &ActivityService{
@@ -52,12 +55,13 @@ func NewActivityService(
 		hexInfluenceRepository:   hexInfluenceRepo,
 		hexLeaderboardRepository: hexLeaderboardRepo,
 		userRepository:           userRepo,
+		userService:              userService,
 		logger:                   logger,
 	}
 }
 
 func (a *ActivityService) validateCreateActivity(req CreateActivityRequest) error {
-	if req.UserID == uuid.Nil {
+	if (req.UserID == uuid.Nil || req.UserID == uuid.UUID{}) {
 		return errors.New("UserID is required")
 	}
 
@@ -78,8 +82,8 @@ func (a *ActivityService) validateCreateActivity(req CreateActivityRequest) erro
 			return errors.New("invalid H3 index: " + strconv.FormatInt(h3Index, 10))
 		}
 
-		if cell.Resolution() != 9 {
-			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution 9")
+		if cell.Resolution() != constants.DefaultHexResolution {
+			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution " + strconv.Itoa(constants.DefaultHexResolution))
 		}
 	}
 
@@ -111,8 +115,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req CreateActivit
 		return nil, errors.New("activity must contain at least one H3 index")
 	}
 	// validate if user exists
-	userService := NewUserService(as.userRepository, as.logger)
-	_, err := userService.FindByID(ctx, activityInput.UserID)
+	_, err := as.userService.FindByID(ctx, activityInput.UserID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, err

@@ -45,6 +45,7 @@ func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivitySer
 	hexInfluenceRepo := repository.NewHexInfluenceRepository(client)
 	hexLeaderboardRepo := repository.NewHexLeaderboardRepository(client)
 	userRepo := repository.NewUserRepository(client)
+	userService := service.NewUserService(userRepo, zap.NewExample())
 	logger := zap.NewExample()
 	// Create service
 	svc := service.NewActivityService(
@@ -53,6 +54,7 @@ func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivitySer
 		hexInfluenceRepo,
 		hexLeaderboardRepo,
 		userRepo,
+		*userService,
 		logger,
 	)
 	return context.Background(), client, svc

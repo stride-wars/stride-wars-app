@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/service"
+	"stride-wars-app/internal/utils"
 
 	"go.uber.org/zap"
 )
@@ -26,7 +26,7 @@ func (h *ActivityHandler) CreateActivity(w http.ResponseWriter, r *http.Request)
 	// Can't use middleware.ParseJSON because it maps int64 into float64 causing inaccurate h3indexes
 	// Unmarshal into the request struct
 	var req service.CreateActivityRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := util.DecodeJSONBody(r.Body, &req); err != nil {
 		middleware.WriteError(w, http.StatusBadRequest, "Invalid request format")
 		return
 	}

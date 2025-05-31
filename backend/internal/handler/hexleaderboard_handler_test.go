@@ -21,6 +21,7 @@ import (
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/repository"
 	"stride-wars-app/internal/service"
+	"stride-wars-app/internal/dto"
 )
 
 var krakowH3Indexes = []int64{
@@ -30,7 +31,7 @@ var krakowH3Indexes = []int64{
 
 type HexLeaderboardAPIResponse struct {
 	Success bool                                            `json:"success"`
-	Data    service.GetAllHexLeaderboardsInsideBBoxResponse `json:"data"`
+	Data    dto.GetAllHexLeaderboardsInsideBBoxResponse `json:"data"`
 }
 
 func setupTestHexLeaderboardHandler(t *testing.T) (context.Context, *ent.Client, *handler.HexLeaderboardHandler) {
@@ -63,32 +64,32 @@ func TestGetHexLeaderboardsInBBox(t *testing.T) {
 	repo := repository.NewUserRepository(client)
 	username := "alice"
 	externalID := uuid.New()
-	new_user := &model.User{
+	newUser := &model.User{
 		Username:     username,
 		ExternalUser: externalID,
 	}
-	created_user, user_err := repo.CreateUser(ctx, new_user)
-	require.NoError(t, user_err)
+	createdUser, userErr := repo.CreateUser(ctx, newUser)
+	require.NoError(t, userErr)
 
 	// Create a second user
 	username2 := "bob"
 	externalID2 := uuid.New()
-	new_user2 := &model.User{
+	newUser2 := &model.User{
 		Username:     username2,
 		ExternalUser: externalID2,
 	}
-	created_user2, user_err := repo.CreateUser(ctx, new_user2)
-	require.NoError(t, user_err)
+	createdUser2, userErr := repo.CreateUser(ctx, newUser2)
+	require.NoError(t, userErr)
 
 	// Create activities for both users
 	activity1 := service.CreateActivityRequest{
-		UserID:    created_user.ID,
+		UserID:    createdUser.ID,
 		Duration:  3600, // 1 hour
 		Distance:  5000, // 5 km
 		H3Indexes: krakowH3Indexes,
 	}
 	activity2 := service.CreateActivityRequest{
-		UserID:    created_user2.ID,
+		UserID:    createdUser2.ID,
 		Duration:  7200,  // 2 hours
 		Distance:  10000, // 10 km
 		H3Indexes: krakowH3Indexes,
@@ -103,6 +104,7 @@ func TestGetHexLeaderboardsInBBox(t *testing.T) {
 		repository.NewHexInfluenceRepository(client),
 		repository.NewHexLeaderboardRepository(client),
 		repository.NewUserRepository(client),
+		*service.NewUserService(repository.NewUserRepository(client), logger),
 		logger,
 	)
 	_, err := activityService.CreateActivity(ctx, activity1)
@@ -126,7 +128,7 @@ func TestGetHexLeaderboardsInBBox(t *testing.T) {
 	// Create a ResponseRecorder to capture the response
 	recorder := httptest.NewRecorder()
 	// Call the handler
-	handler.GetAllLeaderboardsInsideBBBox(recorder, req)
+	handler.GetAllLeaderboardsInsideBBox(recorder, req)
 	t.Logf("Response body: %s", recorder.Body.String())
 	// Check the response status code
 	assert.Equal(t, http.StatusOK, recorder.Code, "Expected status code 200 OK")

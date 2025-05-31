@@ -20,13 +20,14 @@ func Provide(repositories *repository.Repositories, supabaseClient *supabase.Cli
 	userService := NewUserService(repositories.UserRepository, logger)
 
 	return &Services{
-		UserService: NewUserService(repositories.UserRepository, logger),
-		AuthService: NewAuthService(supabaseClient, logger, userService),
+		UserService:    userService,
+		AuthService:    NewAuthService(supabaseClient, logger, userService),
 		ActivityService: NewActivityService(repositories.ActivityRepository,
 			repositories.HexRepository,
 			repositories.HexInfluenceRepository,
 			repositories.HexLeaderboardRepository,
 			repositories.UserRepository,
+			*userService,
 			logger),
 		HexService: NewHexService(repositories.HexRepository, logger),
 		HexLeaderboardService: NewHexLeaderboardService(repositories.HexLeaderboardRepository,

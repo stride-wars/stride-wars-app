@@ -6,6 +6,9 @@ import (
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
+	"stride-wars-app/internal/mappers"
+	"stride-wars-app/internal/dto"
+	"stride-wars-app/internal/constants"
 
 	"github.com/google/uuid"
 	"github.com/uber/h3-go/v4"
@@ -19,26 +22,12 @@ type BoundingBox struct {
 	MaxLng float64 `json:"max_lng"`
 }
 
-type TopUserResponse struct {
-	UserID uuid.UUID `json:"user_id"`
-	Score  float64   `json:"score"`
-}
-
-type HexLeaderboardResponse struct {
-	ID       uuid.UUID         `json:"id"`
-	H3Index  int64             `json:"h3_index"`
-	TopUsers []TopUserResponse `json:"top_users"`
-}
-
-type GetAllHexLeaderboardsInsideBBoxResponse struct {
-	Leaderboards []HexLeaderboardResponse `json:"leaderboards"`
-}
 
 type HexLeaderboardService struct {
 	hexLeaderboardRepository repository.HexLeaderboardRepository
 	hexInfluenceRepository   repository.HexInfluenceRepository
 	logger                   *zap.Logger
-}
+} 
 
 func NewHexLeaderboardService(hexLeaderboardRepository repository.HexLeaderboardRepository, hexInfluenceRepository repository.HexInfluenceRepository, logger *zap.Logger) *HexLeaderboardService {
 	return &HexLeaderboardService{
@@ -193,8 +182,10 @@ func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Conte
 	return hls.hexLeaderboardRepository.GetUserPositionInLeaderboard(ctx, hexID, userID)
 }
 
+
+
 // returns all existing hex leaderboards inside a given bounding box
-func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Context, bbox BoundingBox) (*GetAllHexLeaderboardsInsideBBoxResponse, error) {
+func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Context, bbox BoundingBox) (*dto.GetAllHexLeaderboardsInsideBBoxResponse, error) {
 
 	verts := h3.GeoLoop{
 		{Lat: bbox.MinLat, Lng: bbox.MinLng},
@@ -209,7 +200,7 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 		Holes:   nil,
 	}
 
-	h3Cells, err := h3.PolygonToCells(poly, 9) // 9 is the resolution, adjust as needed
+	h3Cells, err := h3.PolygonToCells(poly, constants.DefaultHexResolution) // 9 is the resolution, adjust as needed
 	if err != nil {
 		hls.logger.Error("Failed to convert polygon to H3 cells", zap.Error(err))
 		return nil, err
@@ -225,31 +216,5 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 		return nil, err
 	}
 	// Map the hex leaderboards to the response format
-	leaderboards := make([]HexLeaderboardResponse, 0, len(hexLeaderboards))
-
-	for _, hexLeaderboard := range hexLeaderboards {
-		topUsers := make([]TopUserResponse, 0, len(hexLeaderboard.TopUsers))
-		for _, user := range hexLeaderboard.TopUsers {
-			topUsers = append(topUsers, TopUserResponse{
-				UserID: user.UserID,
-				Score:  user.Score,
-			})
-		}
-
-		leaderboards = append(leaderboards, HexLeaderboardResponse{
-			ID:       hexLeaderboard.ID,
-			H3Index:  hexLeaderboard.H3Index,
-			TopUsers: topUsers,
-		})
-	}
-
-	// Optional: sort by H3Index
-	sort.Slice(leaderboards, func(i, j int) bool {
-		return leaderboards[i].H3Index < leaderboards[j].H3Index
-	})
-
-	// Return a single wrapper struct with all leaderboards inside
-	return &GetAllHexLeaderboardsInsideBBoxResponse{
-		Leaderboards: leaderboards,
-	}, nil
+	return mappers.MapHexLeaderboardsToResponse(hexLeaderboards), nil
 }

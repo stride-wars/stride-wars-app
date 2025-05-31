@@ -21,7 +21,7 @@ func NewHexLeaderboardHandler(hexLeaderboardService *service.HexLeaderboardServi
 	}
 }
 
-func (h HexLeaderboardHandler) GetAllLeaderboardsInsideBBBox(w http.ResponseWriter, r *http.Request) {
+func (h HexLeaderboardHandler) GetAllLeaderboardsInsideBBox(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	query := r.URL.Query()
 

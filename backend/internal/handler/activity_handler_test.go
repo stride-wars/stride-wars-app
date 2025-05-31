@@ -22,6 +22,7 @@ import (
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/repository"
 	"stride-wars-app/internal/service"
+	util "stride-wars-app/internal/utils"
 )
 
 type ActivityAPIResponse struct {
@@ -51,6 +52,7 @@ func setupTestActivityHandler(t *testing.T) (context.Context, *ent.Client, *hand
 	hexInfluenceRepo := repository.NewHexInfluenceRepository(client)
 	hexLeaderboardRepo := repository.NewHexLeaderboardRepository(client)
 	userRepo := repository.NewUserRepository(client)
+	userService := service.NewUserService(userRepo, zap.NewExample())
 	logger := zap.NewExample()
 	// Create service
 	activityService := service.NewActivityService(
@@ -59,6 +61,7 @@ func setupTestActivityHandler(t *testing.T) (context.Context, *ent.Client, *hand
 		hexInfluenceRepo,
 		hexLeaderboardRepo,
 		userRepo,
+		*userService,
 		logger,
 	)
 	// Create handler
@@ -77,39 +80,39 @@ func TestCreateActivityHappyPath(t *testing.T) {
 	repo := repository.NewUserRepository(client)
 	username := "alice"
 	externalID := uuid.New()
-	new_user := &model.User{
+	newUser := &model.User{
 		Username:     username,
 		ExternalUser: externalID,
 	}
 
-	created_user, err := repo.CreateUser(ctx, new_user)
+	createdUser, err := repo.CreateUser(ctx, newUser)
 	require.NoError(t, err)
 
 	// DEBUG: Print created user details
-	t.Logf("Created user: ID=%s, Username=%s", created_user.ID, created_user.Username)
+	t.Logf("Created user: ID=%s, Username=%s", createdUser.ID, createdUser.Username)
 
 	// DEBUG: Verify user exists in database
-	found_user, find_err := repo.FindByUsername(ctx, username)
-	require.NoError(t, find_err)
-	t.Logf("Found user in repo: ID=%s, Username=%s", found_user.ID, found_user.Username)
+	foundUser, findErr := repo.FindByUsername(ctx, username)
+	require.NoError(t, findErr)
+	t.Logf("Found user in repo: ID=%s, Username=%s", foundUser.ID, foundUser.Username)
 
 	// Prepare request body
-	create_req := service.CreateActivityRequest{
-		UserID:    created_user.ID,
+	createReq := service.CreateActivityRequest{
+		UserID:    createdUser.ID,
 		Duration:  3600,  // 1 hour in seconds
 		Distance:  10000, // 10 km in meters
 		H3Indexes: validH3Indexes,
 	}
-	req_body, err := json.Marshal(create_req)
+	reqBody, err := json.Marshal(createReq)
 	require.NoError(t, err)
 	if err != nil {
 		t.Fatalf("Failed to marshal request body: %v", err)
 	}
 
-	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(req_body))
+	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	// DEBUG: Print request body
-	t.Logf("Request body: %s", req_body)
+	t.Logf("Request body: %s", reqBody)
 	w := httptest.NewRecorder()
 
 	handler := http.HandlerFunc(activityHandler.CreateActivity)
@@ -123,7 +126,7 @@ func TestCreateActivityHappyPath(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Code)
 
 	var response ActivityAPIResponse
-	unmarshal_err := json.Unmarshal(w.Body.Bytes(), &response)
+	unmarshal_err := util.DecodeJSONBody(w.Body, &response)
 	assert.NoError(t, unmarshal_err)
 
 	// DEBUG: Print parsed response
