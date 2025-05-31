@@ -4,31 +4,29 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"stride-wars-app/ent"
-	"stride-wars-app/ent/enttest"
 	"testing"
 
-	"entgo.io/ent/dialect/sql/schema"
+	"stride-wars-app/ent"
+	"stride-wars-app/ent/model"
+	"stride-wars-app/internal/dto"
+	"stride-wars-app/internal/handler"
+	"stride-wars-app/internal/repository"
+	"stride-wars-app/internal/testutil"
+	"stride-wars-app/internal/util"
+
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-
-	"stride-wars-app/ent/model"
-	"stride-wars-app/internal/handler"
-	"stride-wars-app/internal/repository"
-	"stride-wars-app/internal/service"
-	util "stride-wars-app/internal/utils"
 )
 
 type ActivityAPIResponse struct {
-	Success bool                           `json:"success"`
-	Data    service.CreateActivityResponse `json:"data"`
-	Error   string                         `json:"error,omitempty"`
+	Success bool                       `json:"success"`
+	Data    dto.CreateActivityResponse `json:"data"`
+	Error   string                     `json:"error,omitempty"`
 }
 
 var validH3Indexes = []int64{
@@ -38,251 +36,172 @@ var validH3Indexes = []int64{
 
 func setupTestActivityHandler(t *testing.T) (context.Context, *ent.Client, *handler.ActivityHandler) {
 	t.Helper()
-	// Use enttest to create a transient in-memory SQLite DB
-	dbName := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1", uuid.New().String())
-	client := enttest.Open(t, "sqlite3", dbName)
 
-	// Run auto migration to create schema
-	err := client.Schema.Create(context.Background(), schema.WithForeignKeys(true))
-	require.NoError(t, err)
-
-	// Wire repositories
-	activityRepo := repository.NewActivityRepository(client)
-	hexRepo := repository.NewHexRepository(client)
-	hexInfluenceRepo := repository.NewHexInfluenceRepository(client)
-	hexLeaderboardRepo := repository.NewHexLeaderboardRepository(client)
-	userRepo := repository.NewUserRepository(client)
-	userService := service.NewUserService(userRepo, zap.NewExample())
-	logger := zap.NewExample()
-	// Create service
-	activityService := service.NewActivityService(
-		activityRepo,
-		hexRepo,
-		hexInfluenceRepo,
-		hexLeaderboardRepo,
-		userRepo,
-		*userService,
-		logger,
-	)
-	// Create handler
-	activityHandler := handler.NewActivityHandler(
-		activityService,
-		logger,
-	)
-	return context.Background(), client, activityHandler
+	svc := testutil.NewTestServices(t)
+	activityHandler := handler.NewActivityHandler(svc.ActivityService, zap.NewExample())
+	return svc.Ctx, svc.Client, activityHandler
 }
 
-func TestCreateActivityHappyPath(t *testing.T) {
-	// Setup
-	ctx, client, activityHandler := setupTestActivityHandler(t)
+func TestCreateActivity(t *testing.T) {
+	t.Parallel()
 
-	// Create test data
-	repo := repository.NewUserRepository(client)
-	username := "alice"
-	externalID := uuid.New()
-	newUser := &model.User{
-		Username:     username,
-		ExternalUser: externalID,
-	}
+	// ------------------------
+	// Subtest: HappyPath
+	// ------------------------
+	t.Run("HappyPath", func(t *testing.T) {
+		t.Parallel()
 
-	createdUser, err := repo.CreateUser(ctx, newUser)
-	require.NoError(t, err)
+		// Arrange: setup handler + DB
+		ctx, client, activityHandler := setupTestActivityHandler(t)
 
-	// DEBUG: Print created user details
-	t.Logf("Created user: ID=%s, Username=%s", createdUser.ID, createdUser.Username)
+		// Seed a valid user
+		userRepo := repository.NewUserRepository(client)
+		username := "alice"
+		externalID := uuid.New()
+		newUser := &model.User{
+			Username:     username,
+			ExternalUser: externalID,
+		}
+		createdUser, err := userRepo.CreateUser(ctx, newUser)
+		require.NoError(t, err)
 
-	// DEBUG: Verify user exists in database
-	foundUser, findErr := repo.FindByUsername(ctx, username)
-	require.NoError(t, findErr)
-	t.Logf("Found user in repo: ID=%s, Username=%s", foundUser.ID, foundUser.Username)
+		// Sanity check: user exists
+		foundUser, findErr := userRepo.FindByUsername(ctx, username)
+		require.NoError(t, findErr)
+		require.Equal(t, createdUser.ID, foundUser.ID)
 
-	// Prepare request body
-	createReq := service.CreateActivityRequest{
-		UserID:    createdUser.ID,
-		Duration:  3600,  // 1 hour in seconds
-		Distance:  10000, // 10 km in meters
-		H3Indexes: validH3Indexes,
-	}
-	reqBody, err := json.Marshal(createReq)
-	require.NoError(t, err)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
+		// Build request body
+		createReq := dto.CreateActivityRequest{
+			UserID:    foundUser.ID,
+			Duration:  3600,  // 1 hour
+			Distance:  10000, // 10 km
+			H3Indexes: validH3Indexes,
+		}
+		reqBody, err := json.Marshal(createReq)
+		require.NoError(t, err)
 
-	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	// DEBUG: Print request body
-	t.Logf("Request body: %s", reqBody)
-	w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(activityHandler.CreateActivity)
-	handler.ServeHTTP(w, req)
+		// Act
+		http.HandlerFunc(activityHandler.CreateActivity).ServeHTTP(w, req)
 
-	// DEBUG: Print response body
-	t.Logf("Response body: %s", w.Body.String())
-	t.Logf("Response status: %d", w.Code)
+		// Assert status code
+		assert.Equal(t, http.StatusCreated, w.Code)
 
-	// Assertions
-	assert.Equal(t, http.StatusCreated, w.Code)
+		// Assert response body
+		var resp ActivityAPIResponse
+		err = util.DecodeJSONBody(bytes.NewBuffer(w.Body.Bytes()), &resp)
+		require.NoError(t, err)
+		assert.True(t, resp.Success)
+		assert.NotEqual(t, uuid.Nil, resp.Data.ID)
+	})
 
-	var response ActivityAPIResponse
-	unmarshal_err := util.DecodeJSONBody(w.Body, &response)
-	assert.NoError(t, unmarshal_err)
+	// ------------------------
+	// Subtest: MissingFields
+	// ------------------------
+	t.Run("MissingFields", func(t *testing.T) {
+		t.Parallel()
 
-	// DEBUG: Print parsed response
-	t.Logf("Parsed response: ID=%s", response.Data.ID)
+		// Arrange: setup handler + DB
+		_, _, activityHandler := setupTestActivityHandler(t)
 
-	assert.NotEqual(t, uuid.Nil, response.Data.ID)
-}
+		// Build request with missing Duration
+		createReq := dto.CreateActivityRequest{
+			UserID:    uuid.New(),
+			Distance:  10000,
+			H3Indexes: validH3Indexes,
+		}
+		reqBody, err := json.Marshal(createReq)
+		require.NoError(t, err)
 
-/*
-func TestCreateActivityHappyPath(t *testing.T) {
-	// Setup
-	ctx, client, activityHandler := setupTestActivityHandler(t)
+		req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-	// Create test data
-	repo := repository.NewUserRepository(client)
-	username := "alice"
-	externalID := uuid.New()
-	new_user := &model.User{
-		Username:     username,
-		ExternalUser: externalID,
-	}
+		// Act
+		http.HandlerFunc(activityHandler.CreateActivity).ServeHTTP(w, req)
 
-	created_user, err := repo.CreateUser(ctx, new_user)
-	require.NoError(t, err)
+		// Assert status code
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	// DEBUG: Print created user details
-	t.Logf("Created user: ID=%s, Username=%s", created_user.ID, created_user.Username)
+		// Assert error message in response
+		var resp ActivityAPIResponse
+		err = json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Contains(t, resp.Error, "duration must be positive")
+	})
 
-	// DEBUG: Verify user exists in database
-	found_user, find_err := repo.FindByUsername(ctx, username)
-	require.NoError(t, find_err)
-	t.Logf("Found user in repo: ID=%s, Username=%s", found_user.ID, found_user.Username)
+	// ------------------------
+	// Subtest: NoUser
+	// ------------------------
+	t.Run("NoUser", func(t *testing.T) {
+		t.Parallel()
 
-	// Prepare request body
-	create_req := service.CreateActivityRequest{
-		UserID:    created_user.ID,
-		Duration:  3600, // 1 hour in seconds
-		Distance:  10000, // 10 km in meters
-		H3Indexes: validH3Indexes,
-	}
-	req_body, err := json.Marshal(create_req)
-	require.NoError(t, err)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
+		// Arrange: setup handler + DB
+		_, _, activityHandler := setupTestActivityHandler(t)
 
-	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(req_body))
-	req.Header.Set("Content-Type", "application/json")
-	// DEBUG: Print request body
-	t.Logf("Request body: %s", req_body)
-	w := httptest.NewRecorder()
+		// Build request with a random (non-existent) user ID
+		createReq := dto.CreateActivityRequest{
+			UserID:    uuid.New(),
+			Duration:  3600,
+			Distance:  10000,
+			H3Indexes: validH3Indexes,
+		}
+		reqBody, err := json.Marshal(createReq)
+		require.NoError(t, err)
 
-	handler := middleware.ParseJSON(http.HandlerFunc(activityHandler.CreateActivity))
-    handler.ServeHTTP(w, req)
+		req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-	// DEBUG: Print response body
-	t.Logf("Response body: %s", w.Body.String())
-	t.Logf("Response status: %d", w.Code)
+		// Act
+		http.HandlerFunc(activityHandler.CreateActivity).ServeHTTP(w, req)
 
-	// Assertions
-	assert.Equal(t, http.StatusCreated, w.Code)
+		// Assert status code
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	var response ActivityAPIResponse
-	unmarshal_err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, unmarshal_err)
+		// Assert error message in response
+		var resp ActivityAPIResponse
+		err = json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Contains(t, resp.Error, "user not found")
+	})
 
-	// DEBUG: Print parsed response
-	t.Logf("Parsed response: ID=%s", response.Data.ID)
+	// ------------------------
+	// Subtest: InvalidH3Indexes
+	// ------------------------
+	t.Run("InvalidH3Indexes", func(t *testing.T) {
+		t.Parallel()
 
-	assert.NotEqual(t, uuid.Nil, response.Data.ID)
-}
-*/
+		// Arrange: setup handler + DB
+		_, _, activityHandler := setupTestActivityHandler(t)
 
-func TestCreateActivityMissingFields(t *testing.T) {
-	// Setup
-	_, _, activityHandler := setupTestActivityHandler(t)
+		// Build request with invalid H3 index
+		createReq := dto.CreateActivityRequest{
+			UserID:    uuid.New(), // assume no user check here
+			Duration:  3600,
+			Distance:  10000,
+			H3Indexes: []int64{122}, // invalid
+		}
+		reqBody, err := json.Marshal(createReq)
+		require.NoError(t, err)
 
-	// Prepare request with missing fields
-	create_req := service.CreateActivityRequest{
-		UserID: uuid.New(),
-		// Missing  Duration
-		Distance:  10000, // 10 km in meters
-		H3Indexes: validH3Indexes,
-	}
-	req_body, err := json.Marshal(create_req)
-	require.NoError(t, err)
+		req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(req_body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
+		// Act
+		http.HandlerFunc(activityHandler.CreateActivity).ServeHTTP(w, req)
 
-	handler := http.HandlerFunc(activityHandler.CreateActivity)
-	handler.ServeHTTP(w, req)
+		// Assert status code
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	// Assertions
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var response ActivityAPIResponse
-	unmarshal_err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, unmarshal_err)
-	assert.Contains(t, response.Error, "duration must be positive")
-}
-
-func TestCreateActivityNoUser(t *testing.T) {
-	// Setup
-	_, _, activityHandler := setupTestActivityHandler(t)
-
-	// Prepare request with non-existent user ID
-	create_req := service.CreateActivityRequest{
-		UserID:    uuid.New(), // Non-existent user ID
-		Duration:  3600,       // 1 hour in seconds
-		Distance:  10000,      // 10 km in meters
-		H3Indexes: validH3Indexes,
-	}
-	req_body, err := json.Marshal(create_req)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(req_body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	handler := http.HandlerFunc(activityHandler.CreateActivity)
-	handler.ServeHTTP(w, req)
-
-	// Assertions
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var response ActivityAPIResponse
-	unmarshal_err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, unmarshal_err)
-	assert.Contains(t, response.Error, "user not found")
-}
-
-func TestCreateActivityInvalidH3Indexes(t *testing.T) {
-	// Setup
-	_, _, activityHandler := setupTestActivityHandler(t)
-
-	// Prepare request with invalid H3 indexes
-	create_req := service.CreateActivityRequest{
-		UserID:    uuid.New(),   // Assuming this user exists
-		Duration:  3600,         // 1 hour in seconds
-		Distance:  10000,        // 10 km in meters
-		H3Indexes: []int64{122}, // Empty H3 indexes
-	}
-	req_body, err := json.Marshal(create_req)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(req_body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	handler := http.HandlerFunc(activityHandler.CreateActivity)
-	handler.ServeHTTP(w, req)
-
-	// Assertions
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var response ActivityAPIResponse
-	unmarshal_err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, unmarshal_err)
-	assert.Contains(t, response.Error, "invalid H3 index")
+		// Assert error message in response
+		var resp ActivityAPIResponse
+		err = json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Contains(t, resp.Error, "invalid H3 index")
+	})
 }

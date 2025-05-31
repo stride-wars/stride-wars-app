@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"stride-wars-app/ent/enttest"
+	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/repository"
+	"stride-wars-app/internal/testutil"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
@@ -17,19 +18,20 @@ import (
 
 // TODO to properly test this we probably need to set up local postgres container????
 
-func TestActivityRepository_FindByID(t *testing.T) {
+func setupTestActivityHandler(t *testing.T) (context.Context, *ent.Client, repository.ActivityRepository, repository.UserRepository) {
+	t.Helper()
+
+	svc := testutil.NewTestServices(t)
+	activityRepo := repository.NewActivityRepository(svc.Client)
+	userRepo := repository.NewUserRepository(svc.Client)
+	return svc.Ctx, svc.Client, activityRepo, userRepo
+}
+
+func TestActivityRepository(t *testing.T) {
 	t.Parallel()
 	t.Run("correctly find activity by id", func(t *testing.T) {
-		client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&_fk=1")
-		defer func() {
-			if err := client.Close(); err != nil {
-				t.Fatalf("closing client: %v", err)
-			}
-		}()
-
-		ctx := context.Background()
-		activity_repo := repository.NewActivityRepository(client)
-		user_repo := repository.NewUserRepository(client)
+		t.Parallel()
+		ctx, _, activityRepo, userRepo := setupTestActivityHandler(t)
 
 		username := "alice"
 		externalID := uuid.New()
@@ -38,7 +40,7 @@ func TestActivityRepository_FindByID(t *testing.T) {
 			Username:     username,
 			ExternalUser: externalID,
 		}
-		created_user, err := user_repo.CreateUser(ctx, new_user)
+		created_user, err := userRepo.CreateUser(ctx, new_user)
 		require.NoError(t, err)
 
 		userID := created_user.ID
@@ -63,10 +65,10 @@ func TestActivityRepository_FindByID(t *testing.T) {
 			H3Indexes: h3_indexes,
 			CreatedAt: created_at,
 		}
-		created, err := activity_repo.CreateActivity(ctx, new_activity)
+		created, err := activityRepo.CreateActivity(ctx, new_activity)
 		require.NoError(t, err)
 
-		found, err := activity_repo.FindByID(ctx, created.ID)
+		found, err := activityRepo.FindByID(ctx, created.ID)
 		require.NoError(t, err)
 
 		require.Equal(t, created.ID, found.ID)

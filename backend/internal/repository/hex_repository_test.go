@@ -1,43 +1,40 @@
 package repository_test
 
 import (
-	"context"
 	"testing"
 
-	"stride-wars-app/ent/enttest"
-	"stride-wars-app/internal/repository"
-
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
-
 	"github.com/uber/h3-go/v4"
+
+	"stride-wars-app/internal/testutil"
 )
 
-// TODO to properly test this we probably need to set up local postgres container????
-
-func TestHexRepository_FindByID(t *testing.T) {
+func TestHexRepository(t *testing.T) {
 	t.Parallel()
+
 	t.Run("correctly find hex by id", func(t *testing.T) {
-		client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&_fk=1")
-		defer func() {
-			if err := client.Close(); err != nil {
-				t.Fatalf("closing client: %v", err)
-			}
-		}()
+		t.Parallel()
 
-		ctx := context.Background()
-		repo := repository.NewHexRepository(client)
+		// 1) Spin up a new in-memory DB + schema migration:
+		tdb := testutil.NewTestServices(t)
+		ctx := tdb.Ctx
 
+		// 2) Use the injected HexRepo from TestServices:
+		hexRepo := tdb.HexRepo
+
+		// 3) Create a valid H3 index (using h3 library):
 		latLng := h3.NewLatLng(37.775938728915946, -122.41795063018799)
 		resolution := 9
-
-		h3_index, err := h3.LatLngToCell(latLng, resolution)
+		h3Index, err := h3.LatLngToCell(latLng, resolution)
 		require.NoError(t, err)
 
-		created, err := repo.CreateHex(ctx, int64(h3_index))
+		// 4) Insert a new Hex row:
+		created, err := hexRepo.CreateHex(ctx, int64(h3Index))
 		require.NoError(t, err)
+		require.NotNil(t, created)
 
-		found, err := repo.FindByID(ctx, created.ID)
+		// 5) Find by ID:
+		found, err := hexRepo.FindByID(ctx, created.ID)
 		require.NoError(t, err)
 
 		require.Equal(t, created.ID, found.ID)

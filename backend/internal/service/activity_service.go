@@ -5,6 +5,7 @@ import (
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/constants"
+	"stride-wars-app/internal/dto"
 	"stride-wars-app/internal/repository"
 
 	"errors"
@@ -14,21 +15,6 @@ import (
 	"github.com/uber/h3-go/v4"
 	"go.uber.org/zap"
 )
-
-type CreateActivityRequest struct {
-	UserID    uuid.UUID `json:"user_id"`
-	Duration  float64   `json:"duration"` // in seconds
-	Distance  float64   `json:"distance"` // in meters
-	H3Indexes []int64   `json:"h3_indexes"`
-}
-
-type CreateActivityResponse struct {
-	ID        uuid.UUID `json:"activity_id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Duration  float64   `json:"duration"` // in seconds
-	Distance  float64   `json:"distance"` // in meters
-	H3Indexes []int64   `json:"h3_indexes"`
-}
 
 type ActivityService struct {
 	repository               repository.ActivityRepository
@@ -60,7 +46,7 @@ func NewActivityService(
 	}
 }
 
-func (a *ActivityService) validateCreateActivity(req CreateActivityRequest) error {
+func (a *ActivityService) validateCreateActivity(req dto.CreateActivityRequest) error {
 	if (req.UserID == uuid.Nil || req.UserID == uuid.UUID{}) {
 		return errors.New("UserID is required")
 	}
@@ -100,7 +86,7 @@ func (as *ActivityService) FindByUserID(ctx context.Context, userID uuid.UUID) (
 	return as.repository.FindByUserID(ctx, userID)
 }
 
-func (as *ActivityService) CreateActivity(ctx context.Context, req CreateActivityRequest) (*CreateActivityResponse, error) {
+func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateActivityRequest) (*dto.CreateActivityResponse, error) {
 	if err := as.validateCreateActivity(req); err != nil {
 		return nil, err
 	}
@@ -180,7 +166,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req CreateActivit
 	}
 	as.logger.Info("Finished processing all H3 indexes for activity.", zap.Stringer("activityID", createdActivity.ID))
 
-	return &CreateActivityResponse{
+	return &dto.CreateActivityResponse{
 		ID:        createdActivity.ID,
 		UserID:    createdActivity.UserID,
 		Duration:  createdActivity.DurationSeconds,
