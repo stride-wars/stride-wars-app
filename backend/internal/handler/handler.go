@@ -7,7 +7,8 @@ import (
 )
 
 type Handlers struct {
-	AuthHandler *AuthHandler
+	AuthHandler    *AuthHandler
+	HexDataHandler *HexDataHandler
 }
 
 func Provide(services *service.Services, logger *zap.Logger) *Handlers {

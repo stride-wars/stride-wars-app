@@ -19,13 +19,14 @@ export const getHexagonsInRadius = (lat: number, lng: number, radiusInMeters: nu
   });
 };
 
-export const getHexagonColor = (hexId: string) => {
+export function getHexagonColor(hexId: string): string {
+  // Simple hash function from hexId → 0–360
   let hash = 0;
   for (let i = 0; i < hexId.length; i++) {
-    hash = hexId.charCodeAt(i) + ((hash << 5) - hash);
+    hash = (hash << 5) - hash + hexId.charCodeAt(i);
+    hash |= 0; // Convert to 32bit int
   }
-  
-  // Convert to hex color
-  const hue = Math.abs(hash % 360);
-  return `hsl(${hue}, 70%, 50%)`;
-}; 
+
+  const hue = Math.abs(hash) % 360; // Map to hue value
+  return `hsla(${hue}, 70%, 50%, 0.3)`; // 30% transparent HSL color
+}
