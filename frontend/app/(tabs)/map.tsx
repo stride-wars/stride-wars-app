@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import MapView, { Polygon, PROVIDER_DEFAULT, Region } from 'react-native-maps';
-import * as Location from 'expo-location';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
@@ -26,8 +25,7 @@ function scalePolygon(coordinates: Coordinate[], scale: number): Coordinate[] {
 }
 
 export default function MapScreen() {
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { location, error, isLoading, getLocation } = useLocation();
   const [selectedHexId, setSelectedHexId] = useState<string | null>(null);
   const [hexagons, setHexagons] = useState<Array<{
     hexId: string;
@@ -38,21 +36,14 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        return;
-      }
+    getLocation();
+  }, []);
 
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setLocation(loc);
-
+  useEffect(() => {
+    if (location) {
       const rawHexes = getHexagonsInRadius(
-        loc.coords.latitude,
-        loc.coords.longitude,
+        location.coords.latitude,
+        location.coords.longitude,
         1000,
         9
       );
@@ -63,8 +54,8 @@ export default function MapScreen() {
       }));
 
       setHexagons(enrichedHexes);
-    })();
-  }, []);
+    }
+  }, [location]);
 
   const animateHexScaling = (hexId: string, toScale: number, duration: number = 150) => {
     const hex = hexagons.find(h => h.hexId === hexId);
@@ -112,15 +103,15 @@ export default function MapScreen() {
     longitudeDelta: 0.01,
   };
 
-  if (errorMsg) {
+  if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>{errorMsg}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
 
-  if (!location) {
+  if (isLoading || !location) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Loading location...</Text>
@@ -144,7 +135,7 @@ export default function MapScreen() {
           <Polygon
             key={hex.hexId}
             coordinates={hex.animatedCoordinates}
-            fillColor={getHexagonColor(hex.hexId)} // translucent and varied
+            fillColor={getHexagonColor(hex.hexId)}
             strokeColor="rgba(255, 255, 255, 0.4)"
             strokeWidth={1}
             tappable
@@ -153,7 +144,6 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Custom "Locate Me" Button (iOS + Android fallback) */}
       <TouchableOpacity
         style={styles.locateButton}
         onPress={() => {

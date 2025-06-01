@@ -14,12 +14,12 @@ export const sendLocationData = async (location: LocationData): Promise<void> =>
   try {
     const cellId = String(latLngToCell(location.latitude, location.longitude, res));
     console.log('cellId:', cellId, typeof cellId);
-    const response = await fetch(`${API_BASE}/api/data`, {
+    const response = await fetch(`${API_BASE}/api/v1/data/get`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ hex: cellId }),
+      body: JSON.stringify({ id: cellId }),
     });
 
     if (!response.ok) {

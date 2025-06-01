@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"bytes"
 
 	"go.uber.org/zap"
 )
@@ -46,6 +47,7 @@ func ParseJSON(next http.Handler) http.Handler {
 		if err := r.Body.Close(); err != nil {
 			log.Printf("failed to close request body: %v", err)
 		}
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		if len(body) == 0 {
 			next.ServeHTTP(w, r)
