@@ -35,12 +35,15 @@ export default function MapScreen() {
 
   const mapRef = useRef<MapView>(null);
 
+  // Fetch location on mount
   useEffect(() => {
     getLocation();
   }, []);
 
+  // When location updates, generate hexagons & animate map to location
   useEffect(() => {
     if (location) {
+      // Generate hexagons around current location
       const rawHexes = getHexagonsInRadius(
         location.coords.latitude,
         location.coords.longitude,
@@ -54,6 +57,14 @@ export default function MapScreen() {
       }));
 
       setHexagons(enrichedHexes);
+
+      // Animate map to user location
+      mapRef.current?.animateToRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
     }
   }, [location]);
 
@@ -96,13 +107,6 @@ export default function MapScreen() {
     }
   };
 
-  const defaultRegion: Region = {
-    latitude: location?.coords.latitude || 0,
-    longitude: location?.coords.longitude || 0,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
-
   if (error) {
     return (
       <View style={styles.container}>
@@ -125,7 +129,12 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_DEFAULT}
-        initialRegion={defaultRegion}
+        initialRegion={{
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
         showsUserLocation
         showsMyLocationButton={Platform.OS === 'android'}
         showsCompass
