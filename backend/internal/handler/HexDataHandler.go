@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"stride-wars-app/ent"
 
 	"go.uber.org/zap"
@@ -19,22 +20,29 @@ func NewHexDataHandler(logger *zap.Logger, entClient *ent.Client) *HexDataHandle
 
 func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ID string `json:"id"`
+		ID string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	// Parse hex string ID to int64, base 16
+	tempID, err := strconv.ParseInt(req.ID, 16, 64)
+	if err != nil {
+		http.Error(w, "ID must be a valid hex string", http.StatusBadRequest)
+		return
+	}
+
 	hex, err := h.EntClient.Hex.Create().
-		SetID(req.ID).
+		SetID(tempID).
 		Save(r.Context())
 	if err != nil {
-		// Check if it's a duplicate key error
 		if ent.IsConstraintError(err) {
-			h.Logger.Info("Hex already exists", zap.String("id", req.ID))
+			tempID3 := strconv.FormatInt(hex.ID, 16)
+			h.Logger.Info("Hex already exists", zap.String("id", tempID3))
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"already exists"}`))
+			_, _ = w.Write([]byte(`{"status":"already exists"}`))
 			return
 		}
 		h.Logger.Error("Failed to save hex", zap.Error(err))
@@ -42,7 +50,9 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.Logger.Info("Saved hex", zap.String("id", hex.ID))
+	// Convert saved int64 ID back to hex string for logging
+	tempID2 := strconv.FormatInt(hex.ID, 16)
+	h.Logger.Info("Saved hex", zap.String("id", tempID2))
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }

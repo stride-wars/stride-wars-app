@@ -5,11 +5,22 @@ import (
 	"sort"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
+	"stride-wars-app/internal/constants"
+	"stride-wars-app/internal/dto"
+	"stride-wars-app/internal/mappers"
 	"stride-wars-app/internal/repository"
 
 	"github.com/google/uuid"
+	"github.com/uber/h3-go/v4"
 	"go.uber.org/zap"
 )
+
+type BoundingBox struct {
+	MinLat float64 `json:"min_lat"`
+	MinLng float64 `json:"min_lng"`
+	MaxLat float64 `json:"max_lat"`
+	MaxLng float64 `json:"max_lng"`
+}
 
 type HexLeaderboardService struct {
 	hexLeaderboardRepository repository.HexLeaderboardRepository
@@ -168,4 +179,39 @@ func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx co
 // Return users position in a particular hex's leaderboard, returns nil if the user is not in the leaderboard / in case of an error
 func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
 	return hls.hexLeaderboardRepository.GetUserPositionInLeaderboard(ctx, hexID, userID)
+}
+
+// returns all existing hex leaderboards inside a given bounding box
+func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Context, bbox BoundingBox) (*dto.GetAllHexLeaderboardsInsideBBoxResponse, error) {
+
+	verts := h3.GeoLoop{
+		{Lat: bbox.MinLat, Lng: bbox.MinLng},
+		{Lat: bbox.MinLat, Lng: bbox.MaxLng},
+		{Lat: bbox.MaxLat, Lng: bbox.MaxLng},
+		{Lat: bbox.MaxLat, Lng: bbox.MinLng},
+	}
+
+	// Build a GeoPolygon with no holes.
+	poly := h3.GeoPolygon{
+		GeoLoop: verts,
+		Holes:   nil,
+	}
+
+	h3Cells, err := h3.PolygonToCells(poly, constants.DefaultHexResolution) // 9 is the resolution, adjust as needed
+	if err != nil {
+		hls.logger.Error("Failed to convert polygon to H3 cells", zap.Error(err))
+		return nil, err
+	}
+	h3Indexes := make([]int64, len(h3Cells))
+	for i, cell := range h3Cells {
+		h3Indexes[i] = int64(cell)
+	}
+	// Fetch all hex leaderboards for the given H3 indexes
+	hexLeaderboards, err := hls.hexLeaderboardRepository.FindByH3Indexes(ctx, h3Indexes)
+	if err != nil {
+		hls.logger.Error("Failed to fetch hex leaderboards by H3 indexes", zap.Error(err))
+		return nil, err
+	}
+	// Map the hex leaderboards to the response format
+	return mappers.MapHexLeaderboardsToResponse(hexLeaderboards), nil
 }

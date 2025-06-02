@@ -69,7 +69,7 @@ export function useAuth() {
           email: response.data.email,
           external_user: response.data.external_user
         }));
-        router.replace('/');
+        router.replace('/(tabs)');
       }
     } catch (error) {
       handleError(error);
@@ -92,22 +92,35 @@ export function useAuth() {
         throw new Error('Invalid email or password');
       }
 
+      const {username, external_user, session, user_id, email: user_email} = response.data.data
       // Store auth data
-      await AsyncStorage.setItem('access_token', response.data.session.access_token);
-      await AsyncStorage.setItem('refresh_token', response.data.session.refresh_token);
+      await AsyncStorage.setItem('access_token', session.access_token);
+      await AsyncStorage.setItem('refresh_token', session.refresh_token);
       await AsyncStorage.setItem('user', JSON.stringify({
-        id: response.data.user_id,
-        username: response.data.username,
-        email: response.data.email,
-        external_user: response.data.external_user
+        id: user_id,
+        username,
+        email: user_email,
+        external_user,
       }));
-      router.replace('/');
+      router.replace('/(tabs)');
     } catch (error) {
       console.log('%c Login Error:', 'color: #F44336; font-weight: bold', error);
       if (error instanceof Error) {
         throw error;
       }
       throw new Error('An error occurred during login');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('access_token');
+      await AsyncStorage.removeItem('refresh_token');
+      await AsyncStorage.removeItem('user');
+      router.replace('/login');
+    } catch (error) {
+      Alert.alert('Logout Error', 'An error occurred while logging out.');
+      console.error('Logout Error:', error);
     }
   };
 
@@ -123,5 +136,6 @@ export function useAuth() {
     errors,
     handleRegister,
     handleLogin,
+    handleLogout,
   };
 }
