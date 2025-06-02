@@ -23,6 +23,7 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		ID string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.Logger.Error("Failed to decode JSON", zap.Error(err))
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}

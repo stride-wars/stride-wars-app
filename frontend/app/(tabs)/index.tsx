@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function HomeScreen() {
@@ -18,6 +18,11 @@ export default function HomeScreen() {
           <Text style={styles.leaderboardEntry}>WalkMaster - 85 pts</Text>
           <Text style={styles.leaderboardEntry}>HikerPro - 95 pts</Text>
         </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -76,5 +81,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ddd',
     marginBottom: 4,
+  },
+  logoutButton: {
+    marginTop: 28,
+    backgroundColor: '#FF3B30',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

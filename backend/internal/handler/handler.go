@@ -4,6 +4,7 @@ import (
 	"stride-wars-app/internal/service"
 
 	"go.uber.org/zap"
+	"stride-wars-app/ent"
 )
 
 type Handlers struct {

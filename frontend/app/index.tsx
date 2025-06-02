@@ -64,14 +64,6 @@ export default function IndexScreen() {
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
-
-            {/* Mock small leaderboard panel */}
-            <View style={styles.leaderboardPanel}>
-              <Text style={styles.leaderboardTitle}>Leaderboard</Text>
-              <Text style={styles.leaderboardEntry}>StrideRunner42 - 120 pts</Text>
-              <Text style={styles.leaderboardEntry}>WalkMaster - 85 pts</Text>
-              <Text style={styles.leaderboardEntry}>HikerPro - 95 pts</Text>
-            </View>
           </>
         ) : (
           <>

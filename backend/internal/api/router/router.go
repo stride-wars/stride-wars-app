@@ -87,6 +87,10 @@ func (r *Router) Setup(
 
 	// Auth routes
 	auth := api.PathPrefix("/auth").Subrouter()
+	auth.HandleFunc("/signup", authHandler.SignUp).Methods("POST") //delete this later
+	auth.HandleFunc("/signin", authHandler.SignIn).Methods("POST") // delete this later
+
+
 	auth.HandleFunc(constants.Signup.String(), authHandler.SignUp).Methods("POST")
 	auth.HandleFunc(constants.Signin.String(), authHandler.SignIn).Methods("POST")
 
