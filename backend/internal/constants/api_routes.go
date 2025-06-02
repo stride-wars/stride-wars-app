@@ -8,15 +8,15 @@ const (
 	Signin ApiRoute = "/signin"
 
 	// User routes
-	GetUserByUsername ApiRoute = "/by-username"
-	GetUserByID       ApiRoute = "/by-id"
+	GetUserByUsername ApiRoute = "/username"
+	GetUserByID       ApiRoute = "/id"
 	UpdateUsername    ApiRoute = "/update"
 
 	// Activity routes
 	CreateActivity ApiRoute = "/create"
 
 	// Leaderboard routes
-	GetLeaderboardByBBox ApiRoute = "/by-bbox"
+	GetLeaderboardByBBox ApiRoute = "/bbox"
 
 	// Test route
 	Test ApiRoute = "/test"

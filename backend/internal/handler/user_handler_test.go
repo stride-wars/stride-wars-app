@@ -72,7 +72,7 @@ func TestUserHandler(t *testing.T) {
 		require.NoError(t, findErr)
 		require.Equal(t, createdUser.ID, foundUser.ID)
 
-		req := httptest.NewRequest("GET", "/user/by-username?username=alice", nil)
+		req := httptest.NewRequest("GET", "/user/username?username=alice", nil)
 		w := httptest.NewRecorder()
 
 		userHandler.GetUserByUsername(w, req)
@@ -95,7 +95,7 @@ func TestUserHandler(t *testing.T) {
 
 		_, _, userHandler := setupTestUserHandler(t)
 
-		req := httptest.NewRequest("GET", "/user/by-username?username=alice", nil)
+		req := httptest.NewRequest("GET", "/user/username?username=alice", nil)
 		w := httptest.NewRecorder()
 
 		userHandler.GetUserByUsername(w, req)
@@ -118,7 +118,8 @@ func TestUserHandler(t *testing.T) {
 
 		_, _, userHandler := setupTestUserHandler(t)
 
-		req := httptest.NewRequest("GET", "/user/by-username?usernnname=alice", nil)
+		req := httptest.NewRequest("GET", "/user/username?usernname=alice", nil)
+		// notice the typo in the query parameter
 		w := httptest.NewRecorder()
 
 		userHandler.GetUserByUsername(w, req)
@@ -148,7 +149,7 @@ func TestUserHandler(t *testing.T) {
 		require.NoError(t, findErr)
 		require.Equal(t, createdUser.ID, foundUser.ID)
 
-		req := httptest.NewRequest("GET", fmt.Sprintf("/user/by-id?id=%s", createdUser.ID), nil)
+		req := httptest.NewRequest("GET", fmt.Sprintf("/user/id?id=%s", createdUser.ID), nil)
 		w := httptest.NewRecorder()
 
 		userHandler.GetUserByID(w, req)
@@ -172,7 +173,7 @@ func TestUserHandler(t *testing.T) {
 		_, _, userHandler := setupTestUserHandler(t)
 
 		nonExistentID := uuid.New()
-		req := httptest.NewRequest("GET", fmt.Sprintf("/user/by-id?id=%s", nonExistentID), nil)
+		req := httptest.NewRequest("GET", fmt.Sprintf("/user/id?id=%s", nonExistentID), nil)
 		w := httptest.NewRecorder()
 
 		userHandler.GetUserByID(w, req)
@@ -195,7 +196,7 @@ func TestUserHandler(t *testing.T) {
 
 		_, _, userHandler := setupTestUserHandler(t)
 
-		req := httptest.NewRequest("GET", "/user/by-id?id=invalid-uuid", nil)
+		req := httptest.NewRequest("GET", "/user/id?id=invalid-uuid", nil)
 		w := httptest.NewRecorder()
 
 		userHandler.GetUserByID(w, req)
@@ -229,7 +230,7 @@ func TestUserHandler(t *testing.T) {
 		reqBody, err := json.Marshal(updateReq)
 		require.NoError(t, err)
 
-		req := httptest.NewRequest("PUT", "/user/update-username", bytes.NewBuffer(reqBody))
+		req := httptest.NewRequest("PUT", "/user/update", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -261,7 +262,7 @@ func TestUserHandler(t *testing.T) {
 		reqBody, err := json.Marshal(updateReq)
 		require.NoError(t, err)
 
-		req := httptest.NewRequest("PUT", "/user/update-username", bytes.NewBuffer(reqBody))
+		req := httptest.NewRequest("PUT", "/user/update", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -286,7 +287,7 @@ func TestUserHandler(t *testing.T) {
 
 		_, _, userHandler := setupTestUserHandler(t)
 
-		req := httptest.NewRequest("PUT", "/user/update-username", bytes.NewBufferString("invalid-json"))
+		req := httptest.NewRequest("PUT", "/user/update", bytes.NewBufferString("invalid-json"))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 

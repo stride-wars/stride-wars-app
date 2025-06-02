@@ -109,7 +109,7 @@ func TestHexLeaderboardHandler(t *testing.T) {
 		}
 		req, err := http.NewRequest(
 			"GET",
-			fmt.Sprintf("/hexleaderboards?min_lat=%f&min_lng=%f&max_lat=%f&max_lng=%f",
+			fmt.Sprintf("/hexleaderboards/bbox?min_lat=%f&min_lng=%f&max_lat=%f&max_lng=%f",
 				bbox.MinLat, bbox.MinLng, bbox.MaxLat, bbox.MaxLng),
 			nil,
 		)
