@@ -75,7 +75,7 @@ func TestUserHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", "/user/username?username=alice", nil)
 		w := httptest.NewRecorder()
 
-		userHandler.GetUserByUsername(w, req)
+		userHandler.GetUser(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -98,7 +98,7 @@ func TestUserHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", "/user/username?username=alice", nil)
 		w := httptest.NewRecorder()
 
-		userHandler.GetUserByUsername(w, req)
+		userHandler.GetUser(w, req)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 
@@ -122,7 +122,7 @@ func TestUserHandler(t *testing.T) {
 		// notice the typo in the query parameter
 		w := httptest.NewRecorder()
 
-		userHandler.GetUserByUsername(w, req)
+		userHandler.GetUser(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
@@ -152,7 +152,7 @@ func TestUserHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", fmt.Sprintf("/user/id?id=%s", createdUser.ID), nil)
 		w := httptest.NewRecorder()
 
-		userHandler.GetUserByID(w, req)
+		userHandler.GetUser(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -176,7 +176,7 @@ func TestUserHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", fmt.Sprintf("/user/id?id=%s", nonExistentID), nil)
 		w := httptest.NewRecorder()
 
-		userHandler.GetUserByID(w, req)
+		userHandler.GetUser(w, req)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 
@@ -199,7 +199,7 @@ func TestUserHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", "/user/id?id=invalid-uuid", nil)
 		w := httptest.NewRecorder()
 
-		userHandler.GetUserByID(w, req)
+		userHandler.GetUser(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})

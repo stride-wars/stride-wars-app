@@ -4,8 +4,8 @@ import (
 	"context"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
-	"stride-wars-app/internal/constants"
 	"stride-wars-app/internal/dto"
+	"stride-wars-app/internal/hex/hexconsts"
 	"stride-wars-app/internal/repository"
 
 	"errors"
@@ -17,32 +17,29 @@ import (
 )
 
 type ActivityService struct {
-	repository               repository.ActivityRepository
-	hexRepository            repository.HexRepository
-	hexInfluenceRepository   repository.HexInfluenceRepository
-	hexLeaderboardRepository repository.HexLeaderboardRepository
-	userRepository           repository.UserRepository
-	userService              UserService
-	logger                   *zap.Logger
+	repository            repository.ActivityRepository
+	HexService            *HexService
+	HexInfluenceService   *HexInfluenceService
+	HexLeaderboardService *HexLeaderboardService
+	UserService           *UserService
+	logger                *zap.Logger
 }
 
 func NewActivityService(
 	activityRepo repository.ActivityRepository,
-	hexRepo repository.HexRepository,
 	hexInfluenceRepo repository.HexInfluenceRepository,
 	hexLeaderboardRepo repository.HexLeaderboardRepository,
-	userRepo repository.UserRepository,
-	userService UserService,
+	hexRepo repository.HexRepository,
+	userService *UserService, // Fixed: pass already constructed service
 	logger *zap.Logger,
 ) *ActivityService {
 	return &ActivityService{
-		repository:               activityRepo,
-		hexRepository:            hexRepo,
-		hexInfluenceRepository:   hexInfluenceRepo,
-		hexLeaderboardRepository: hexLeaderboardRepo,
-		userRepository:           userRepo,
-		userService:              userService,
-		logger:                   logger,
+		repository:            activityRepo,
+		HexService:            NewHexService(hexRepo, logger),
+		HexInfluenceService:   NewHexInfluenceService(hexInfluenceRepo, logger),
+		HexLeaderboardService: NewHexLeaderboardService(hexLeaderboardRepo, hexInfluenceRepo, logger),
+		UserService:           userService, // Fixed: use passed-in service
+		logger:                logger,
 	}
 }
 
@@ -68,8 +65,8 @@ func (a *ActivityService) validateCreateActivity(req dto.CreateActivityRequest) 
 			return errors.New("invalid H3 index: " + strconv.FormatInt(h3Index, 10))
 		}
 
-		if cell.Resolution() != constants.DefaultHexResolution {
-			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution " + strconv.Itoa(constants.DefaultHexResolution))
+		if cell.Resolution() != hexconsts.DefaultHexResolution {
+			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution " + strconv.Itoa(hexconsts.DefaultHexResolution))
 		}
 	}
 
@@ -101,7 +98,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 		return nil, errors.New("activity must contain at least one H3 index")
 	}
 	// validate if user exists
-	_, err := as.userService.FindByID(ctx, activityInput.UserID)
+	_, err := as.UserService.FindByID(ctx, activityInput.UserID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, err
@@ -117,12 +114,8 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 	userID := activityInput.UserID
 	h3Indexes := activityInput.H3Indexes
 
-	hexService := NewHexService(as.hexRepository, as.logger)
-	hexInfluenceService := NewHexInfluenceService(as.hexInfluenceRepository, as.logger)
-	hexLeaderboardService := NewHexLeaderboardService(as.hexLeaderboardRepository, as.hexInfluenceRepository, as.logger)
-
 	as.logger.Debug("Checking and creating hexes if necessary", zap.Any("h3Indexes", h3Indexes))
-	existingHexEntities, err := hexService.FindByIDs(ctx, h3Indexes)
+	existingHexEntities, err := as.HexService.FindByIDs(ctx, h3Indexes)
 	if err != nil {
 		as.logger.Warn("Failed to pre-fetch existing hexes by IDs. Will attempt creation individually.",
 			zap.Error(err), zap.Any("h3Indexes", h3Indexes))
@@ -136,7 +129,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 	for _, h3Index := range h3Indexes {
 		if _, exists := existingHexMap[h3Index]; !exists {
 			as.logger.Info("Hex not found in database, attempting to create.", zap.Int64("h3Index", h3Index))
-			_, createHexErr := hexService.CreateHex(ctx, h3Index)
+			_, createHexErr := as.HexService.CreateHex(ctx, h3Index)
 			if createHexErr != nil {
 				as.logger.Error("Failed to create hex, or it was created concurrently by another process.",
 					zap.Error(createHexErr), zap.Int64("h3Index", h3Index))
@@ -150,14 +143,14 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 	for _, h3Index := range h3Indexes {
 
 		// Update or create hex influence
-		_, err := hexInfluenceService.UpdateOrCreateHexInfluence(ctx, userID, h3Index)
+		_, err := as.HexInfluenceService.UpdateOrCreateHexInfluence(ctx, userID, h3Index)
 		if err != nil {
 			as.logger.Error("Failed to update or create hex influence.", zap.Error(err), zap.Int64("h3Index", h3Index))
 			continue
 		}
 
 		// Add user to leaderboard
-		_, err = hexLeaderboardService.AddUserToLeaderboardOrCreateLeaderboard(ctx, h3Index, userID)
+		_, err = as.HexLeaderboardService.AddUserToLeaderboardOrCreateLeaderboard(ctx, h3Index, userID)
 		if err != nil {
 			as.logger.Error("Failed to add user to leaderboard.", zap.Error(err), zap.Int64("h3Index", h3Index))
 			continue

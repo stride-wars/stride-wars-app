@@ -5,8 +5,8 @@ import (
 	"sort"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
-	"stride-wars-app/internal/constants"
 	"stride-wars-app/internal/dto"
+	"stride-wars-app/internal/hex/hexconsts"
 	"stride-wars-app/internal/mappers"
 	"stride-wars-app/internal/repository"
 
@@ -197,7 +197,7 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 		Holes:   nil,
 	}
 
-	h3Cells, err := h3.PolygonToCells(poly, constants.DefaultHexResolution) // 9 is the resolution, adjust as needed
+	h3Cells, err := h3.PolygonToCells(poly, hexconsts.DefaultHexResolution) // 9 is the resolution, adjust as needed
 	if err != nil {
 		hls.logger.Error("Failed to convert polygon to H3 cells", zap.Error(err))
 		return nil, err

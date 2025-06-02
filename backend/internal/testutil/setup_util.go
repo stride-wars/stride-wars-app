@@ -60,11 +60,10 @@ func NewTestServices(t *testing.T) *TestServices {
 	userService := service.NewUserService(userRepo, logger)
 	activityService := service.NewActivityService(
 		activityRepo,
-		hexRepo,
 		hexInfluenceRepo,
 		hexLeaderboardRepo,
-		userRepo,
-		*userService,
+		hexRepo,
+		userService,
 		logger,
 	)
 	hexService := service.NewHexService(hexRepo, logger)

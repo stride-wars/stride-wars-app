@@ -74,11 +74,10 @@ func TestHexLeaderboardHandler(t *testing.T) {
 		// Create two activities with the same H3 indexes (different users)
 		activityService := service.NewActivityService(
 			repository.NewActivityRepository(client),
-			repository.NewHexRepository(client),
 			repository.NewHexInfluenceRepository(client),
 			repository.NewHexLeaderboardRepository(client),
-			repository.NewUserRepository(client),
-			*service.NewUserService(repository.NewUserRepository(client), zap.NewExample()),
+			repository.NewHexRepository(client),
+			service.NewUserService(repository.NewUserRepository(client), zap.NewExample()),
 			zap.NewExample(),
 		)
 

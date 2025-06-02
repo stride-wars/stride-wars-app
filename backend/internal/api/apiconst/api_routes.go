@@ -1,4 +1,4 @@
-package constants
+package apiroute
 
 type ApiRoute string
 
@@ -8,9 +8,7 @@ const (
 	Signin ApiRoute = "/signin"
 
 	// User routes
-	GetUserByUsername ApiRoute = "/username"
-	GetUserByID       ApiRoute = "/id"
-	UpdateUsername    ApiRoute = "/update"
+	UpdateUsername ApiRoute = "/update"
 
 	// Activity routes
 	CreateActivity ApiRoute = "/create"
