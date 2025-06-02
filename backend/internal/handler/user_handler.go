@@ -24,59 +24,52 @@ func NewUserHandler(userService *service.UserService, logger *zap.Logger) *UserH
 	}
 }
 
-func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
-	// Extract 'username' from query parameters
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	// Check for 'username' or 'id' query param
 	username := r.URL.Query().Get("username")
-	if username == "" {
-		middleware.WriteError(w, http.StatusBadRequest, "Missing 'username' query parameter")
-		return
-	}
-
-	// Call the service with the username
-	resp, err := h.userService.FindByUsername(r.Context(), username)
-	if err != nil {
-		h.logger.Error("find user by username failed", zap.Error(err))
-		if ent.IsNotFound(err) {
-			middleware.WriteError(w, http.StatusNotFound, "user not found")
-			return
-		}
-		middleware.WriteError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// Respond with JSON
-	middleware.WriteJSON(w, http.StatusOK, resp)
-}
-
-func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	// Extract the "id" query parameter
 	idStr := r.URL.Query().Get("id")
-	if idStr == "" {
-		middleware.WriteError(w, http.StatusBadRequest, "Missing 'id' query parameter")
-		return
-	}
 
-	// Validate UUID
-	userID, err := uuid.Parse(idStr)
-	if err != nil {
-		middleware.WriteError(w, http.StatusBadRequest, "Invalid UUID format for 'id'")
-		return
-	}
-
-	// Call the service
-	resp, err := h.userService.FindByID(r.Context(), userID)
-	if err != nil {
-		h.logger.Error("find user by ID failed", zap.Error(err))
-		if ent.IsNotFound(err) {
-			middleware.WriteError(w, http.StatusNotFound, "user not found")
+	switch {
+	case username != "":
+		// Fetch by username
+		resp, err := h.userService.FindByUsername(r.Context(), username)
+		if err != nil {
+			h.logger.Error("find user by username failed", zap.Error(err))
+			if ent.IsNotFound(err) {
+				middleware.WriteError(w, http.StatusNotFound, "user not found")
+			} else {
+				middleware.WriteError(w, http.StatusBadRequest, err.Error())
+			}
 			return
 		}
-		middleware.WriteError(w, http.StatusBadRequest, err.Error())
+		middleware.WriteJSON(w, http.StatusOK, resp)
 		return
-	}
 
-	// Return the response
-	middleware.WriteJSON(w, http.StatusOK, resp)
+	case idStr != "":
+		// Validate UUID
+		userID, err := uuid.Parse(idStr)
+		if err != nil {
+			middleware.WriteError(w, http.StatusBadRequest, "Invalid UUID format for 'id'")
+			return
+		}
+
+		// Fetch by ID
+		resp, err := h.userService.FindByID(r.Context(), userID)
+		if err != nil {
+			h.logger.Error("find user by ID failed", zap.Error(err))
+			if ent.IsNotFound(err) {
+				middleware.WriteError(w, http.StatusNotFound, "user not found")
+			} else {
+				middleware.WriteError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+		middleware.WriteJSON(w, http.StatusOK, resp)
+		return
+
+	default:
+		middleware.WriteError(w, http.StatusBadRequest, "Missing 'username' or 'id' query parameter")
+	}
 }
 
 func (h *UserHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
@@ -115,3 +108,5 @@ func (h *UserHandler) UpdateUsername(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+// merge get into one func

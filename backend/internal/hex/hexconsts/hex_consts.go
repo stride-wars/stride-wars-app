@@ -1,3 +1,3 @@
-package constants
+package hexconsts
 
 const DefaultHexResolution = 9

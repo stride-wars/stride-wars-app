@@ -22,12 +22,12 @@ func Provide(repositories *repository.Repositories, supabaseClient *supabase.Cli
 	return &Services{
 		UserService: userService,
 		AuthService: NewAuthService(supabaseClient, logger, userService),
-		ActivityService: NewActivityService(repositories.ActivityRepository,
-			repositories.HexRepository,
+		ActivityService: NewActivityService(
+			repositories.ActivityRepository,
 			repositories.HexInfluenceRepository,
 			repositories.HexLeaderboardRepository,
-			repositories.UserRepository,
-			*userService,
+			repositories.HexRepository,
+			userService,
 			logger),
 		HexService: NewHexService(repositories.HexRepository, logger),
 		HexLeaderboardService: NewHexLeaderboardService(repositories.HexLeaderboardRepository,

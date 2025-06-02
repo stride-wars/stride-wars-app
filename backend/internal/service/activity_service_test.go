@@ -32,11 +32,10 @@ func setupTest(t *testing.T) (context.Context, *ent.Client, *service.ActivitySer
 	ctx := svc.Ctx
 	activityService := service.NewActivityService(
 		svc.ActivityRepo,
-		svc.HexRepo,
 		svc.HexInfluenceRepo,
 		svc.HexLeaderboardRepo,
-		svc.UserRepo,
-		*svc.UserService,
+		svc.HexRepo,
+		svc.UserService,
 		zap.NewExample(),
 	)
 	return ctx, client, activityService

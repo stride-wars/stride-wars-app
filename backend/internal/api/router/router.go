@@ -3,8 +3,8 @@ package router
 import (
 	"net/http"
 
+	apiroute "stride-wars-app/internal/api/apiconst"
 	"stride-wars-app/internal/api/middleware"
-	"stride-wars-app/internal/constants"
 	"stride-wars-app/internal/handler"
 	"stride-wars-app/internal/service"
 
@@ -87,22 +87,21 @@ func (r *Router) Setup(
 
 	// Auth routes
 	auth := api.PathPrefix("/auth").Subrouter()
-	auth.HandleFunc(constants.Signup.String(), authHandler.SignUp).Methods("POST")
-	auth.HandleFunc(constants.Signin.String(), authHandler.SignIn).Methods("POST")
+	auth.HandleFunc(apiroute.Signup.String(), authHandler.SignUp).Methods("POST")
+	auth.HandleFunc(apiroute.Signin.String(), authHandler.SignIn).Methods("POST")
 
 	// User routes
 	users := api.PathPrefix("/user").Subrouter()
-	users.HandleFunc(constants.GetUserByUsername.String(), userHandler.GetUserByUsername).Methods("GET")
-	users.HandleFunc(constants.GetUserByID.String(), userHandler.GetUserByID).Methods("GET")
-	users.HandleFunc(constants.UpdateUsername.String(), userHandler.UpdateUsername).Methods("PUT")
+	users.HandleFunc("", userHandler.GetUser).Methods("GET")
+	users.HandleFunc(apiroute.UpdateUsername.String(), userHandler.UpdateUsername).Methods("PUT")
 
 	// Activity routes
 	activity := api.PathPrefix("/activity").Subrouter()
-	activity.HandleFunc(constants.CreateActivity.String(), activityHandler.CreateActivity).Methods("POST")
+	activity.HandleFunc(apiroute.CreateActivity.String(), activityHandler.CreateActivity).Methods("POST")
 
 	// Leaderboard routes
 	leaderboard := api.PathPrefix("/leaderboard").Subrouter()
-	leaderboard.HandleFunc(constants.GetLeaderboardByBBox.String(), hexLeaderboardHandler.GetAllLeaderboardsInsideBBox).Methods("GET")
+	leaderboard.HandleFunc(apiroute.GetLeaderboardByBBox.String(), hexLeaderboardHandler.GetAllLeaderboardsInsideBBox).Methods("GET")
 }
 
 // Handler returns the HTTP handler for the router
