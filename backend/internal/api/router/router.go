@@ -87,6 +87,7 @@ func (r *Router) Setup(
 
 	// Auth routes
 	auth := api.PathPrefix("/auth").Subrouter()
+
 	auth.HandleFunc(apiroute.Signup.String(), authHandler.SignUp).Methods("POST")
 	auth.HandleFunc(apiroute.Signin.String(), authHandler.SignIn).Methods("POST")
 

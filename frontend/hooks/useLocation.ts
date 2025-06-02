@@ -33,10 +33,12 @@ export const useLocation = () => {
         timestamp: location.timestamp,
       });
 
+      console.log('Location fetched:', location.coords.latitude, location.coords.longitude);
+
       await sendLocationData({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
-        timestamp: location.timestamp
+        timestamp: location.timestamp,
       });
 
     } catch (err) {

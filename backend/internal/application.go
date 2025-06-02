@@ -57,7 +57,7 @@ func (a *Application) Start(ctx context.Context) error {
 
 	a.Repositories = repository.Provide(a.EntClient)
 	a.Services = service.Provide(a.Repositories, a.SupabaseClient, a.Logger)
-	a.Handlers = handler.Provide(a.Services, a.Logger)
+	a.Handlers = handler.Provide(a.Services, a.Logger, a.EntClient)
 
 	if err := a.initializeRouter(); err != nil {
 		return err

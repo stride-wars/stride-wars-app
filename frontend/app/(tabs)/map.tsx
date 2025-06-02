@@ -1,53 +1,124 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import MapView, { Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
-import * as Location from 'expo-location';
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import MapView, { Polygon, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
+import { useLocation } from '../../hooks/useLocation';
+
+type Coordinate = { latitude: number; longitude: number };
+
+function interpolatePolygon(from: Coordinate[], to: Coordinate[], t: number): Coordinate[] {
+  return from.map((point, i) => ({
+    latitude: point.latitude + (to[i].latitude - point.latitude) * t,
+    longitude: point.longitude + (to[i].longitude - point.longitude) * t,
+  }));
+}
+
+function scalePolygon(coordinates: Coordinate[], scale: number): Coordinate[] {
+  const latAvg = coordinates.reduce((sum, p) => sum + p.latitude, 0) / coordinates.length;
+  const lngAvg = coordinates.reduce((sum, p) => sum + p.longitude, 0) / coordinates.length;
+
+  return coordinates.map(p => ({
+    latitude: latAvg + (p.latitude - latAvg) * scale,
+    longitude: lngAvg + (p.longitude - lngAvg) * scale,
+  }));
+}
 
 export default function MapScreen() {
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { location, error, isLoading, getLocation } = useLocation();
+  const [selectedHexId, setSelectedHexId] = useState<string | null>(null);
   const [hexagons, setHexagons] = useState<Array<{
     hexId: string;
-    coordinates: Array<{ latitude: number; longitude: number }>;
+    coordinates: Coordinate[];
+    animatedCoordinates: Coordinate[];
   }>>([]);
 
+  const mapRef = useRef<MapView>(null);
+
+  // Fetch location on mount
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setLocation(location);
-
-      // Generate hexagons around the user's location
-      const hexes = getHexagonsInRadius(
-        location.coords.latitude,
-        location.coords.longitude,
-        1000, // 1km radius
-        9 // resolution (9 is a good balance between detail and performance)
-      );
-      setHexagons(hexes);
-    })();
+    getLocation();
   }, []);
 
-  if (errorMsg) {
+  // When location updates, generate hexagons & animate map to location
+  useEffect(() => {
+    if (location) {
+      // Generate hexagons around current location
+      const rawHexes = getHexagonsInRadius(
+        location.coords.latitude,
+        location.coords.longitude,
+        1000,
+        9
+      );
+
+      const enrichedHexes = rawHexes.map(h => ({
+        ...h,
+        animatedCoordinates: h.coordinates,
+      }));
+
+      setHexagons(enrichedHexes);
+
+      // Animate map to user location
+      mapRef.current?.animateToRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    }
+  }, [location]);
+
+  const animateHexScaling = (hexId: string, toScale: number, duration: number = 150) => {
+    const hex = hexagons.find(h => h.hexId === hexId);
+    if (!hex) return;
+
+    const from = hex.animatedCoordinates;
+    const to = scalePolygon(hex.coordinates, toScale);
+    const steps = 10;
+    let currentStep = 0;
+
+    const interval = setInterval(() => {
+      currentStep++;
+      const t = currentStep / steps;
+      const intermediate = interpolatePolygon(from, to, t);
+
+      setHexagons(prev =>
+        prev.map(h =>
+          h.hexId === hexId
+            ? { ...h, animatedCoordinates: intermediate }
+            : h
+        )
+      );
+
+      if (currentStep >= steps) clearInterval(interval);
+    }, duration / steps);
+  };
+
+  const handleHexPress = (hexId: string) => {
+    if (selectedHexId === hexId) {
+      animateHexScaling(hexId, 1.0);
+      setSelectedHexId(null);
+    } else {
+      if (selectedHexId) {
+        animateHexScaling(selectedHexId, 1.0);
+      }
+      animateHexScaling(hexId, 1.05);
+      setSelectedHexId(hexId);
+    }
+  };
+
+  if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>{errorMsg}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
 
-  if (!location) {
+  if (isLoading || !location) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading map...</Text>
+        <Text style={styles.errorText}>Loading location...</Text>
       </View>
     );
   }
@@ -55,6 +126,7 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         style={styles.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={{
@@ -63,26 +135,39 @@ export default function MapScreen() {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         }}
-        showsUserLocation={true}
-        showsMyLocationButton={true}
-        showsCompass={true}
+        showsUserLocation
+        showsMyLocationButton={Platform.OS === 'android'}
+        showsCompass
         mapType="standard"
       >
-        {hexagons.map((hexagon) => (
+        {hexagons.map(hex => (
           <Polygon
-            key={hexagon.hexId}
-            coordinates={hexagon.coordinates}
-            fillColor={getHexagonColor(hexagon.hexId)}
-            strokeColor="rgba(255, 255, 255, 0.5)"
+            key={hex.hexId}
+            coordinates={hex.animatedCoordinates}
+            fillColor={getHexagonColor(hex.hexId)}
+            strokeColor="rgba(255, 255, 255, 0.4)"
             strokeWidth={1}
-            tappable={true}
-            onPress={() => {
-              // Handle hexagon press if needed
-              console.log('Hexagon pressed:', hexagon.hexId);
-            }}
+            tappable
+            onPress={() => handleHexPress(hex.hexId)}
           />
         ))}
       </MapView>
+
+      <TouchableOpacity
+        style={styles.locateButton}
+        onPress={() => {
+          if (location) {
+            mapRef.current?.animateToRegion({
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            });
+          }
+        }}
+      >
+        <MaterialIcons name="my-location" size={24} color="white" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -102,10 +187,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-  loadingText: {
-    color: '#FFD600',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 20,
+  locateButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 24,
+    zIndex: 999,
   },
-}); 
+});

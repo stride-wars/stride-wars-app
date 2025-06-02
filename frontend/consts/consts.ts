@@ -1,1 +1,1 @@
-export const API_BASE = 'http://localhost:8080';
+export const EXPO_PUBLIC_API_URL = 'https://4d85-188-146-191-2.ngrok-free.app';
