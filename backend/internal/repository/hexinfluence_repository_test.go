@@ -1,79 +1,77 @@
 package repository_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	"stride-wars-app/ent/enttest"
+	"github.com/stretchr/testify/require"
+
 	"stride-wars-app/ent/model"
-	"stride-wars-app/internal/repository"
+	"stride-wars-app/internal/testutil"
 
 	"github.com/google/uuid"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/require"
 )
 
-// TODO to properly test this we probably need to set up local postgres container????
-
-func TestHexInfluenceRepository_UpdateHexInfluence(t *testing.T) {
+func TestHexInfluenceRepository(t *testing.T) {
 	t.Parallel()
+
 	t.Run("correctly update a hex influence", func(t *testing.T) {
-		client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&_fk=1")
-		defer func() {
-			if err := client.Close(); err != nil {
-				t.Fatalf("closing client: %v", err)
-			}
-		}()
+		t.Parallel()
 
-		ctx := context.Background()
-		influence_repo := repository.NewHexInfluenceRepository(client)
-		user_repo := repository.NewUserRepository(client)
-		hex_repo := repository.NewHexRepository(client)
+		// 1) New in-memory DB:
+		tdb := testutil.NewTestServices(t)
+		ctx := tdb.Ctx
 
-		created_hex, err := hex_repo.CreateHex(ctx, 617700169958293503)
+		// 2) Pull repos from TestServices:
+		inflRepo := tdb.HexInfluenceRepo
+		userRepo := tdb.UserRepo
+		hexRepo := tdb.HexRepo
+
+		// 3) Create a hex row first:
+		createdHex, err := hexRepo.CreateHex(ctx, 617700169958293503)
 		require.NoError(t, err)
-		require.NotNil(t, created_hex)
+		require.NotNil(t, createdHex)
 
+		// 4) Create a user:
 		username := "alice"
 		externalID := uuid.New()
-
-		new_user := &model.User{
+		newUser := &model.User{
 			Username:     username,
 			ExternalUser: externalID,
 		}
-		created_user, err := user_repo.CreateUser(ctx, new_user)
+		createdUser, err := userRepo.CreateUser(ctx, newUser)
 		require.NoError(t, err)
 
-		userID := created_user.ID
-		h3_index := int64(617700169958293503)
-		last_updated := time.Now().Add(-15 * 24 * time.Hour)
+		// 5) Insert a HexInfluence with Score=10.0 and LastUpdated 15 days ago:
+		userID := createdUser.ID
+		h3Index := int64(617700169958293503)
+		lastUpdated := time.Now().Add(-15 * 24 * time.Hour)
 		score := 10.0
 
-		new_hex_influence := &model.HexInfluence{
+		newInfluence := &model.HexInfluence{
 			UserID:      userID,
-			H3Index:     h3_index,
-			LastUpdated: last_updated,
+			H3Index:     h3Index,
+			LastUpdated: lastUpdated,
 			Score:       score,
 		}
-		created, err := influence_repo.CreateHexInfluence(ctx, new_hex_influence)
+		createdInfluence, err := inflRepo.CreateHexInfluence(ctx, newInfluence)
 		require.NoError(t, err)
 
-		rows_changed, err := influence_repo.UpdateHexInfluence(ctx, created.UserID, created.H3Index)
+		// 6) Update the influence (should decrement Score to 9.0 and set LastUpdated=now):
+		rowsChanged, err := inflRepo.UpdateHexInfluence(ctx, createdInfluence.UserID, createdInfluence.H3Index)
 		require.NoError(t, err)
-		updated_influence, err := influence_repo.FindByUserIDAndHexID(ctx, created.UserID, created.H3Index)
+		require.Equal(t, 1, rowsChanged)
+
+		// 7) Fetch the updated row:
+		updated, err := inflRepo.FindByUserIDAndHexID(ctx, createdInfluence.UserID, createdInfluence.H3Index)
 		require.NoError(t, err)
 
-		require.Equal(t, 1, rows_changed)
-		require.Equal(t, created.ID, updated_influence.ID)
-		require.Equal(t, 9.0, updated_influence.Score)
-		require.Equal(t, created.UserID, updated_influence.UserID)
-		require.Equal(t, created.H3Index, h3_index)
-		require.WithinDuration(t,
-			time.Now(),
-			updated_influence.LastUpdated, // actual
-			time.Second*2,                 // tolerance
-		)
+		require.Equal(t, createdInfluence.ID, updated.ID)
+		require.Equal(t, userID, updated.UserID)
+		require.Equal(t, h3Index, updated.H3Index)
+		require.Equal(t, 9.0, updated.Score)
 
+		// 8) LastUpdated was set to “now”:
+		require.WithinDuration(t, time.Now(), updated.LastUpdated, time.Second*2)
 	})
 }

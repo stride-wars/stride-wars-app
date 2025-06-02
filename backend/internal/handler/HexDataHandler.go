@@ -20,7 +20,7 @@ func NewHexDataHandler(logger *zap.Logger, entClient *ent.Client) *HexDataHandle
 
 func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ID string `json:"id"`
+		ID string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.Logger.Error("Failed to decode JSON", zap.Error(err))
@@ -40,9 +40,10 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 		Save(r.Context())
 	if err != nil {
 		if ent.IsConstraintError(err) {
-			h.Logger.Info("Hex already exists", zap.String("id", req.ID))
+			tempID3 := strconv.FormatInt(hex.ID, 16)
+			h.Logger.Info("Hex already exists", zap.String("id", tempID3))
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"already exists"}`))
+			_, _ = w.Write([]byte(`{"status":"already exists"}`))
 			return
 		}
 		h.Logger.Error("Failed to save hex", zap.Error(err))
@@ -54,5 +55,5 @@ func (h *HexDataHandler) ReceiveHexData(w http.ResponseWriter, r *http.Request) 
 	tempID2 := strconv.FormatInt(hex.ID, 16)
 	h.Logger.Info("Saved hex", zap.String("id", tempID2))
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }

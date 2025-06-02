@@ -91,7 +91,10 @@ func (a *Application) initializeEntClient(ctx context.Context) error {
 
 func (a *Application) initializeRouter() error {
 	router := router.New(a.Logger)
-	router.Setup(a.Handlers.AuthHandler, a.Services.AuthService, a.Handlers.HexDataHandler, a.Services.HexService)
+	router.Setup(a.Handlers.AuthHandler, a.Services.AuthService,
+		a.Handlers.UserHandler, a.Services.UserService,
+		a.Handlers.ActivityHandler, a.Services.ActivityService,
+		a.Handlers.HexLeaderboardHandler, a.Services.HexLeaderboardService)
 	a.Router = router.Handler()
 	return nil
 }
