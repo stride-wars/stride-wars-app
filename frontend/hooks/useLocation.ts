@@ -1,6 +1,5 @@
 import * as Location from 'expo-location';
 import { useState } from 'react';
-import { sendLocationData } from '../services/api';
 
 export interface LocationState {
   coords: {
@@ -35,11 +34,7 @@ export const useLocation = () => {
 
       console.log('Location fetched:', location.coords.latitude, location.coords.longitude);
 
-      await sendLocationData({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        timestamp: location.timestamp,
-      });
+      // 🔥 Removed sendLocationData() call
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
