@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '90%',
-    marginVertical: 20,
+    marginVertical: '10%',
   },
   statCard: {
     backgroundColor: '#1E1E1E',
