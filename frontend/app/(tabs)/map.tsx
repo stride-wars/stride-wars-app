@@ -4,6 +4,7 @@ import MapView, { Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Coordinate = { latitude: number; longitude: number };
 
@@ -173,13 +174,13 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      <View style={styles.activityControls}>
+      <View style={styles.bottomButtonContainer}>
         {!isRecording ? (
           <TouchableOpacity
             onPress={() => setIsRecording(true)}
-            style={styles.startButton}
+            style={styles.fullWidthButton}
           >
-            <Text style={styles.startButtonText}>Start activity</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Start striding!</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.timerContainer}>
@@ -223,7 +224,9 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
-    height: '100%',
+    flex: 1,
+    margin: 0,
+    padding: 0,
   },
   errorText: {
     color: '#FFD600',
@@ -233,8 +236,8 @@ const styles = StyleSheet.create({
   },
   locateButton: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
+    bottom: 80,
+    right: 30,
     backgroundColor: 'rgba(0,0,0,0.6)',
     padding: 12,
     borderRadius: 24,
@@ -265,11 +268,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  timerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   timerText: {
     color: '#fff',
     fontSize: 16,
@@ -277,16 +275,52 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
+    width: '25%',
+    textAlign: 'center',
   },
-  stopButton: {
-    backgroundColor: '#ff5252',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
+  bottomButtonContainer: {
+    width: '100%',
+    backgroundColor: '#FFD600',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56,
+    padding: 0,
+    margin: 0,
+    borderRadius: 0,
+    borderTopWidth: 0,
+  },
+  timerContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    justifyContent: 'center',
   },
   stopButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  stopButton: {
+    backgroundColor: '#ff5252',
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    height: '80%',
+    aspectRatio: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+    width: '25%',
+    textAlign: 'center',
+  },
+  fullWidthButton: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    margin: 0,
+    borderRadius: 0,
   },
 });

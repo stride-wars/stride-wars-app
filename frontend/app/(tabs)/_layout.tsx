@@ -18,9 +18,9 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: '#1E1E1E',
             borderTopColor: '#333',
-            paddingBottom: 6,
+            paddingBottom: 12,
             paddingTop: 4,
-            height: 60,
+            height: 70,
           },
           headerStyle: {
             backgroundColor: '#1E1E1E',
@@ -44,7 +44,25 @@ export default function TabLayout() {
             />
           ),
         }}
-      >
+      > 
+        <Tabs.Screen
+            name="map"
+            options={{
+              title: 'Map',
+              tabBarIcon: ({ color, focused }) => (
+                <FontAwesome
+                  name="map-marker"
+                  size={24}
+                  color={color}
+                  style={{
+                    textShadowColor: focused ? '#FFD600AA' : 'transparent',
+                    textShadowOffset: { width: 0, height: 0 },
+                    textShadowRadius: 8,
+                  }}
+                />
+              ),
+          }}
+        />
         <Tabs.Screen
           name="index"
           options={{
@@ -62,25 +80,7 @@ export default function TabLayout() {
               />
             ),
           }}
-        />
-        <Tabs.Screen
-          name="map"
-          options={{
-            title: 'Map',
-            tabBarIcon: ({ color, focused }) => (
-              <FontAwesome
-                name="map-marker"
-                size={24}
-                color={color}
-                style={{
-                  textShadowColor: focused ? '#FFD600AA' : 'transparent',
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 8,
-                }}
-              />
-            ),
-          }}
-        />
+        />=
         <Tabs.Screen
           name="profile"
           options={{
