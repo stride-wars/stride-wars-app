@@ -15,6 +15,7 @@ const (
 
 	// Leaderboard routes
 	GetLeaderboardByBBox ApiRoute = "/bbox"
+	GetGlobalLeaderboard ApiRoute = "/global"
 
 	// Test route
 	Test ApiRoute = "/test"

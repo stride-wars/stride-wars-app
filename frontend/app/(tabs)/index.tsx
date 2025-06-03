@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useGlobalLeaderboard } from '../../hooks/useGlobalLeaderboards';
 
 const leaderboardData = [
   { name: 'StrideRunner42', score: 120 },
@@ -25,6 +26,7 @@ const leaderboardData = [
 
 export default function HomeScreen() {
   const { handleLogout } = useAuth();
+  const { leaderboard, loading, error, refresh } = useGlobalLeaderboard();
 
   const getTrophyIcon = (index: number) => {
     const colors = ['#FFD700', '#C0C0C0', '#CD7F32']; // gold, silver, bronze
@@ -38,6 +40,9 @@ export default function HomeScreen() {
     );
   };
 
+  if (loading) return <Text>Loading leaderboard...</Text>;
+  if (error) return <Text>Error: {error}</Text>;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mainCard}>
@@ -48,12 +53,12 @@ export default function HomeScreen() {
         <View style={styles.leaderboardPanel}>
           <Text style={styles.leaderboardTitle}>🏆 Leaderboard</Text>
           <ScrollView style={{ maxHeight: 240 }}>
-            {leaderboardData.map((entry, index) => (
-              <View style={styles.leaderboardRow} key={index}>
+            {leaderboard && leaderboard.map((entry, index) => (
+              <View style={styles.leaderboardRow} key={entry.user_id}>
                 <Text style={styles.rank}>{index + 1}.</Text>
                 {index < 1 && getTrophyIcon(index)}
-                <Text style={styles.name}>{entry.name}</Text>
-                <Text style={styles.score}>{entry.score} pts</Text>
+                <Text style={styles.name}>{entry.username || entry.user_id}</Text>
+                <Text style={styles.score}>{entry.top_count} pts</Text>
               </View>
             ))}
           </ScrollView>
