@@ -34,13 +34,13 @@ func (r HexInfluenceRepository) FindByIDs(ctx context.Context, ids []uuid.UUID) 
 func (r HexInfluenceRepository) FindByUserID(ctx context.Context, userID uuid.UUID) ([]*ent.HexInfluence, error) {
 	return r.client.HexInfluence.Query().Where(entHexInfluence.UserIDEQ(userID)).All(ctx)
 }
-func (r HexInfluenceRepository) FindByUserIDAndHexID(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
+func (r HexInfluenceRepository) FindByUserIDAndHexID(ctx context.Context, userID uuid.UUID, hexID string) (*ent.HexInfluence, error) {
 	return r.client.HexInfluence.Query().Where(
 		entHexInfluence.H3IndexEQ(hexID),
 		entHexInfluence.UserIDEQ(userID),
 	).First(ctx)
 }
-func (r HexInfluenceRepository) FindByHexID(ctx context.Context, hexID int64) ([]*ent.HexInfluence, error) {
+func (r HexInfluenceRepository) FindByHexID(ctx context.Context, hexID string) ([]*ent.HexInfluence, error) {
 	return r.client.HexInfluence.Query().Where(entHexInfluence.H3IndexEQ(hexID)).All(ctx)
 }
 
@@ -53,7 +53,7 @@ func (r HexInfluenceRepository) CreateHexInfluence(ctx context.Context, hexInflu
 		SetID(uuid.New()).
 		Save(ctx)
 }
-func (r HexInfluenceRepository) UpdateHexInfluence(ctx context.Context, userID uuid.UUID, hexID int64) (int, error) {
+func (r HexInfluenceRepository) UpdateHexInfluence(ctx context.Context, userID uuid.UUID, hexID string) (int, error) {
 	hexInfluence, err := r.FindByUserIDAndHexID(ctx, userID, hexID)
 	if err != nil {
 		return 0, err
@@ -81,7 +81,7 @@ func (r HexInfluenceRepository) UpdateHexInfluence(ctx context.Context, userID u
 		Save(ctx)
 }
 
-func (r HexInfluenceRepository) UpdateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []int64) (int, error) {
+func (r HexInfluenceRepository) UpdateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []string) (int, error) {
 	totalUpdated := 0
 	for _, h3id := range hexIDs {
 		n, err := r.UpdateHexInfluence(ctx, userID, h3id)
@@ -93,7 +93,7 @@ func (r HexInfluenceRepository) UpdateHexInfluences(ctx context.Context, userID 
 
 	return totalUpdated, nil
 }
-func (r HexInfluenceRepository) UpdateOrCreateHexInfluence(ctx context.Context, userID uuid.UUID, hexID int64) (*ent.HexInfluence, error) {
+func (r HexInfluenceRepository) UpdateOrCreateHexInfluence(ctx context.Context, userID uuid.UUID, hexID string) (*ent.HexInfluence, error) {
 	updatedInfluence, err := r.UpdateHexInfluence(ctx, userID, hexID)
 	if err != nil {
 		// Check if the error is due to no rows being updated (i.e., not found)
@@ -115,7 +115,7 @@ func (r HexInfluenceRepository) UpdateOrCreateHexInfluence(ctx context.Context, 
 	}
 	return r.FindByUserIDAndHexID(ctx, userID, hexID)
 }
-func (r HexInfluenceRepository) UpdateOrCreateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []int64) ([]*ent.HexInfluence, error) {
+func (r HexInfluenceRepository) UpdateOrCreateHexInfluences(ctx context.Context, userID uuid.UUID, hexIDs []string) ([]*ent.HexInfluence, error) {
 	updatedInfluences := make([]*ent.HexInfluence, 0, len(hexIDs))
 	for _, h3id := range hexIDs {
 		influence, err := r.UpdateOrCreateHexInfluence(ctx, userID, h3id)

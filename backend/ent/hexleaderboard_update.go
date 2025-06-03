@@ -31,15 +31,15 @@ func (hlu *HexLeaderboardUpdate) Where(ps ...predicate.HexLeaderboard) *HexLeade
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hlu *HexLeaderboardUpdate) SetH3Index(i int64) *HexLeaderboardUpdate {
-	hlu.mutation.SetH3Index(i)
+func (hlu *HexLeaderboardUpdate) SetH3Index(s string) *HexLeaderboardUpdate {
+	hlu.mutation.SetH3Index(s)
 	return hlu
 }
 
 // SetNillableH3Index sets the "h3_index" field if the given value is not nil.
-func (hlu *HexLeaderboardUpdate) SetNillableH3Index(i *int64) *HexLeaderboardUpdate {
-	if i != nil {
-		hlu.SetH3Index(*i)
+func (hlu *HexLeaderboardUpdate) SetNillableH3Index(s *string) *HexLeaderboardUpdate {
+	if s != nil {
+		hlu.SetH3Index(*s)
 	}
 	return hlu
 }
@@ -57,7 +57,7 @@ func (hlu *HexLeaderboardUpdate) AppendTopUsers(mu []model.TopUser) *HexLeaderbo
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hlu *HexLeaderboardUpdate) SetHexID(id int64) *HexLeaderboardUpdate {
+func (hlu *HexLeaderboardUpdate) SetHexID(id string) *HexLeaderboardUpdate {
 	hlu.mutation.SetHexID(id)
 	return hlu
 }
@@ -141,7 +141,7 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -154,7 +154,7 @@ func (hlu *HexLeaderboardUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -183,15 +183,15 @@ type HexLeaderboardUpdateOne struct {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (hluo *HexLeaderboardUpdateOne) SetH3Index(i int64) *HexLeaderboardUpdateOne {
-	hluo.mutation.SetH3Index(i)
+func (hluo *HexLeaderboardUpdateOne) SetH3Index(s string) *HexLeaderboardUpdateOne {
+	hluo.mutation.SetH3Index(s)
 	return hluo
 }
 
 // SetNillableH3Index sets the "h3_index" field if the given value is not nil.
-func (hluo *HexLeaderboardUpdateOne) SetNillableH3Index(i *int64) *HexLeaderboardUpdateOne {
-	if i != nil {
-		hluo.SetH3Index(*i)
+func (hluo *HexLeaderboardUpdateOne) SetNillableH3Index(s *string) *HexLeaderboardUpdateOne {
+	if s != nil {
+		hluo.SetH3Index(*s)
 	}
 	return hluo
 }
@@ -209,7 +209,7 @@ func (hluo *HexLeaderboardUpdateOne) AppendTopUsers(mu []model.TopUser) *HexLead
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by ID.
-func (hluo *HexLeaderboardUpdateOne) SetHexID(id int64) *HexLeaderboardUpdateOne {
+func (hluo *HexLeaderboardUpdateOne) SetHexID(id string) *HexLeaderboardUpdateOne {
 	hluo.mutation.SetHexID(id)
 	return hluo
 }
@@ -323,7 +323,7 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -336,7 +336,7 @@ func (hluo *HexLeaderboardUpdateOne) sqlSave(ctx context.Context) (_node *HexLea
 			Columns: []string{hexleaderboard.HexColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

@@ -19,7 +19,7 @@ func NewHexLeaderboardRepository(client *ent.Client) HexLeaderboardRepository {
 func (r HexLeaderboardRepository) FindByID(ctx context.Context, id uuid.UUID) (*ent.HexLeaderboard, error) {
 	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.IDEQ(id)).First(ctx)
 }
-func (r HexLeaderboardRepository) FindByH3Index(ctx context.Context, hexID int64) (*ent.HexLeaderboard, error) {
+func (r HexLeaderboardRepository) FindByH3Index(ctx context.Context, hexID string) (*ent.HexLeaderboard, error) {
 	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.H3IndexEQ(hexID)).First(ctx)
 }
 func (r HexLeaderboardRepository) CreateHexLeaderboard(ctx context.Context, hexLeaderboard *model.HexLeaderboard) (*ent.HexLeaderboard, error) {
@@ -31,12 +31,12 @@ func (r HexLeaderboardRepository) CreateHexLeaderboard(ctx context.Context, hexL
 func (r HexLeaderboardRepository) UpdateHexLeaderboard(ctx context.Context, hexLeaderboard *model.HexLeaderboard) (int, error) {
 	return r.client.HexLeaderboard.Update().Where(entHexLeaderboard.IDEQ(hexLeaderboard.ID)).SetTopUsers(hexLeaderboard.TopUsers).Save(ctx)
 }
-func (r HexLeaderboardRepository) FindByH3Indexes(ctx context.Context, h3Indexes []int64) ([]*ent.HexLeaderboard, error) {
+func (r HexLeaderboardRepository) FindByH3Indexes(ctx context.Context, h3Indexes []string) ([]*ent.HexLeaderboard, error) {
 	return r.client.HexLeaderboard.Query().Where(entHexLeaderboard.H3IndexIn(h3Indexes...)).All(ctx)
 }
 
 // Return users position in a particular hex's leaderboard, returns nil if the user is not in the leaderboard / in case of an error
-func (r HexLeaderboardRepository) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
+func (r HexLeaderboardRepository) GetUserPositionInLeaderboard(ctx context.Context, hexID string, userID uuid.UUID) (*int, error) {
 	hexLeaderboard, err := r.FindByH3Index(ctx, hexID)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/uber/h3-go/v4"
@@ -60,13 +61,13 @@ func (a *ActivityService) validateCreateActivity(req dto.CreateActivityRequest) 
 		return errors.New("at least one H3 index is required")
 	}
 	for _, h3Index := range req.H3Indexes {
-		cell := h3.Cell(h3Index)
+		cell := h3.Cell(h3.IndexFromString(h3Index))
 		if !cell.IsValid() {
-			return errors.New("invalid H3 index: " + strconv.FormatInt(h3Index, 10))
+			return errors.New("invalid H3 index: " + h3Index)
 		}
 
 		if cell.Resolution() != hexconsts.DefaultHexResolution {
-			return errors.New("H3 index " + strconv.FormatInt(h3Index, 10) + " is not at resolution " + strconv.Itoa(hexconsts.DefaultHexResolution))
+			return errors.New("H3 index " + h3Index + " is not at resolution " + strconv.Itoa(hexconsts.DefaultHexResolution))
 		}
 	}
 
@@ -121,20 +122,20 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 			zap.Error(err), zap.Any("h3Indexes", h3Indexes))
 	}
 
-	existingHexMap := make(map[int64]bool)
+	existingHexMap := make(map[string]bool)
 	for _, eh := range existingHexEntities {
 		existingHexMap[eh.ID] = true
 	}
 
 	for _, h3Index := range h3Indexes {
 		if _, exists := existingHexMap[h3Index]; !exists {
-			as.logger.Info("Hex not found in database, attempting to create.", zap.Int64("h3Index", h3Index))
+			as.logger.Info("Hex not found in database, attempting to create.", zap.String("h3Index", h3Index))
 			_, createHexErr := as.HexService.CreateHex(ctx, h3Index)
 			if createHexErr != nil {
 				as.logger.Error("Failed to create hex, or it was created concurrently by another process.",
-					zap.Error(createHexErr), zap.Int64("h3Index", h3Index))
+					zap.Error(createHexErr), zap.String("h3Index", h3Index))
 			} else {
-				as.logger.Info("Successfully created new hex in database.", zap.Int64("h3Index", h3Index))
+				as.logger.Info("Successfully created new hex in database.", zap.String("h3Index", h3Index))
 			}
 		}
 	}
@@ -145,17 +146,17 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 		// Update or create hex influence
 		_, err := as.HexInfluenceService.UpdateOrCreateHexInfluence(ctx, userID, h3Index)
 		if err != nil {
-			as.logger.Error("Failed to update or create hex influence.", zap.Error(err), zap.Int64("h3Index", h3Index))
+			as.logger.Error("Failed to update or create hex influence.", zap.Error(err), zap.String("h3Index", h3Index))
 			continue
 		}
 
 		// Add user to leaderboard
 		_, err = as.HexLeaderboardService.AddUserToLeaderboardOrCreateLeaderboard(ctx, h3Index, userID)
 		if err != nil {
-			as.logger.Error("Failed to add user to leaderboard.", zap.Error(err), zap.Int64("h3Index", h3Index))
+			as.logger.Error("Failed to add user to leaderboard.", zap.Error(err), zap.String("h3Index", h3Index))
 			continue
 		}
-		as.logger.Info("Successfully added user to leaderboard.", zap.Int64("h3Index", h3Index))
+		as.logger.Info("Successfully added user to leaderboard.", zap.String("h3Index", h3Index))
 	}
 	as.logger.Info("Finished processing all H3 indexes for activity.", zap.Stringer("activityID", createdActivity.ID))
 
@@ -166,4 +167,43 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 		Distance:  createdActivity.DistanceMeters,
 		H3Indexes: createdActivity.H3Indexes,
 	}, nil
+}
+
+func (as *ActivityService) GetUserActivityStats(ctx context.Context, userID uuid.UUID) (*dto.GetUserActivityStatsResponse, error) {
+	activities, err := as.repository.FindByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(activities) == 0 {
+		return &dto.GetUserActivityStatsResponse{
+			HexesVisited:       0,
+			ActivitiesRecorded: 0,
+			DistanceCovered:    0,
+			WeeklyActivities:   make([]int64, 7),
+		}, nil
+	}
+
+	stats := &dto.GetUserActivityStatsResponse{
+		HexesVisited:       0,
+		ActivitiesRecorded: int64(len(activities)),
+		DistanceCovered:    0,
+		WeeklyActivities:   make([]int64, 7),
+	}
+
+	now := time.Now()
+	startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	for _, activity := range activities {
+		stats.DistanceCovered += activity.DistanceMeters
+		stats.HexesVisited += int64(len(activity.H3Indexes))
+
+		// Calculate how many days ago this activity was
+		daysAgo := int(startOfToday.Sub(activity.CreatedAt).Hours() / 24)
+		if daysAgo >= 0 && daysAgo < 7 {
+			stats.WeeklyActivities[6-daysAgo]++ // Reverse so index 6 is today
+		}
+	}
+
+	return stats, nil
 }

@@ -622,7 +622,7 @@ func (c *HexClient) UpdateOne(h *Hex) *HexUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *HexClient) UpdateOneID(id int64) *HexUpdateOne {
+func (c *HexClient) UpdateOneID(id string) *HexUpdateOne {
 	mutation := newHexMutation(c.config, OpUpdateOne, withHexID(id))
 	return &HexUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -639,7 +639,7 @@ func (c *HexClient) DeleteOne(h *Hex) *HexDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *HexClient) DeleteOneID(id int64) *HexDeleteOne {
+func (c *HexClient) DeleteOneID(id string) *HexDeleteOne {
 	builder := c.Delete().Where(hex.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -656,12 +656,12 @@ func (c *HexClient) Query() *HexQuery {
 }
 
 // Get returns a Hex entity by its id.
-func (c *HexClient) Get(ctx context.Context, id int64) (*Hex, error) {
+func (c *HexClient) Get(ctx context.Context, id string) (*Hex, error) {
 	return c.Query().Where(hex.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *HexClient) GetX(ctx context.Context, id int64) *Hex {
+func (c *HexClient) GetX(ctx context.Context, id string) *Hex {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

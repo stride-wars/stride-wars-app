@@ -14,7 +14,7 @@ type Activity struct {
 	UserID    uuid.UUID
 	Duration  float64
 	Distance  float64
-	H3Indexes []int64
+	H3Indexes []string
 	CreatedAt time.Time
 	ent.Schema
 }
@@ -25,7 +25,7 @@ func (Activity) Fields() []ent.Field {
 		field.UUID("user_id", uuid.UUID{}),
 		field.Float("duration_seconds"),
 		field.Float("distance_meters"),
-		field.JSON("h3_indexes", []int64{}),
+		field.JSON("h3_indexes", []string{}),
 		field.Time("created_at").Default(time.Now()),
 	}
 }

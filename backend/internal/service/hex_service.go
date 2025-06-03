@@ -20,13 +20,13 @@ func NewHexService(repository repository.HexRepository, logger *zap.Logger) *Hex
 	}
 }
 
-func (hs *HexService) FindByID(ctx context.Context, h3_index int64) (*ent.Hex, error) {
+func (hs *HexService) FindByID(ctx context.Context, h3_index string) (*ent.Hex, error) {
 	return hs.repository.FindByID(ctx, h3_index)
 }
-func (hs *HexService) FindByIDs(ctx context.Context, h3_indexes []int64) ([]*ent.Hex, error) {
+func (hs *HexService) FindByIDs(ctx context.Context, h3_indexes []string) ([]*ent.Hex, error) {
 	return hs.repository.FindByIDs(ctx, h3_indexes)
 }
-func (hs *HexService) CreateHex(ctx context.Context, h3_index int64) (*ent.Hex, error) {
+func (hs *HexService) CreateHex(ctx context.Context, h3_index string) (*ent.Hex, error) {
 	return hs.repository.CreateHex(ctx, h3_index)
 }
 func (hs *HexService) CreateHexes(ctx context.Context, hexes []*ent.Hex) ([]*ent.Hex, error) {
