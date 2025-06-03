@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { View, Image } from 'react-native';
 
 export default function TabLayout() {
   return (
@@ -31,6 +31,18 @@ export default function TabLayout() {
             fontSize: 20,
           },
           headerTintColor: '#FFD600',
+
+          headerRight: () => (
+            <Image
+              source={require('../../assets/images/stride_wars.png')}
+              style={{
+                width: 53,
+                height: 53,
+                marginRight: 16,
+                resizeMode: 'contain',
+              }}
+            />
+          ),
         }}
       >
         <Tabs.Screen
