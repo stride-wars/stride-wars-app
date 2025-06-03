@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Platform,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import MapView, { Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
@@ -24,6 +32,8 @@ function scalePolygon(coordinates: Coordinate[], scale: number): Coordinate[] {
   }));
 }
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
 export default function MapScreen() {
   const { location, error, isLoading, getLocation } = useLocation();
   const [selectedHexId, setSelectedHexId] = useState<string | null>(null);
@@ -37,13 +47,12 @@ export default function MapScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef<NodeJS.Timer | null>(null);
+  const leaderboardAnim = useRef(new Animated.Value(0)).current;
 
-  // Fetch location on mount
   useEffect(() => {
     getLocation();
   }, []);
 
-  // Start/stop timer
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
@@ -62,7 +71,6 @@ export default function MapScreen() {
     };
   }, [isRecording]);
 
-  // When location updates, generate hexagons & animate map to location
   useEffect(() => {
     if (location) {
       const rawHexes = getHexagonsInRadius(
@@ -96,36 +104,57 @@ export default function MapScreen() {
     const to = scalePolygon(hex.coordinates, toScale);
     const steps = 10;
     let currentStep = 0;
+    const updatedFrames: Coordinate[][] = [];
 
-    const interval = setInterval(() => {
+    const animateStep = () => {
       currentStep++;
       const t = currentStep / steps;
       const intermediate = interpolatePolygon(from, to, t);
+      updatedFrames.push(intermediate);
 
-      setHexagons(prev =>
-        prev.map(h =>
-          h.hexId === hexId
-            ? { ...h, animatedCoordinates: intermediate }
-            : h
-        )
-      );
+      if (currentStep < steps) {
+        requestAnimationFrame(animateStep);
+      } else {
+        // Apply final update once to reduce state churn
+        setHexagons(prev =>
+          prev.map(h =>
+            h.hexId === hexId
+              ? { ...h, animatedCoordinates: to }
+              : h
+          )
+        );
+      }
+    };
 
-      if (currentStep >= steps) clearInterval(interval);
-    }, duration / steps);
+    animateStep();
   };
 
   const handleHexPress = (hexId: string) => {
     if (selectedHexId === hexId) {
       animateHexScaling(hexId, 1.0);
-      setSelectedHexId(null);
+      Animated.timing(leaderboardAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true, // changed
+      }).start(() => setSelectedHexId(null));
     } else {
       if (selectedHexId) {
         animateHexScaling(selectedHexId, 1.0);
       }
       animateHexScaling(hexId, 1.05);
-      setSelectedHexId(hexId);
+      setSelectedHexId(hexId); // moved up
+      Animated.timing(leaderboardAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true, // changed
+      }).start();
     }
   };
+
+  const leaderboardTranslateY = leaderboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [200, 0],
+  });
 
   if (error) {
     return (
@@ -173,12 +202,30 @@ export default function MapScreen() {
         ))}
       </MapView>
 
+      {selectedHexId && (
+        <Animated.View
+          style={[
+            styles.leaderboard,
+            {
+              transform: [{ translateY: leaderboardTranslateY }],
+              opacity: leaderboardAnim,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          <Text style={styles.leaderboardTitle}>🏆 Leaderboard</Text>
+          <Text style={styles.leaderboardEntry}>1. Alice - 120 pts</Text>
+          <Text style={styles.leaderboardEntry}>2. Bob - 95 pts</Text>
+          <Text style={styles.leaderboardEntry}>3. Charlie - 80 pts</Text>
+          <TouchableOpacity onPress={() => handleHexPress(selectedHexId)} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>Dismiss</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
       <View style={styles.activityControls}>
         {!isRecording ? (
-          <TouchableOpacity
-            onPress={() => setIsRecording(true)}
-            style={styles.startButton}
-          >
+          <TouchableOpacity onPress={() => setIsRecording(true)} style={styles.startButton}>
             <Text style={styles.startButtonText}>Start activity</Text>
           </TouchableOpacity>
         ) : (
@@ -187,10 +234,7 @@ export default function MapScreen() {
               {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
               {(elapsedTime % 60).toString().padStart(2, '0')}
             </Text>
-            <TouchableOpacity
-              onPress={() => setIsRecording(false)}
-              style={styles.stopButton}
-            >
+            <TouchableOpacity onPress={() => setIsRecording(false)} style={styles.stopButton}>
               <Text style={styles.stopButtonText}>Stop</Text>
             </TouchableOpacity>
           </View>
@@ -288,5 +332,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  leaderboard: {
+    position: 'absolute',
+    top: 80,
+    alignSelf: 'center',
+    backgroundColor: '#222',
+    padding: 20,
+    borderRadius: 20,
+    width: SCREEN_WIDTH * 0.8,
+    zIndex: 1000,
+    shadowColor: '#FFD600',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  leaderboardTitle: {
+    color: '#FFD600',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  leaderboardEntry: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  closeButton: {
+    marginTop: 10,
+    alignSelf: 'center',
+    backgroundColor: '#444',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });

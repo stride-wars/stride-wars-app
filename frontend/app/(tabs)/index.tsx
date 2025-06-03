@@ -51,7 +51,7 @@ export default function HomeScreen() {
             {leaderboardData.map((entry, index) => (
               <View style={styles.leaderboardRow} key={index}>
                 <Text style={styles.rank}>{index + 1}.</Text>
-                {index < 1 && getTrophyIcon(index)}
+                {index < 3 && getTrophyIcon(index)}
                 <Text style={styles.name}>{entry.name}</Text>
                 <Text style={styles.score}>{entry.score} pts</Text>
               </View>
