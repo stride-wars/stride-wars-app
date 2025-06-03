@@ -2,12 +2,13 @@ package handler
 
 import (
 	"net/http"
+	"stride-wars-app/ent"
 	"stride-wars-app/internal/api/middleware"
 	"stride-wars-app/internal/dto"
 	"stride-wars-app/internal/service"
 	"stride-wars-app/internal/util"
+
 	"github.com/google/uuid"
-	"stride-wars-app/ent"
 
 	"go.uber.org/zap"
 )

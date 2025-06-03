@@ -27,7 +27,7 @@ type Activity struct {
 	// DistanceMeters holds the value of the "distance_meters" field.
 	DistanceMeters float64 `json:"distance_meters,omitempty"`
 	// H3Indexes holds the value of the "h3_indexes" field.
-	H3Indexes []int64 `json:"h3_indexes,omitempty"`
+	H3Indexes []string `json:"h3_indexes,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.

@@ -28,7 +28,7 @@ func TestHexInfluenceRepository(t *testing.T) {
 		hexRepo := tdb.HexRepo
 
 		// 3) Create a hex row first:
-		createdHex, err := hexRepo.CreateHex(ctx, 617700169958293503)
+		createdHex, err := hexRepo.CreateHex(ctx, "85283473fffffff")
 		require.NoError(t, err)
 		require.NotNil(t, createdHex)
 
@@ -44,7 +44,7 @@ func TestHexInfluenceRepository(t *testing.T) {
 
 		// 5) Insert a HexInfluence with Score=10.0 and LastUpdated 15 days ago:
 		userID := createdUser.ID
-		h3Index := int64(617700169958293503)
+		h3Index := "85283473fffffff"
 		lastUpdated := time.Now().Add(-15 * 24 * time.Hour)
 		score := 10.0
 

@@ -27,18 +27,15 @@ export function useStats() {
           JSON.parse(storedUser);
         setUsername(parsedUser.username);
 
-        const result: ApiResponse<GetActivityStatsResponse> =
+        const result =
           await api.getUserActivityStats(parsedUser.id);
 
         if (result.error) {
           setError(result.error);
         } else if (result.data) {
           setHexesVisited(result.data.hexes_visited);
-          const {hexes_visited, activities_recorded, distance_covered, weekly_activities} = result
-          console.log(result.)
           setActivitiesRecorded(result.data.activities_recorded);
           setDistanceCovered(result.data.distance_covered);
-          console.log(result.data.distance_covered);
           if (result.data.weekly_activities.length === 7) {
             setWeeklyActivities(result.data.weekly_activities);
           } else {

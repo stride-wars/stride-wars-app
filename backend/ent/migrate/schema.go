@@ -60,7 +60,7 @@ var (
 	}
 	// HexesColumns holds the columns for the "hexes" table.
 	HexesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "id", Type: field.TypeString},
 	}
 	// HexesTable holds the schema information for the "hexes" table.
 	HexesTable = &schema.Table{
@@ -73,7 +73,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "score", Type: field.TypeFloat64},
 		{Name: "last_updated", Type: field.TypeTime},
-		{Name: "h3_index", Type: field.TypeInt64},
+		{Name: "h3_index", Type: field.TypeString},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// HexInfluencesTable holds the schema information for the "hex_influences" table.
@@ -100,7 +100,7 @@ var (
 	HexLeaderboardsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "top_users", Type: field.TypeJSON},
-		{Name: "h3_index", Type: field.TypeInt64},
+		{Name: "h3_index", Type: field.TypeString},
 	}
 	// HexLeaderboardsTable holds the schema information for the "hex_leaderboards" table.
 	HexLeaderboardsTable = &schema.Table{

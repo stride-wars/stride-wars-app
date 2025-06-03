@@ -135,7 +135,7 @@ func (hu *HexUpdate) ExecX(ctx context.Context) {
 }
 
 func (hu *HexUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64))
+	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	if ps := hu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -371,7 +371,7 @@ func (huo *HexUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (huo *HexUpdateOne) sqlSave(ctx context.Context) (_node *Hex, err error) {
-	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64))
+	_spec := sqlgraph.NewUpdateSpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	id, ok := huo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Hex.id" for update`)}

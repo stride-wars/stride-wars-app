@@ -40,7 +40,7 @@ func (hls *HexLeaderboardService) FindByID(ctx context.Context, id uuid.UUID) (*
 }
 
 // find by h3 index
-func (hls *HexLeaderboardService) FindByH3Index(ctx context.Context, h3_index int64) (*ent.HexLeaderboard, error) {
+func (hls *HexLeaderboardService) FindByH3Index(ctx context.Context, h3_index string) (*ent.HexLeaderboard, error) {
 	return hls.hexLeaderboardRepository.FindByH3Index(ctx, h3_index)
 }
 func (hls *HexLeaderboardService) CreateHexLeaderboard(ctx context.Context, hexLeaderboard *model.HexLeaderboard) (*ent.HexLeaderboard, error) {
@@ -49,13 +49,13 @@ func (hls *HexLeaderboardService) CreateHexLeaderboard(ctx context.Context, hexL
 func (hls *HexLeaderboardService) UpdateHexLeaderboard(ctx context.Context, hexLeaderboard *model.HexLeaderboard) (int, error) {
 	return hls.hexLeaderboardRepository.UpdateHexLeaderboard(ctx, hexLeaderboard)
 }
-func (hls *HexLeaderboardService) FindByH3Indexes(ctx context.Context, h3Indexes []int64) ([]*ent.HexLeaderboard, error) {
+func (hls *HexLeaderboardService) FindByH3Indexes(ctx context.Context, h3Indexes []string) ([]*ent.HexLeaderboard, error) {
 	return hls.hexLeaderboardRepository.FindByH3Indexes(ctx, h3Indexes)
 }
 
 // Ads a given user to the leaderboard of a hexagon with the given hexID - if the user has enough points to go into top 5.
 // Return users position in the leaderboard - nil otherwise
-func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
+func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexID string, userID uuid.UUID) (*int, error) {
 	hexLeaderboard, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -135,7 +135,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 }
 
 // func AddUserToLeaderboardOrCreate
-func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
+func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx context.Context, hexID string, userID uuid.UUID) (*int, error) {
 	// Try to find the leaderboard
 	_, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
 	if err != nil {
@@ -177,7 +177,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx co
 }
 
 // Return users position in a particular hex's leaderboard, returns nil if the user is not in the leaderboard / in case of an error
-func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Context, hexID int64, userID uuid.UUID) (*int, error) {
+func (hls *HexLeaderboardService) GetUserPositionInLeaderboard(ctx context.Context, hexID string, userID uuid.UUID) (*int, error) {
 	return hls.hexLeaderboardRepository.GetUserPositionInLeaderboard(ctx, hexID, userID)
 }
 
@@ -202,9 +202,9 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 		hls.logger.Error("Failed to convert polygon to H3 cells", zap.Error(err))
 		return nil, err
 	}
-	h3Indexes := make([]int64, len(h3Cells))
+	h3Indexes := make([]string, len(h3Cells))
 	for i, cell := range h3Cells {
-		h3Indexes[i] = int64(cell)
+		h3Indexes[i] = cell.String()
 	}
 	// Fetch all hex leaderboards for the given H3 indexes
 	hexLeaderboards, err := hls.hexLeaderboardRepository.FindByH3Indexes(ctx, h3Indexes)

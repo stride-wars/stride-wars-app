@@ -11,7 +11,7 @@ type TopUserResponse struct {
 
 type HexLeaderboardResponse struct {
 	ID       uuid.UUID         `json:"id"`
-	H3Index  int64             `json:"h3_index"`
+	H3Index  string            `json:"h3_index"`
 	TopUsers []TopUserResponse `json:"top_users"`
 }
 

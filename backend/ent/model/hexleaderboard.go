@@ -14,7 +14,7 @@ type TopUser struct {
 
 type HexLeaderboard struct {
 	ID       uuid.UUID
-	H3Index  int64
+	H3Index  string
 	TopUsers []TopUser `json:"top_users"`
 	ent.Schema
 }
@@ -22,7 +22,7 @@ type HexLeaderboard struct {
 func (HexLeaderboard) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
-		field.Int64("h3_index").Unique(),
+		field.String("h3_index").Unique(),
 		field.JSON("top_users", []TopUser{}).
 			Default([]TopUser{}),
 	}

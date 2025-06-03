@@ -22,8 +22,8 @@ type HexCreate struct {
 }
 
 // SetID sets the "id" field.
-func (hc *HexCreate) SetID(i int64) *HexCreate {
-	hc.mutation.SetID(i)
+func (hc *HexCreate) SetID(s string) *HexCreate {
+	hc.mutation.SetID(s)
 	return hc
 }
 
@@ -105,9 +105,12 @@ func (hc *HexCreate) sqlSave(ctx context.Context) (*Hex, error) {
 		}
 		return nil, err
 	}
-	if _spec.ID.Value != _node.ID {
-		id := _spec.ID.Value.(int64)
-		_node.ID = int64(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected Hex.ID type: %T", _spec.ID.Value)
+		}
 	}
 	hc.mutation.id = &_node.ID
 	hc.mutation.done = true
@@ -117,7 +120,7 @@ func (hc *HexCreate) sqlSave(ctx context.Context) (*Hex, error) {
 func (hc *HexCreate) createSpec() (*Hex, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Hex{config: hc.config}
-		_spec = sqlgraph.NewCreateSpec(hex.Table, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64))
+		_spec = sqlgraph.NewCreateSpec(hex.Table, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
 	)
 	if id, ok := hc.mutation.ID(); ok {
 		_node.ID = id
@@ -202,10 +205,6 @@ func (hcb *HexCreateBulk) Save(ctx context.Context) ([]*Hex, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil && nodes[i].ID == 0 {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int64(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

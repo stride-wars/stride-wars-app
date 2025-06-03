@@ -30,14 +30,14 @@ type ActivityAPIResponse struct {
 }
 
 type UserActivityStatsAPIResponse struct {
-	Success bool                          `json:"success"`
+	Success bool                             `json:"success"`
 	Data    dto.GetUserActivityStatsResponse `json:"data"`
-	Error   string                          `json:"error,omitempty"`
+	Error   string                           `json:"error,omitempty"`
 }
 
-var validH3Indexes = []int64{
-	618094571073044479,
-	618094571271487487,
+var validH3Indexes = []string{
+	"891e2e6b153ffff",
+	"891e2e6b103ffff",
 }
 
 func setupTestActivityHandler(t *testing.T) (context.Context, *ent.Client, *handler.ActivityHandler) {
@@ -189,7 +189,7 @@ func TestCreateActivity(t *testing.T) {
 			UserID:    uuid.New(), // assume no user check here
 			Duration:  3600,
 			Distance:  10000,
-			H3Indexes: []int64{122}, // invalid
+			H3Indexes: []string{"mlody napoleon", "tylko troche wieksze berlo"}, // invalid
 		}
 		reqBody, err := json.Marshal(createReq)
 		require.NoError(t, err)

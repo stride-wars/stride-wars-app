@@ -121,7 +121,7 @@ class ApiClient {
         throw new Error('Invalid email or password');
       }
 
-      return { data };
+      return data;
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'An error occurred' };
     }
