@@ -6,6 +6,8 @@ import (
 	"stride-wars-app/internal/dto"
 	"stride-wars-app/internal/service"
 	"stride-wars-app/internal/util"
+	"github.com/google/uuid"
+	"stride-wars-app/ent"
 
 	"go.uber.org/zap"
 )
@@ -46,4 +48,32 @@ func (h *ActivityHandler) CreateActivity(w http.ResponseWriter, r *http.Request)
 	}
 
 	middleware.WriteJSON(w, http.StatusCreated, resp)
+}
+
+func (h *ActivityHandler) GetUserActivityStats(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("user_id")
+
+	if idStr == "" {
+		middleware.WriteError(w, http.StatusBadRequest, "User ID is required")
+		return
+	}
+
+	userID, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.WriteError(w, http.StatusBadRequest, "Invalid UUID format for 'user_id'")
+		return
+	}
+
+	ActivityStats, err := h.activityService.GetUserActivityStats(r.Context(), userID)
+	if err != nil {
+		h.logger.Error("find user activities failed", zap.Error(err))
+		if ent.IsNotFound(err) {
+			middleware.WriteError(w, http.StatusNotFound, "No activities found for this user")
+		} else {
+			middleware.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, ActivityStats)
 }

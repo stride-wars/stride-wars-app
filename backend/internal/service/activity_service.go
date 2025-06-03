@@ -10,10 +10,12 @@ import (
 
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/uber/h3-go/v4"
 	"go.uber.org/zap"
+
 )
 
 type ActivityService struct {
@@ -166,4 +168,43 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 		Distance:  createdActivity.DistanceMeters,
 		H3Indexes: createdActivity.H3Indexes,
 	}, nil
+}
+
+func (as *ActivityService) GetUserActivityStats(ctx context.Context, userID uuid.UUID) (*dto.GetUserActivityStatsResponse, error) {
+	activities, err := as.repository.FindByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(activities) == 0 {
+		return &dto.GetUserActivityStatsResponse{
+			HexesVisited:      0,
+			ActivitiesRecorded: 0,
+			DistanceCovered:   0,
+			WeeklyActivities:  make([]int64, 7),
+		}, nil
+	}
+
+	stats := &dto.GetUserActivityStatsResponse{
+		HexesVisited:      0,
+		ActivitiesRecorded: int64(len(activities)),
+		DistanceCovered:   0,
+		WeeklyActivities:  make([]int64, 7),
+	}
+
+	now := time.Now()
+	startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	for _, activity := range activities {
+		stats.DistanceCovered += activity.DistanceMeters
+		stats.HexesVisited += int64(len(activity.H3Indexes))
+
+		// Calculate how many days ago this activity was
+		daysAgo := int(startOfToday.Sub(activity.CreatedAt).Hours() / 24)
+		if daysAgo >= 0 && daysAgo < 7 {
+			stats.WeeklyActivities[6-daysAgo]++ // Reverse so index 6 is today
+		}
+	}
+
+	return stats, nil
 }
