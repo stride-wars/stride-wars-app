@@ -12,8 +12,10 @@ import MapView, { Polygon, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
-
-const API_BASE = 'https://4d85-188-146-191-2.ngrok-free.app/api/v1';
+import * as h3 from 'h3-js';
+import { stringify } from 'querystring';
+const res = 9; // the size of hexes
+const API_BASE = 'https://a64e-194-53-114-21.ngrok-free.app/api/v1';
 
 type Coordinate = { latitude: number; longitude: number };
 type LeaderboardEntry = { name: string; points: number };
@@ -50,8 +52,18 @@ export default function MapScreen() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef<NodeJS.Timer | null>(null);
   const leaderboardAnim = useRef(new Animated.Value(0)).current;
+  const [visitedHexIds, setVisitedHexIds] = useState<Set<string>>(new Set());
 
-  // Fetch location on mount
+  useEffect(() => {
+    if (!isRecording || !location) return;
+    const nearestHex = String(h3.latLngToCell(location.coords.latitude, location.coords.longitude, res));
+    setVisitedHexIds(prev => {
+      const updated = new Set(prev);
+      updated.add(nearestHex);
+      return updated;
+    });
+  }, [location, isRecording]);
+
   useEffect(() => {
     getLocation();
   }, []);
@@ -62,19 +74,15 @@ export default function MapScreen() {
       timerRef.current = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
-    } else {
+    }
+
+    return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
-        timerRef.current = null;
       }
-      setElapsedTime(0);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isRecording]);
 
-  // Unified fetch leaderboard data for given bounds
   const fetchLeaderboardDataForBounds = async (
     minLat: number,
     minLng: number,
@@ -86,7 +94,6 @@ export default function MapScreen() {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
-      // Defensive: handle different data shapes from API
       setLeaderboardData(data.hexLeaderboards || data || {});
     } catch (err) {
       console.error('Failed to fetch leaderboard data:', err);
@@ -164,6 +171,57 @@ export default function MapScreen() {
     };
     animateStep();
   };
+
+const handleStopRecording = async () => {
+  // Immediately stop recording and clear timer
+  setIsRecording(false);
+  if (timerRef.current) {
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  // Capture state before resetting
+  const hexesToSend = Array.from(visitedHexIds);
+  const durationToSend = elapsedTime;
+
+  // Reset UI state immediately
+  setVisitedHexIds(new Set());
+  setElapsedTime(0);
+
+  if (hexesToSend.length > 0) {
+
+    try {
+      const activityData = {
+        user_id: 'cb304380-9d01-43e7-9239-d788432db291',
+        // Convert hex strings to numbers
+        h3_indexes: hexesToSend,
+        duration: 5,
+        distance: 1, // placeholder
+      };
+
+      console.log('Submitting activity with data:', activityData);
+
+      const res = await fetch(`${API_BASE}/activity/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(activityData),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Failed to submit activity:', text);
+        throw new Error(`HTTP error ${res.status}`);
+      }
+
+      const json = await res.json();
+      console.log('Activity saved:', json);
+    } catch (err) {
+      console.error('Error submitting activity:', err);
+    }
+  }
+};
 
   // Handle hexagon press
   const handleHexPress = (hexId: string) => {
@@ -263,23 +321,23 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
-      <View style={styles.activityControls}>
-        {!isRecording ? (
-          <TouchableOpacity onPress={() => setIsRecording(true)} style={styles.startButton}>
-            <Text style={styles.startButtonText}>Start activity</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.timerContainer}>
-            <Text style={styles.timerText}>
-              {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
-              {(elapsedTime % 60).toString().padStart(2, '0')}
-            </Text>
-            <TouchableOpacity onPress={() => setIsRecording(false)} style={styles.stopButton}>
-              <Text style={styles.stopButtonText}>Stop</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+    <View style={styles.activityControls}>
+      {!isRecording ? (
+        <TouchableOpacity onPress={() => setIsRecording(true)} style={styles.startButton}>
+          <Text style={styles.startButtonText}>Start activity</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.timerContainer}>
+          <Text style={styles.timerText}>
+            {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
+            {(elapsedTime % 60).toString().padStart(2, '0')}
+          </Text>
+        <TouchableOpacity onPress={async () => await handleStopRecording()} style={styles.stopButton}>
+          <Text style={styles.stopButtonText}>Stop</Text>
+        </TouchableOpacity>
+        </View>
+      )}
+    </View>
 
       <TouchableOpacity
         style={styles.locateButton}
