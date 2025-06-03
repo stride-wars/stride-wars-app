@@ -8,13 +8,17 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import MapView, { Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Polygon, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
 
-type Coordinate = { latitude: number; longitude: number };
+const API_BASE = 'https://4d85-188-146-191-2.ngrok-free.app/api/v1';
 
+type Coordinate = { latitude: number; longitude: number };
+type LeaderboardEntry = { name: string; points: number };
+
+// [utils]
 function interpolatePolygon(from: Coordinate[], to: Coordinate[], t: number): Coordinate[] {
   return from.map((point, i) => ({
     latitude: point.latitude + (to[i].latitude - point.latitude) * t,
@@ -25,7 +29,6 @@ function interpolatePolygon(from: Coordinate[], to: Coordinate[], t: number): Co
 function scalePolygon(coordinates: Coordinate[], scale: number): Coordinate[] {
   const latAvg = coordinates.reduce((sum, p) => sum + p.latitude, 0) / coordinates.length;
   const lngAvg = coordinates.reduce((sum, p) => sum + p.longitude, 0) / coordinates.length;
-
   return coordinates.map(p => ({
     latitude: latAvg + (p.latitude - latAvg) * scale,
     longitude: lngAvg + (p.longitude - lngAvg) * scale,
@@ -37,22 +40,23 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 export default function MapScreen() {
   const { location, error, isLoading, getLocation } = useLocation();
   const [selectedHexId, setSelectedHexId] = useState<string | null>(null);
-  const [hexagons, setHexagons] = useState<Array<{
-    hexId: string;
-    coordinates: Coordinate[];
-    animatedCoordinates: Coordinate[];
-  }>>([]);
-  const mapRef = useRef<MapView>(null);
+  const [hexagons, setHexagons] = useState<
+    Array<{ hexId: string; coordinates: Coordinate[]; animatedCoordinates: Coordinate[] }>
+  >([]);
+  const [leaderboardData, setLeaderboardData] = useState<Record<string, { user: string; score: number }[]>>({});
 
+  const mapRef = useRef<MapView>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef<NodeJS.Timer | null>(null);
   const leaderboardAnim = useRef(new Animated.Value(0)).current;
 
+  // Fetch location on mount
   useEffect(() => {
     getLocation();
   }, []);
 
+  // Handle timer for recording
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
@@ -65,88 +69,121 @@ export default function MapScreen() {
       }
       setElapsedTime(0);
     }
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isRecording]);
 
-  useEffect(() => {
-    if (location) {
-      const rawHexes = getHexagonsInRadius(
-        location.coords.latitude,
-        location.coords.longitude,
-        1000,
-        9
-      );
-
-      const enrichedHexes = rawHexes.map(h => ({
-        ...h,
-        animatedCoordinates: h.coordinates,
-      }));
-
-      setHexagons(enrichedHexes);
-
-      mapRef.current?.animateToRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
+  // Unified fetch leaderboard data for given bounds
+  const fetchLeaderboardDataForBounds = async (
+    minLat: number,
+    minLng: number,
+    maxLat: number,
+    maxLng: number
+  ) => {
+    try {
+      const url = `${API_BASE}/leaderboard/bbox?min_lat=${minLat}&min_lng=${minLng}&max_lat=${maxLat}&max_lng=${maxLng}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      // Defensive: handle different data shapes from API
+      setLeaderboardData(data.hexLeaderboards || data || {});
+    } catch (err) {
+      console.error('Failed to fetch leaderboard data:', err);
     }
+  };
+
+  // Initialize hexagons and leaderboard on location update
+  useEffect(() => {
+    if (!location) return;
+
+    const rawHexes = getHexagonsInRadius(location.coords.latitude, location.coords.longitude, 1000, 9);
+
+    const enrichedHexes = rawHexes.map(h => ({
+      ...h,
+      animatedCoordinates: h.coordinates,
+    }));
+
+    setHexagons(enrichedHexes);
+
+    // Calculate bounding box of all hexagons
+    const lats = enrichedHexes.flatMap(h => h.coordinates.map(c => c.latitude));
+    const lngs = enrichedHexes.flatMap(h => h.coordinates.map(c => c.longitude));
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+
+    fetchLeaderboardDataForBounds(minLat, minLng, maxLat, maxLng);
+
+    mapRef.current?.animateToRegion({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
   }, [location]);
 
+  // Fetch leaderboard data on region change
+  const fetchLeaderboards = async (region: Region) => {
+    const minLat = region.latitude - region.latitudeDelta / 2;
+    const maxLat = region.latitude + region.latitudeDelta / 2;
+    const minLng = region.longitude - region.longitudeDelta / 2;
+    const maxLng = region.longitude + region.longitudeDelta / 2;
+
+    fetchLeaderboardDataForBounds(minLat, minLng, maxLat, maxLng);
+  };
+
+  // Animate polygon scaling
   const animateHexScaling = (hexId: string, toScale: number, duration: number = 150) => {
     const hex = hexagons.find(h => h.hexId === hexId);
     if (!hex) return;
-
     const from = hex.animatedCoordinates;
     const to = scalePolygon(hex.coordinates, toScale);
     const steps = 10;
     let currentStep = 0;
-    const updatedFrames: Coordinate[][] = [];
 
     const animateStep = () => {
       currentStep++;
       const t = currentStep / steps;
       const intermediate = interpolatePolygon(from, to, t);
-      updatedFrames.push(intermediate);
-
       if (currentStep < steps) {
-        requestAnimationFrame(animateStep);
-      } else {
-        // Apply final update once to reduce state churn
         setHexagons(prev =>
           prev.map(h =>
-            h.hexId === hexId
-              ? { ...h, animatedCoordinates: to }
-              : h
+            h.hexId === hexId ? { ...h, animatedCoordinates: intermediate } : h
+          )
+        );
+        requestAnimationFrame(animateStep);
+      } else {
+        setHexagons(prev =>
+          prev.map(h =>
+            h.hexId === hexId ? { ...h, animatedCoordinates: to } : h
           )
         );
       }
     };
-
     animateStep();
   };
 
+  // Handle hexagon press
   const handleHexPress = (hexId: string) => {
     if (selectedHexId === hexId) {
       animateHexScaling(hexId, 1.0);
       Animated.timing(leaderboardAnim, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: true, // changed
+        useNativeDriver: true,
       }).start(() => setSelectedHexId(null));
     } else {
       if (selectedHexId) {
         animateHexScaling(selectedHexId, 1.0);
       }
       animateHexScaling(hexId, 1.05);
-      setSelectedHexId(hexId); // moved up
+      setSelectedHexId(hexId);
       Animated.timing(leaderboardAnim, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true, // changed
+        useNativeDriver: true,
       }).start();
     }
   };
@@ -184,6 +221,7 @@ export default function MapScreen() {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         }}
+        onRegionChangeComplete={fetchLeaderboards}
         showsUserLocation
         showsMyLocationButton={Platform.OS === 'android'}
         showsCompass
@@ -214,11 +252,13 @@ export default function MapScreen() {
           pointerEvents="box-none"
         >
           <Text style={styles.leaderboardTitle}>🏆 Leaderboard</Text>
-          <Text style={styles.leaderboardEntry}>1. Alice - 120 pts</Text>
-          <Text style={styles.leaderboardEntry}>2. Bob - 95 pts</Text>
-          <Text style={styles.leaderboardEntry}>3. Charlie - 80 pts</Text>
+          {(leaderboardData[selectedHexId] || []).map((entry, index) => (
+            <Text key={index} style={styles.leaderboardEntry}>
+              {index + 1}. {entry.user} - {entry.score} pts
+            </Text>
+          ))}
           <TouchableOpacity onPress={() => handleHexPress(selectedHexId)} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Dismiss</Text>
+            <Text style={styles.closeButtonText}>Hide</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -259,6 +299,7 @@ export default function MapScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
