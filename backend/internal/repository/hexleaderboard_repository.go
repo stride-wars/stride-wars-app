@@ -2,11 +2,9 @@ package repository
 
 import (
 	"context"
-	"sort"
 	"stride-wars-app/ent"
 	entHexLeaderboard "stride-wars-app/ent/hexleaderboard"
 	"stride-wars-app/ent/model"
-	"stride-wars-app/internal/dto"
 
 	"github.com/google/uuid"
 )
@@ -55,31 +53,4 @@ func (r HexLeaderboardRepository) GetUserPositionInLeaderboard(ctx context.Conte
 		}
 	}
 	return nil, nil
-}
-
-func (r HexLeaderboardRepository) GetGlobalHexLeaderboard(ctx context.Context) ([]dto.GlobalLeaderboardEntry, error) {
-	leaderboards, err := r.client.HexLeaderboard.Query().All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	userCounts := make(map[uuid.UUID]int)
-	for _, lb := range leaderboards {
-		if len(lb.TopUsers) > 0 {
-			userCounts[lb.TopUsers[0].UserID]++
-		}
-	}
-
-	var entries []dto.GlobalLeaderboardEntry
-	for userID, count := range userCounts {
-		entries = append(entries, dto.GlobalLeaderboardEntry{UserID: userID, TopCount: count})
-	}
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].TopCount > entries[j].TopCount
-	})
-
-	if len(entries) > 10 {
-		entries = entries[:10]
-	}
-	return entries, nil
 }

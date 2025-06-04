@@ -79,15 +79,3 @@ func (h HexLeaderboardHandler) GetAllLeaderboardsInsideBBox(w http.ResponseWrite
 
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
-
-func (h HexLeaderboardHandler) GetGlobalHexLeaderboard(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	entries, err := h.hexLeaderboardService.GetGlobalLeaderboard(ctx)
-	if err != nil {
-		h.logger.Error("get global leaderboard failed", zap.Error(err))
-		middleware.WriteError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	middleware.WriteJSON(w, http.StatusOK, entries)
-}

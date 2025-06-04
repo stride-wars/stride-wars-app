@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
-import MapView, { Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Polygon, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Coordinate = { latitude: number; longitude: number };
 
@@ -33,39 +32,18 @@ export default function MapScreen() {
     coordinates: Coordinate[];
     animatedCoordinates: Coordinate[];
   }>>([]);
-  const mapRef = useRef<MapView>(null);
 
-  const [isRecording, setIsRecording] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const timerRef = useRef<NodeJS.Timer | null>(null);
+  const mapRef = useRef<MapView>(null);
 
   // Fetch location on mount
   useEffect(() => {
     getLocation();
   }, []);
 
-  // Start/stop timer
-  useEffect(() => {
-    if (isRecording) {
-      timerRef.current = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setElapsedTime(0);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRecording]);
-
   // When location updates, generate hexagons & animate map to location
   useEffect(() => {
     if (location) {
+      // Generate hexagons around current location
       const rawHexes = getHexagonsInRadius(
         location.coords.latitude,
         location.coords.longitude,
@@ -80,6 +58,7 @@ export default function MapScreen() {
 
       setHexagons(enrichedHexes);
 
+      // Animate map to user location
       mapRef.current?.animateToRegion({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
@@ -174,30 +153,6 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      <View style={styles.bottomButtonContainer}>
-        {!isRecording ? (
-          <TouchableOpacity
-            onPress={() => setIsRecording(true)}
-            style={styles.fullWidthButton}
-          >
-            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Start striding!</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.timerContainer}>
-            <Text style={styles.timerText}>
-              {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
-              {(elapsedTime % 60).toString().padStart(2, '0')}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setIsRecording(false)}
-              style={styles.stopButton}
-            >
-              <Text style={styles.stopButtonText}>Stop</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
       <TouchableOpacity
         style={styles.locateButton}
         onPress={() => {
@@ -224,9 +179,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
-    flex: 1,
-    margin: 0,
-    padding: 0,
+    height: '100%',
   },
   errorText: {
     color: '#FFD600',
@@ -236,91 +189,11 @@ const styles = StyleSheet.create({
   },
   locateButton: {
     position: 'absolute',
-    bottom: 80,
-    right: 30,
+    bottom: 20,
+    right: 20,
     backgroundColor: 'rgba(0,0,0,0.6)',
     padding: 12,
     borderRadius: 24,
     zIndex: 999,
-  },
-  activityControls: {
-    position: 'absolute',
-    bottom: 20,
-    left: '59%',
-    transform: [{ translateX: -100 }],
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 998,
-  },
-  startButton: {
-    backgroundColor: '#FFD600',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    shadowColor: '#FFD600',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  startButtonText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  timerText: {
-    color: '#fff',
-    fontSize: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    width: '25%',
-    textAlign: 'center',
-  },
-  bottomButtonContainer: {
-    width: '100%',
-    backgroundColor: '#FFD600',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 56,
-    padding: 0,
-    margin: 0,
-    borderRadius: 0,
-    borderTopWidth: 0,
-  },
-  timerContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    justifyContent: 'center',
-  },
-  stopButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  stopButton: {
-    backgroundColor: '#ff5252',
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    height: '80%',
-    aspectRatio: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 10,
-    width: '25%',
-    textAlign: 'center',
-  },
-  fullWidthButton: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-    margin: 0,
-    borderRadius: 0,
   },
 });

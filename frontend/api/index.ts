@@ -5,8 +5,7 @@ import {
   SignUpResponse, 
   SignInResponse, 
   ApiResponse,
-  Session,
-  GlobalLeaderboardEntry
+  Session
 } from '../consts/types';
 //const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 const API_BASE = 'https://4d85-188-146-191-2.ngrok-free.app/api/v1';
@@ -145,10 +144,6 @@ class ApiClient {
 
   async signOut(): Promise<void> {
     await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user']);
-  }
-
-  async getGlobalLeaderboard(): Promise<ApiResponse<GlobalLeaderboardEntry[]>> {
-    return this.request<GlobalLeaderboardEntry[]>('/leaderboard/global');
   }
 }
 

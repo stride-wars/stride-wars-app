@@ -215,7 +215,3 @@ func (hls *HexLeaderboardService) GetAllLeaderboardsInsideBBBox(ctx context.Cont
 	// Map the hex leaderboards to the response format
 	return mappers.MapHexLeaderboardsToResponse(hexLeaderboards), nil
 }
-
-func (hls *HexLeaderboardService) GetGlobalLeaderboard(ctx context.Context) ([]dto.GlobalLeaderboardEntry, error) {
-	return hls.hexLeaderboardRepository.GetGlobalHexLeaderboard(ctx)
-}
