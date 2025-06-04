@@ -53,3 +53,10 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+export type GlobalLeaderboardEntry = {
+  user_id: string;
+  username?: string;
+  top_count: number;
+};
+

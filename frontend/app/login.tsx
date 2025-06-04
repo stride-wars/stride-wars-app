@@ -42,11 +42,11 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
-        <TouchableWithoutFeedback >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.inner}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../assets/images/stride_wars.png')} 
+                source={require('../assets/images/stride_wars.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -106,51 +106,64 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // dark background
+    backgroundColor: '#121212', // dark background like MapScreen
   },
   keyboardAvoid: {
     flex: 1,
   },
   inner: {
     flex: 1,
-    padding: 20,
+    padding: 24,
     justifyContent: 'center',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 12,
+    width: 180,
+    height: 180,
+    marginBottom: 16,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+    elevation: 15,
   },
   appTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#FACC15', // yellow-500
+    color: '#FACC15', // bright yellow
+    textShadowColor: 'rgba(250, 204, 21, 0.8)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#9CA3AF', // gray-400
-    marginTop: 4,
+    fontSize: 16,
+    color: '#9CA3AF',
+    marginTop: 6,
   },
   formContainer: {
-    gap: 20,
+    gap: 24,
   },
   loginButton: {
-    marginTop: 10,
-    backgroundColor: '#2563EB', // blue-600
+    marginTop: 12,
+    backgroundColor: '#FFD600', // bright yellow
+    shadowColor: '#FFD600',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 10,
   },
   registerLink: {
-    marginTop: 16,
+    marginTop: 20,
     alignItems: 'center',
   },
   registerText: {
-    fontSize: 14,
-    color: '#FACC15', // yellow-500
+    fontSize: 15,
+    color: '#FACC15',
   },
   registerTextBold: {
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

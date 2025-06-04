@@ -103,6 +103,7 @@ func (r *Router) Setup(
 	// Leaderboard routes
 	leaderboard := api.PathPrefix("/leaderboard").Subrouter()
 	leaderboard.HandleFunc(apiroute.GetLeaderboardByBBox.String(), hexLeaderboardHandler.GetAllLeaderboardsInsideBBox).Methods("GET")
+	leaderboard.HandleFunc(apiroute.GetGlobalLeaderboard.String(), hexLeaderboardHandler.GetGlobalHexLeaderboard).Methods("GET")
 }
 
 // Handler returns the HTTP handler for the router
