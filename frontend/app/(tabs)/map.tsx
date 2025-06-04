@@ -43,7 +43,6 @@ function scalePolygon(coordinates: Coordinate[], scale: number): Coordinate[] {
   }));
 }
 
-// Utility: Haversine distance between two lat/lng pairs in meters
 function calculateDistance(
   lat1: number,
   lon1: number,
@@ -66,7 +65,6 @@ function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
 }
 
-// Retrieve the current user object from AsyncStorage (if any)
 export const getCurrentUser = async () => {
   const userString = await AsyncStorage.getItem('user');
   if (!userString) return null;
@@ -80,44 +78,33 @@ export default function MapScreen() {
 
   const [selectedHexId, setSelectedHexId] = useState<string | null>(null);
 
-  // Each hex has its original boundary ("coordinates") and an "animatedCoordinates" that we lerp/scale
   const [hexagons, setHexagons] = useState<
     Array<{ hexId: string; coordinates: Coordinate[]; animatedCoordinates: Coordinate[] }>
   >([]);
 
-  // leaderboardData maps each hexId → array of { user, score }
   const [leaderboardData, setLeaderboardData] = useState<Record<string, { user: string; score: number }[]>>({});
 
   const mapRef = useRef<MapView>(null);
 
-  // Recording state:
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
   const [distanceTraveled, setDistanceTraveled] = useState(0); // in meters
 
-  // previousLocation now ONLY holds `{ latitude, longitude }` or null
   const [previousLocation, setPreviousLocation] = useState<Coordinate | null>(null);
 
-  // timerRef should store the ID from setInterval (a number in React Native)
  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Animation value for sliding the leaderboard panel up/down
   const leaderboardAnim = useRef(new Animated.Value(0)).current;
 
-  // Track which hex IDs have been visited in this session
   const [visitedHexIds, setVisitedHexIds] = useState<Set<string>>(new Set());
 
-  // Keep track of the last region to avoid re-fetching too often
   const lastRegionRef = useRef<Region | null>(null);
 
-  // Current user ID (loaded from AsyncStorage)
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Whenever `location` or `isRecording` changes, update visited hexes & distance
   useEffect(() => {
     if (!isRecording || !location) return;
 
-    // Convert lat/lng → H3 cell at resolution `res`
     const nearestHex = String(h3.latLngToCell(location.coords.latitude, location.coords.longitude, res));
     setVisitedHexIds(prev => {
       const updated = new Set(prev);
@@ -125,7 +112,6 @@ export default function MapScreen() {
       return updated;
     });
 
-    // If we have a previousLocation, compute distance
     if (previousLocation) {
       const newDistance = calculateDistance(
         previousLocation.latitude,
@@ -136,19 +122,16 @@ export default function MapScreen() {
       setDistanceTraveled(prev => prev + newDistance);
     }
 
-    // Now store the current lat/lng as the new "previousLocation"
     setPreviousLocation({
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
     });
   }, [location, isRecording]);
 
-  // On mount, request location permissions / start polling
   useEffect(() => {
     getLocation();
   }, []);
 
-  // Load the current user from AsyncStorage
   useEffect(() => {
     const loadUser = async () => {
       const user = await getCurrentUser();
@@ -159,10 +142,8 @@ export default function MapScreen() {
     loadUser();
   }, []);
 
-  // Handle the recording timer
   useEffect(() => {
     if (isRecording) {
-      // In RN, setInterval(...) returns a number
       const id = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
@@ -177,7 +158,6 @@ export default function MapScreen() {
     };
   }, [isRecording]);
 
-  // Fetch leaderboard data for a given bounding box
   const fetchLeaderboardDataForBounds = async (
     minLat: number,
     minLng: number,
@@ -230,7 +210,6 @@ export default function MapScreen() {
 
   // Called whenever the map region changes
   const fetchLeaderboards = async (region: Region) => {
-    // Avoid refetching if region change is too minor
     if (
       lastRegionRef.current &&
       Math.abs(lastRegionRef.current.latitude - region.latitude) < region.latitudeDelta / 10 &&
@@ -250,7 +229,6 @@ export default function MapScreen() {
     lastRegionRef.current = region;
   };
 
-  // When `location` first arrives, zoom the map there and fetch initial leaderboard
   useEffect(() => {
     if (!location) return;
 
@@ -271,7 +249,6 @@ export default function MapScreen() {
     fetchLeaderboardDataForBounds(minLat, minLng, maxLat, maxLng);
   }, [location]);
 
-  // Animate scaling of a hex’s polygon from its current 'animatedCoordinates' to a scaled version
   const animateHexScaling = (hexId: string, toScale: number, duration: number = 150) => {
     const hex = hexagons.find(h => h.hexId === hexId);
     if (!hex) return;
@@ -304,11 +281,9 @@ export default function MapScreen() {
     animateStep();
   };
 
-  // Called when the user presses "Stop recording"
   const handleStopRecording = async () => {
     setIsRecording(false);
 
-    // Clear the interval
     if (timerRef.current !== null) {
       clearInterval(timerRef.current);
       timerRef.current = null;
