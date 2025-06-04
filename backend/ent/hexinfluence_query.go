@@ -335,7 +335,7 @@ func (hiq *HexInfluenceQuery) WithUsers(opts ...func(*UserQuery)) *HexInfluenceQ
 // Example:
 //
 //	var v []struct {
-//		H3Index int64 `json:"h3_index,omitempty"`
+//		H3Index string `json:"h3_index,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -358,7 +358,7 @@ func (hiq *HexInfluenceQuery) GroupBy(field string, fields ...string) *HexInflue
 // Example:
 //
 //	var v []struct {
-//		H3Index int64 `json:"h3_index,omitempty"`
+//		H3Index string `json:"h3_index,omitempty"`
 //	}
 //
 //	client.HexInfluence.Query().
@@ -446,8 +446,8 @@ func (hiq *HexInfluenceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 }
 
 func (hiq *HexInfluenceQuery) loadHex(ctx context.Context, query *HexQuery, nodes []*HexInfluence, init func(*HexInfluence), assign func(*HexInfluence, *Hex)) error {
-	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*HexInfluence)
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*HexInfluence)
 	for i := range nodes {
 		fk := nodes[i].H3Index
 		if _, ok := nodeids[fk]; !ok {

@@ -56,28 +56,73 @@ func IDLTE(id uuid.UUID) predicate.HexLeaderboard {
 }
 
 // H3Index applies equality check predicate on the "h3_index" field. It's identical to H3IndexEQ.
-func H3Index(v int64) predicate.HexLeaderboard {
+func H3Index(v string) predicate.HexLeaderboard {
 	return predicate.HexLeaderboard(sql.FieldEQ(FieldH3Index, v))
 }
 
 // H3IndexEQ applies the EQ predicate on the "h3_index" field.
-func H3IndexEQ(v int64) predicate.HexLeaderboard {
+func H3IndexEQ(v string) predicate.HexLeaderboard {
 	return predicate.HexLeaderboard(sql.FieldEQ(FieldH3Index, v))
 }
 
 // H3IndexNEQ applies the NEQ predicate on the "h3_index" field.
-func H3IndexNEQ(v int64) predicate.HexLeaderboard {
+func H3IndexNEQ(v string) predicate.HexLeaderboard {
 	return predicate.HexLeaderboard(sql.FieldNEQ(FieldH3Index, v))
 }
 
 // H3IndexIn applies the In predicate on the "h3_index" field.
-func H3IndexIn(vs ...int64) predicate.HexLeaderboard {
+func H3IndexIn(vs ...string) predicate.HexLeaderboard {
 	return predicate.HexLeaderboard(sql.FieldIn(FieldH3Index, vs...))
 }
 
 // H3IndexNotIn applies the NotIn predicate on the "h3_index" field.
-func H3IndexNotIn(vs ...int64) predicate.HexLeaderboard {
+func H3IndexNotIn(vs ...string) predicate.HexLeaderboard {
 	return predicate.HexLeaderboard(sql.FieldNotIn(FieldH3Index, vs...))
+}
+
+// H3IndexGT applies the GT predicate on the "h3_index" field.
+func H3IndexGT(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldGT(FieldH3Index, v))
+}
+
+// H3IndexGTE applies the GTE predicate on the "h3_index" field.
+func H3IndexGTE(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldGTE(FieldH3Index, v))
+}
+
+// H3IndexLT applies the LT predicate on the "h3_index" field.
+func H3IndexLT(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldLT(FieldH3Index, v))
+}
+
+// H3IndexLTE applies the LTE predicate on the "h3_index" field.
+func H3IndexLTE(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldLTE(FieldH3Index, v))
+}
+
+// H3IndexContains applies the Contains predicate on the "h3_index" field.
+func H3IndexContains(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldContains(FieldH3Index, v))
+}
+
+// H3IndexHasPrefix applies the HasPrefix predicate on the "h3_index" field.
+func H3IndexHasPrefix(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldHasPrefix(FieldH3Index, v))
+}
+
+// H3IndexHasSuffix applies the HasSuffix predicate on the "h3_index" field.
+func H3IndexHasSuffix(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldHasSuffix(FieldH3Index, v))
+}
+
+// H3IndexEqualFold applies the EqualFold predicate on the "h3_index" field.
+func H3IndexEqualFold(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldEqualFold(FieldH3Index, v))
+}
+
+// H3IndexContainsFold applies the ContainsFold predicate on the "h3_index" field.
+func H3IndexContainsFold(v string) predicate.HexLeaderboard {
+	return predicate.HexLeaderboard(sql.FieldContainsFold(FieldH3Index, v))
 }
 
 // HasHex applies the HasEdge predicate on the "hex" edge.

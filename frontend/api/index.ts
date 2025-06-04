@@ -3,13 +3,14 @@ import {
   SignUpRequest, 
   SignInRequest, 
   SignUpResponse, 
-  SignInResponse, 
+  SignInResponse,
+  GetActivityStatsResponse, 
   ApiResponse,
   Session,
   GlobalLeaderboardEntry
 } from '../consts/types';
 //const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-const API_BASE = 'https://4d85-188-146-191-2.ngrok-free.app/api/v1';
+const API_BASE = 'https://8c0e-195-128-172-5.ngrok-free.app/api/v1';
 
 class ApiClient {
   private async refreshToken(): Promise<Session | null> {
@@ -121,7 +122,7 @@ class ApiClient {
         throw new Error('Invalid email or password');
       }
 
-      return { data };
+      return data;
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'An error occurred' };
     }
@@ -147,6 +148,11 @@ class ApiClient {
     await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user']);
   }
 
+  async getUserActivityStats(userId: string): Promise<ApiResponse<GetActivityStatsResponse>> {
+  return this.request<GetActivityStatsResponse>(`/activity?user_id=${encodeURIComponent(userId)}`, {
+    method: 'GET',
+  });
+}
   async getGlobalLeaderboard(): Promise<ApiResponse<GlobalLeaderboardEntry[]>> {
     return this.request<GlobalLeaderboardEntry[]>('/leaderboard/global');
   }

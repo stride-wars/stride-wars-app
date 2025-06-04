@@ -88,14 +88,14 @@ func (au *ActivityUpdate) AddDistanceMeters(f float64) *ActivityUpdate {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (au *ActivityUpdate) SetH3Indexes(i []int64) *ActivityUpdate {
-	au.mutation.SetH3Indexes(i)
+func (au *ActivityUpdate) SetH3Indexes(s []string) *ActivityUpdate {
+	au.mutation.SetH3Indexes(s)
 	return au
 }
 
-// AppendH3Indexes appends i to the "h3_indexes" field.
-func (au *ActivityUpdate) AppendH3Indexes(i []int64) *ActivityUpdate {
-	au.mutation.AppendH3Indexes(i)
+// AppendH3Indexes appends s to the "h3_indexes" field.
+func (au *ActivityUpdate) AppendH3Indexes(s []string) *ActivityUpdate {
+	au.mutation.AppendH3Indexes(s)
 	return au
 }
 
@@ -305,14 +305,14 @@ func (auo *ActivityUpdateOne) AddDistanceMeters(f float64) *ActivityUpdateOne {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (auo *ActivityUpdateOne) SetH3Indexes(i []int64) *ActivityUpdateOne {
-	auo.mutation.SetH3Indexes(i)
+func (auo *ActivityUpdateOne) SetH3Indexes(s []string) *ActivityUpdateOne {
+	auo.mutation.SetH3Indexes(s)
 	return auo
 }
 
-// AppendH3Indexes appends i to the "h3_indexes" field.
-func (auo *ActivityUpdateOne) AppendH3Indexes(i []int64) *ActivityUpdateOne {
-	auo.mutation.AppendH3Indexes(i)
+// AppendH3Indexes appends s to the "h3_indexes" field.
+func (auo *ActivityUpdateOne) AppendH3Indexes(s []string) *ActivityUpdateOne {
+	auo.mutation.AppendH3Indexes(s)
 	return auo
 }
 

@@ -11,7 +11,7 @@ import (
 
 type HexInfluence struct {
 	ID          uuid.UUID
-	H3Index     int64
+	H3Index     string
 	UserID      uuid.UUID
 	Score       float64
 	LastUpdated time.Time
@@ -21,7 +21,7 @@ type HexInfluence struct {
 func (HexInfluence) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
-		field.Int64("h3_index"),
+		field.String("h3_index"),
 		field.UUID("user_id", uuid.UUID{}),
 		field.Float("score"),
 		field.Time("last_updated"),

@@ -15,7 +15,7 @@ import (
 type Hex struct {
 	config
 	// ID of the ent.
-	ID int64 `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HexQuery when eager-loading is set.
 	Edges        HexEdges `json:"edges"`
@@ -57,7 +57,7 @@ func (*Hex) scanValues(columns []string) ([]any, error) {
 	for i := range columns {
 		switch columns[i] {
 		case hex.FieldID:
-			values[i] = new(sql.NullInt64)
+			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -74,11 +74,11 @@ func (h *Hex) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case hex.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value.Valid {
+				h.ID = value.String
 			}
-			h.ID = int64(value.Int64)
 		default:
 			h.selectValues.Set(columns[i], values[i])
 		}

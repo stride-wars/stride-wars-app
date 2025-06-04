@@ -56,9 +56,9 @@ export default function HomeScreen() {
             {leaderboard && leaderboard.map((entry, index) => (
               <View style={styles.leaderboardRow} key={entry.user_id}>
                 <Text style={styles.rank}>{index + 1}.</Text>
-                {index < 1 && getTrophyIcon(index)}
-                <Text style={styles.name}>{entry.username || entry.user_id}</Text>
-                <Text style={styles.score}>{entry.top_count} pts</Text>
+                {index < 3 && getTrophyIcon(index)}
+                <Text style={styles.name}>{entry.name}</Text>
+                <Text style={styles.score}>{entry.score} pts</Text>
               </View>
             ))}
           </ScrollView>

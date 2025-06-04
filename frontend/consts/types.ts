@@ -1,3 +1,6 @@
+import { NumberArray } from "react-native-svg";
+import { Float, Int32 } from "react-native/Libraries/Types/CodegenTypes";
+
 export interface SignUpRequest {
   username: string;
   email: string;
@@ -49,9 +52,17 @@ export interface SignInResponse {
   email: string;
 }
 
+export interface GetActivityStatsResponse {
+  hexes_visited: number;
+  activities_recorded: number;
+  distance_covered: number;
+  weekly_activities: number[];
+}
+
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
+  success?: boolean;
 }
 
 export type GlobalLeaderboardEntry = {
