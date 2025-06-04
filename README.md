@@ -46,20 +46,15 @@ Stride Wars is a territory takeover application where users capture hexagonal ma
 - Expo Location Services
 - React Native Maps
 - H3-JS for hexagon geospatial indexing
-- Async Storage
-
-### Frontend (Web)
-- **Angular** (TypeScript)
-- RxJS for state management
+- Ngrok for tunneling the requests
 
 ### Backend
 - **Go** (1.24+)
 - Gin Web Framework
-- H3-Go for geospatial processing
+- [H3-Go](https://github.com/uber/h3-go) for geospatial processing
 
 ### Database
-- **Supabase** (PostgreSQL)
-- PostGIS for geospatial queries
+- PostgreSQL hosted on [Supabase](https://supabase.com/)
 
 ### Dependencies
 - Yarn (package manager)
@@ -73,6 +68,21 @@ Stride Wars is a territory takeover application where users capture hexagonal ma
 - Yarn: `npm install -g yarn`
 - Expo CLI: `npm install -g expo-cli`
 - Supabase account
+- Ngrok, two command long tutorial [here](https://dashboard.ngrok.com/get-started/setup/linux)
+
+### Configuration
+Create a `.env` file in the `backend` directory:
+```env
+# Supabase Configuration
+SUPABASE_CONN_STRING=your-supabase-connection-string
+SUPABASE_PROJECT_URL=your-supabase-project-url
+SUPABASE_API_KEY=your-supabase-api-key
+```
+
+Create a `.env` file in the `frontend` directory:
+```env
+EXPO_PUBLIC_API_URL=https://your-ngrok-url/api/v1
+```
 
 ### Mobile App Setup
 ```bash
@@ -85,7 +95,6 @@ yarn install
 
 # Start development server
 npx expo run:android # or :ios
-
 ```
 
 ### Backend Setup
@@ -97,21 +106,6 @@ go mod download
 
 # Build and run
 make run
-```
-
-## Configuration
-
-Create a `.env` file in the `backend` directory:
-
-```env
-# Supabase Configuration
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-supabase-service-key
-SUPABASE_JWT_SECRET=your-jwt-secret
-
-# Server Configuration
-SERVER_PORT=8080
-ENVIRONMENT=development
 ```
 
 ## Application Screens
@@ -142,7 +136,7 @@ Secure authentication with credentials.
 ### Statistics
 **Statistics Screen:**
 - Visited hexagon count
-- Activity statistics
+- Activity count
 - 7-day activity chart
 
 <img src="./assets/profile.png" alt="Statistics Screen" width="300"/>
@@ -164,13 +158,13 @@ Top 10 players with the most dominated hexagons
 Each hexagon visit earns points based on:
 
 ```
-Score = ReLU(1 - 0.1 * (tc - tl)) * Scorec + 1
+Score = ReLU(1 - 0.1 * (t_c - t_l)) * Score_c + 1
 ```
 Where:
 - **Score** = New score
-- **tc** = Current time (weeks)
-- **tl** = Last visit time (weeks)
-- **Scorec** = Current score
+- **t_c** = Current time (weeks)
+- **t_l** = Last visit time (weeks)
+- **Score_c** = Current score
 
 The formula rewards frequent visits and penalizes infrequent players.
 
@@ -186,9 +180,7 @@ Each hexagon maintains:
 ```
 stride-wars/
 ├── frontend/        # React Native Expo app
-├── backend/         # Go server
-├── h3-utils/        # Shared geospatial utilities
-└── supabase/        # Database schemas and migrations
+└── backend/         # Go server
 ```
 
 ## Contributing

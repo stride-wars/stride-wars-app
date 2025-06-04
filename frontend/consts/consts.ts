@@ -1,1 +1,1 @@
-export const EXPO_PUBLIC_API_URL = 'https://e39c-188-146-191-28.ngrok-free.app';
+export const EXPO_PUBLIC_API_URL = 'https://2b7d-188-146-191-28.ngrok-free.app';
