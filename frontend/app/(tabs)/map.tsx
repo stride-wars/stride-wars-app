@@ -14,9 +14,10 @@ import { getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
 import * as h3 from 'h3-js';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const res = 9; // the size of hexes
-const API_BASE = 'https://a64e-194-53-114-21.ngrok-free.app/api/v1';
+const API_BASE = 'https://e39c-188-146-191-28.ngrok-free.app/api/v1';
 
 type Coordinate = { latitude: number; longitude: number };
 type LeaderboardEntry = { name: string; points: number };
@@ -57,6 +58,12 @@ function deg2rad(deg: number): number {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+  export const getCurrentUser = async () => {
+    const userString = await AsyncStorage.getItem('user');
+    if (!userString) return null;
+    return JSON.parse(userString);
+  };
+
 export default function MapScreen() {
   const { location, error, isLoading, getLocation } = useLocation();
   const [selectedHexId, setSelectedHexId] = useState<string | null>(null);
@@ -74,6 +81,7 @@ export default function MapScreen() {
   const leaderboardAnim = useRef(new Animated.Value(0)).current;
   const [visitedHexIds, setVisitedHexIds] = useState<Set<string>>(new Set());
   const lastRegionRef = useRef<Region | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isRecording || !location) return;
@@ -102,6 +110,16 @@ export default function MapScreen() {
 
   useEffect(() => {
     getLocation();
+  }, []);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      if (user?.id) {
+        setUserId(user.id);
+      }
+    };
+    loadUser();
   }, []);
 
   // Handle timer for recording
@@ -154,7 +172,7 @@ export default function MapScreen() {
         });
 
         hexMap[hexId] = leaderboard.top_users.map((user: any) => ({
-          user: user.user_id,
+          user: user.username ?? user.name ?? user.user_id,
           score: user.score,
         }));
       }
@@ -257,7 +275,7 @@ export default function MapScreen() {
     if (hexesToSend.length > 0) {
       try {
         const activityData = {
-          user_id: 'cb304380-9d01-43e7-9239-d788432db291',
+          user_id: userId,
           h3_indexes: hexesToSend,
           duration: durationToSend,
           distance: distanceToSend + 1, // for demo purposes we want this to be positive
