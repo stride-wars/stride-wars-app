@@ -14,6 +14,8 @@ import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
 import * as h3 from 'h3-js';
 import { stringify } from 'querystring';
+import * as Location from 'expo-location';
+
 const res = 9; // the size of hexes
 const API_BASE = 'https://a64e-194-53-114-21.ngrok-free.app/api/v1';
 
@@ -37,6 +39,23 @@ function scalePolygon(coordinates: Coordinate[], scale: number): Coordinate[] {
   }));
 }
 
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const d = R * c; // Distance in km
+  return d * 1000; // Convert to meters
+}
+
+function deg2rad(deg: number): number {
+  return deg * (Math.PI/180);
+}
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function MapScreen() {
@@ -50,18 +69,35 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [distanceTraveled, setDistanceTraveled] = useState(0);
+  const [previousLocation, setPreviousLocation] = useState<Location.LocationObject | null>(null);
   const timerRef = useRef<NodeJS.Timer | null>(null);
   const leaderboardAnim = useRef(new Animated.Value(0)).current;
   const [visitedHexIds, setVisitedHexIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isRecording || !location) return;
+    
     const nearestHex = String(h3.latLngToCell(location.coords.latitude, location.coords.longitude, res));
     setVisitedHexIds(prev => {
       const updated = new Set(prev);
       updated.add(nearestHex);
       return updated;
     });
+
+    // Calculate distance if we have a previous location
+    if (previousLocation) {
+      const newDistance = calculateDistance(
+        previousLocation.coords.latitude,
+        previousLocation.coords.longitude,
+        location.coords.latitude,
+        location.coords.longitude
+      );
+      setDistanceTraveled(prev => prev + newDistance);
+    }
+    
+    // Update previous location
+    setPreviousLocation(location);
   }, [location, isRecording]);
 
   useEffect(() => {
@@ -173,30 +209,23 @@ export default function MapScreen() {
   };
 
 const handleStopRecording = async () => {
-  // Immediately stop recording and clear timer
   setIsRecording(false);
   if (timerRef.current) {
     clearInterval(timerRef.current);
     timerRef.current = null;
   }
 
-  // Capture state before resetting
   const hexesToSend = Array.from(visitedHexIds);
   const durationToSend = elapsedTime;
-
-  // Reset UI state immediately
-  setVisitedHexIds(new Set());
-  setElapsedTime(0);
+  const distanceToSend = distanceTraveled;
 
   if (hexesToSend.length > 0) {
-
     try {
       const activityData = {
         user_id: 'cb304380-9d01-43e7-9239-d788432db291',
-        // Convert hex strings to numbers
         h3_indexes: hexesToSend,
-        duration: 5,
-        distance: 1, // placeholder
+        duration: durationToSend,
+        distance: distanceToSend + 1, // for demo purposes we want this to be positive
       };
 
       console.log('Submitting activity with data:', activityData);
@@ -221,6 +250,11 @@ const handleStopRecording = async () => {
       console.error('Error submitting activity:', err);
     }
   }
+  setVisitedHexIds(new Set());
+  setElapsedTime(0);
+  setDistanceTraveled(0);
+  setPreviousLocation(null);
+
 };
 
   // Handle hexagon press
@@ -328,13 +362,18 @@ const handleStopRecording = async () => {
         </TouchableOpacity>
       ) : (
         <View style={styles.timerContainer}>
-          <Text style={styles.timerText}>
-            {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
-            {(elapsedTime % 60).toString().padStart(2, '0')}
-          </Text>
-        <TouchableOpacity onPress={async () => await handleStopRecording()} style={styles.stopButton}>
-          <Text style={styles.stopButtonText}>Stop</Text>
-        </TouchableOpacity>
+          <View style={styles.statsContainer}>
+            <Text style={styles.timerText}>
+              {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
+              {(elapsedTime % 60).toString().padStart(2, '0')}
+            </Text>
+            <Text style={styles.distanceText}>
+              {(distanceTraveled / 1000).toFixed(2)} km
+            </Text>
+          </View>
+          <TouchableOpacity onPress={async () => await handleStopRecording()} style={styles.stopButton}>
+            <Text style={styles.stopButtonText}>Stop</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -357,7 +396,6 @@ const handleStopRecording = async () => {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -413,13 +451,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  timerText: {
-    color: '#fff',
-    fontSize: 16,
+  statsContainer: {
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
+    alignItems: 'center',
+  },
+  timerText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  distanceText: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 4,
   },
   stopButton: {
     backgroundColor: '#ff5252',
