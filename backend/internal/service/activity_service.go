@@ -114,7 +114,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 
 	userID := activityInput.UserID
 	h3Indexes := activityInput.H3Indexes
-	userName := "Jan" // TODO: change this to a valid value
+	userName, _ := as.UserService.FindByID(ctx, userID)
 
 	as.logger.Debug("Checking and creating hexes if necessary", zap.Any("h3Indexes", h3Indexes))
 	existingHexEntities, err := as.HexService.FindByIDs(ctx, h3Indexes)
@@ -152,7 +152,7 @@ func (as *ActivityService) CreateActivity(ctx context.Context, req dto.CreateAct
 		}
 
 		// Add user to leaderboard
-		_, err = as.HexLeaderboardService.AddUserToLeaderboardOrCreateLeaderboard(ctx, h3Index, userID, userName)
+		_, err = as.HexLeaderboardService.AddUserToLeaderboardOrCreateLeaderboard(ctx, h3Index, userID, userName.Username)
 		if err != nil {
 			as.logger.Error("Failed to add user to leaderboard.", zap.Error(err), zap.String("h3Index", h3Index))
 			continue

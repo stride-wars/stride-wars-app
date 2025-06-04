@@ -72,14 +72,13 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 		return nil, nil
 	}
 	score := hexInfluence.Score
-
 	newTopUsers := make([]model.TopUser, 0, len(hexLeaderboard.TopUsers))
 	addedOrUpdated := false
 
 	for _, u := range hexLeaderboard.TopUsers {
 		if u.UserID == userID {
 			if u.Score != score {
-				newTopUsers = append(newTopUsers, model.TopUser{UserID: userID, Score: score})
+				newTopUsers = append(newTopUsers, model.TopUser{UserID: userID, UserName: userName, Score: score})
 				addedOrUpdated = true
 			} else {
 				newTopUsers = append(newTopUsers, u)
@@ -90,7 +89,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 	}
 
 	if !addedOrUpdated {
-		newTopUsers = append(newTopUsers, model.TopUser{UserID: userID, Score: score})
+		newTopUsers = append(newTopUsers, model.TopUser{UserID: userID, UserName: userName, Score: score})
 	}
 
 	sort.Slice(newTopUsers, func(i, j int) bool {
