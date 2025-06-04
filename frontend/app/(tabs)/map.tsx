@@ -10,10 +10,9 @@ import {
 } from 'react-native';
 import MapView, { Polygon, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getHexagonsInRadius, getHexagonColor } from '../../utils/h3Utils';
+import { getHexagonColor } from '../../utils/h3Utils';
 import { useLocation } from '../../hooks/useLocation';
 import * as h3 from 'h3-js';
-import { stringify } from 'querystring';
 import * as Location from 'expo-location';
 
 const res = 9; // the size of hexes
@@ -74,6 +73,7 @@ export default function MapScreen() {
   const timerRef = useRef<NodeJS.Timer | null>(null);
   const leaderboardAnim = useRef(new Animated.Value(0)).current;
   const [visitedHexIds, setVisitedHexIds] = useState<Set<string>>(new Set());
+  const lastRegionRef = useRef<Region | null>(null);
 
   useEffect(() => {
     if (!isRecording || !location) return;
@@ -119,7 +119,7 @@ export default function MapScreen() {
     };
   }, [isRecording]);
 
-  const fetchLeaderboardDataForBounds = async (
+    const fetchLeaderboardDataForBounds = async (
     minLat: number,
     minLng: number,
     maxLat: number,
@@ -129,53 +129,88 @@ export default function MapScreen() {
       const url = `${API_BASE}/leaderboard/bbox?min_lat=${minLat}&min_lng=${minLng}&max_lat=${maxLat}&max_lng=${maxLng}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
       const data = await res.json();
-      setLeaderboardData(data.hexLeaderboards || data || {});
+      console.log('[DEBUG] leaderboard API raw response:', data);
+
+      const leaderboards = data?.data?.leaderboards ?? [];
+      const hexMap: Record<string, { user: string; score: number }[]> = {};
+      const newHexagons: typeof hexagons = [];
+
+      for (const leaderboard of leaderboards) {
+        const hexId = leaderboard.h3_index;
+        if (!hexId) continue;
+
+        const boundary = h3.cellToBoundary(hexId, false);
+        const coordinates = boundary.map(([lat, lng]: [number, number]) => ({
+          latitude: lat,
+          longitude: lng,
+        }));
+
+        newHexagons.push({
+          hexId,
+          coordinates,
+          animatedCoordinates: coordinates,
+        });
+
+        hexMap[hexId] = leaderboard.top_users.map((user: any) => ({
+          user: user.user_id,
+          score: user.score,
+        }));
+      }
+      console.log('hexy', newHexagons.map(v => v.hexId))
+      setHexagons(newHexagons);
+      setLeaderboardData(hexMap);
     } catch (err) {
       console.error('Failed to fetch leaderboard data:', err);
     }
   };
 
-  // Initialize hexagons and leaderboard on location update
-  useEffect(() => {
-    if (!location) return;
 
-    const rawHexes = getHexagonsInRadius(location.coords.latitude, location.coords.longitude, 1000, 9);
-
-    const enrichedHexes = rawHexes.map(h => ({
-      ...h,
-      animatedCoordinates: h.coordinates,
-    }));
-
-    setHexagons(enrichedHexes);
-
-    // Calculate bounding box of all hexagons
-    const lats = enrichedHexes.flatMap(h => h.coordinates.map(c => c.latitude));
-    const lngs = enrichedHexes.flatMap(h => h.coordinates.map(c => c.longitude));
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-
-    fetchLeaderboardDataForBounds(minLat, minLng, maxLat, maxLng);
-
-    mapRef.current?.animateToRegion({
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    });
-  }, [location]);
 
   // Fetch leaderboard data on region change
   const fetchLeaderboards = async (region: Region) => {
+    // Only update if region has changed significantly
+    if (
+      lastRegionRef.current &&
+      Math.abs(lastRegionRef.current.latitude - region.latitude) < region.latitudeDelta / 10 &&
+      Math.abs(lastRegionRef.current.longitude - region.longitude) < region.longitudeDelta / 10 &&
+      Math.abs(lastRegionRef.current.latitudeDelta - region.latitudeDelta) < region.latitudeDelta / 5 &&
+      Math.abs(lastRegionRef.current.longitudeDelta - region.longitudeDelta) < region.longitudeDelta / 5
+    ) {
+      return;
+    }
+    
     const minLat = region.latitude - region.latitudeDelta / 2;
     const maxLat = region.latitude + region.latitudeDelta / 2;
     const minLng = region.longitude - region.longitudeDelta / 2;
     const maxLng = region.longitude + region.longitudeDelta / 2;
 
     fetchLeaderboardDataForBounds(minLat, minLng, maxLat, maxLng);
+    lastRegionRef.current = region;
   };
+
+  // Initialize map when location is available
+  useEffect(() => {
+    if (!location) return;
+    
+    const initialRegion = {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+    
+    mapRef.current?.animateToRegion(initialRegion);
+    
+    // Fetch initial leaderboard data
+    const minLat = initialRegion.latitude - initialRegion.latitudeDelta / 2;
+    const maxLat = initialRegion.latitude + initialRegion.latitudeDelta / 2;
+    const minLng = initialRegion.longitude - initialRegion.longitudeDelta / 2;
+    const maxLng = initialRegion.longitude + initialRegion.longitudeDelta / 2;
+    
+    fetchLeaderboardDataForBounds(minLat, minLng, maxLat, maxLng);
+  }, [location]);
 
   // Animate polygon scaling
   const animateHexScaling = (hexId: string, toScale: number, duration: number = 150) => {
@@ -208,54 +243,53 @@ export default function MapScreen() {
     animateStep();
   };
 
-const handleStopRecording = async () => {
-  setIsRecording(false);
-  if (timerRef.current) {
-    clearInterval(timerRef.current);
-    timerRef.current = null;
-  }
-
-  const hexesToSend = Array.from(visitedHexIds);
-  const durationToSend = elapsedTime;
-  const distanceToSend = distanceTraveled;
-
-  if (hexesToSend.length > 0) {
-    try {
-      const activityData = {
-        user_id: 'cb304380-9d01-43e7-9239-d788432db291',
-        h3_indexes: hexesToSend,
-        duration: durationToSend,
-        distance: distanceToSend + 1, // for demo purposes we want this to be positive
-      };
-
-      console.log('Submitting activity with data:', activityData);
-
-      const res = await fetch(`${API_BASE}/activity/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('Failed to submit activity:', text);
-        throw new Error(`HTTP error ${res.status}`);
-      }
-
-      const json = await res.json();
-      console.log('Activity saved:', json);
-    } catch (err) {
-      console.error('Error submitting activity:', err);
+  const handleStopRecording = async () => {
+    setIsRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-  }
-  setVisitedHexIds(new Set());
-  setElapsedTime(0);
-  setDistanceTraveled(0);
-  setPreviousLocation(null);
 
-};
+    const hexesToSend = Array.from(visitedHexIds);
+    const durationToSend = elapsedTime;
+    const distanceToSend = distanceTraveled;
+
+    if (hexesToSend.length > 0) {
+      try {
+        const activityData = {
+          user_id: 'cb304380-9d01-43e7-9239-d788432db291',
+          h3_indexes: hexesToSend,
+          duration: durationToSend,
+          distance: distanceToSend + 1, // for demo purposes we want this to be positive
+        };
+
+        console.log('Submitting activity with data:', activityData);
+
+        const res = await fetch(`${API_BASE}/activity/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(activityData),
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('Failed to submit activity:', text);
+          throw new Error(`HTTP error ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('Activity saved:', json);
+      } catch (err) {
+        console.error('Error submitting activity:', err);
+      }
+    }
+    setVisitedHexIds(new Set());
+    setElapsedTime(0);
+    setDistanceTraveled(0);
+    setPreviousLocation(null);
+  };
 
   // Handle hexagon press
   const handleHexPress = (hexId: string) => {
@@ -355,28 +389,28 @@ const handleStopRecording = async () => {
         </Animated.View>
       )}
 
-    <View style={styles.activityControls}>
-      {!isRecording ? (
-        <TouchableOpacity onPress={() => setIsRecording(true)} style={styles.startButton}>
-          <Text style={styles.startButtonText}>Start activity</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.timerContainer}>
-          <View style={styles.statsContainer}>
-            <Text style={styles.timerText}>
-              {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
-              {(elapsedTime % 60).toString().padStart(2, '0')}
-            </Text>
-            <Text style={styles.distanceText}>
-              {(distanceTraveled / 1000).toFixed(2)} km
-            </Text>
-          </View>
-          <TouchableOpacity onPress={async () => await handleStopRecording()} style={styles.stopButton}>
-            <Text style={styles.stopButtonText}>Stop</Text>
+      <View style={styles.activityControls}>
+        {!isRecording ? (
+          <TouchableOpacity onPress={() => setIsRecording(true)} style={styles.startButton}>
+            <Text style={styles.startButtonText}>Start activity</Text>
           </TouchableOpacity>
-        </View>
-      )}
-    </View>
+        ) : (
+          <View style={styles.timerContainer}>
+            <View style={styles.statsContainer}>
+              <Text style={styles.timerText}>
+                {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
+                {(elapsedTime % 60).toString().padStart(2, '0')}
+              </Text>
+              <Text style={styles.distanceText}>
+                {(distanceTraveled / 1000).toFixed(2)} km
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleStopRecording} style={styles.stopButton}>
+              <Text style={styles.stopButtonText}>Stop</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
       <TouchableOpacity
         style={styles.locateButton}
