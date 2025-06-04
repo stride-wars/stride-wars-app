@@ -42,11 +42,11 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <TouchableWithoutFeedback >
           <View style={styles.inner}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../assets/images/stride_wars.png')}
+                source={require('../assets/images/stride_wars.png')} 
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -106,64 +106,51 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212', // dark background like MapScreen
+    backgroundColor: '#111827', // dark background
   },
   keyboardAvoid: {
     flex: 1,
   },
   inner: {
     flex: 1,
-    padding: 24,
+    padding: 20,
     justifyContent: 'center',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
   logo: {
-    width: 180,
-    height: 180,
-    marginBottom: 16,
-    shadowColor: '#FACC15',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
-    elevation: 15,
+    width: 120,
+    height: 120,
+    marginBottom: 12,
   },
   appTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#FACC15', // bright yellow
-    textShadowColor: 'rgba(250, 204, 21, 0.8)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    color: '#FACC15', // yellow-500
   },
   subtitle: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    marginTop: 6,
+    fontSize: 14,
+    color: '#9CA3AF', // gray-400
+    marginTop: 4,
   },
   formContainer: {
-    gap: 24,
+    gap: 20,
   },
   loginButton: {
-    marginTop: 12,
-    backgroundColor: '#FFD600', // bright yellow
-    shadowColor: '#FFD600',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 10,
+    marginTop: 10,
+    backgroundColor: '#2563EB', // blue-600
   },
   registerLink: {
-    marginTop: 20,
+    marginTop: 16,
     alignItems: 'center',
   },
   registerText: {
-    fontSize: 15,
-    color: '#FACC15',
+    fontSize: 14,
+    color: '#FACC15', // yellow-500
   },
   registerTextBold: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });
