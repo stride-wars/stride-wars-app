@@ -19,3 +19,9 @@ type HexLeaderboardResponse struct {
 type GetAllHexLeaderboardsInsideBBoxResponse struct {
 	Leaderboards []HexLeaderboardResponse `json:"leaderboards"`
 }
+
+type GlobalLeaderboardEntry struct {
+	UserID   uuid.UUID `json:"user_id"`
+	Username string    `json:"username"`
+	TopCount int       `json:"top_count"`
+}

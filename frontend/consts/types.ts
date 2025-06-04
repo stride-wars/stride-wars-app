@@ -64,3 +64,10 @@ export interface ApiResponse<T> {
   error?: string;
   success?: boolean;
 }
+
+export type GlobalLeaderboardEntry = {
+  user_id: string;
+  username?: string;
+  top_count: number;
+};
+

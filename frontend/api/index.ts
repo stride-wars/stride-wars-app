@@ -6,7 +6,8 @@ import {
   SignInResponse,
   GetActivityStatsResponse, 
   ApiResponse,
-  Session
+  Session,
+  GlobalLeaderboardEntry
 } from '../consts/types';
 //const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 const API_BASE = 'https://8c0e-195-128-172-5.ngrok-free.app/api/v1';
@@ -152,6 +153,9 @@ class ApiClient {
     method: 'GET',
   });
 }
+  async getGlobalLeaderboard(): Promise<ApiResponse<GlobalLeaderboardEntry[]>> {
+    return this.request<GlobalLeaderboardEntry[]>('/leaderboard/global');
+  }
 }
 
 export const api = new ApiClient(); 
