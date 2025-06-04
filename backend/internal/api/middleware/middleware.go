@@ -1,13 +1,13 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"time"
-	"bytes"
 
 	"go.uber.org/zap"
 )
@@ -106,7 +106,7 @@ func CORS() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Set CORS headers for all responses
-			//w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081")
+			// w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081")
 			w.Header().Set("Access-Control-Allow-Origin", "http://192.168.22.230:8081")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")

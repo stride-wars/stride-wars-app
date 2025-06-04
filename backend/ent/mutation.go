@@ -49,8 +49,8 @@ type ActivityMutation struct {
 	addduration_seconds *float64
 	distance_meters     *float64
 	adddistance_meters  *float64
-	h3_indexes          *[]int64
-	appendh3_indexes    []int64
+	h3_indexes          *[]string
+	appendh3_indexes    []string
 	created_at          *time.Time
 	clearedFields       map[string]struct{}
 	user                *uuid.UUID
@@ -313,13 +313,13 @@ func (m *ActivityMutation) ResetDistanceMeters() {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (m *ActivityMutation) SetH3Indexes(i []int64) {
-	m.h3_indexes = &i
+func (m *ActivityMutation) SetH3Indexes(s []string) {
+	m.h3_indexes = &s
 	m.appendh3_indexes = nil
 }
 
 // H3Indexes returns the value of the "h3_indexes" field in the mutation.
-func (m *ActivityMutation) H3Indexes() (r []int64, exists bool) {
+func (m *ActivityMutation) H3Indexes() (r []string, exists bool) {
 	v := m.h3_indexes
 	if v == nil {
 		return
@@ -330,7 +330,7 @@ func (m *ActivityMutation) H3Indexes() (r []int64, exists bool) {
 // OldH3Indexes returns the old "h3_indexes" field's value of the Activity entity.
 // If the Activity object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []int64, err error) {
+func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldH3Indexes is only allowed on UpdateOne operations")
 	}
@@ -344,13 +344,13 @@ func (m *ActivityMutation) OldH3Indexes(ctx context.Context) (v []int64, err err
 	return oldValue.H3Indexes, nil
 }
 
-// AppendH3Indexes adds i to the "h3_indexes" field.
-func (m *ActivityMutation) AppendH3Indexes(i []int64) {
-	m.appendh3_indexes = append(m.appendh3_indexes, i...)
+// AppendH3Indexes adds s to the "h3_indexes" field.
+func (m *ActivityMutation) AppendH3Indexes(s []string) {
+	m.appendh3_indexes = append(m.appendh3_indexes, s...)
 }
 
 // AppendedH3Indexes returns the list of values that were appended to the "h3_indexes" field in this mutation.
-func (m *ActivityMutation) AppendedH3Indexes() ([]int64, bool) {
+func (m *ActivityMutation) AppendedH3Indexes() ([]string, bool) {
 	if len(m.appendh3_indexes) == 0 {
 		return nil, false
 	}
@@ -544,7 +544,7 @@ func (m *ActivityMutation) SetField(name string, value ent.Value) error {
 		m.SetDistanceMeters(v)
 		return nil
 	case activity.FieldH3Indexes:
-		v, ok := value.([]int64)
+		v, ok := value.([]string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1297,7 +1297,7 @@ type HexMutation struct {
 	config
 	op                     Op
 	typ                    string
-	id                     *int64
+	id                     *string
 	clearedFields          map[string]struct{}
 	hexinfluences          map[uuid.UUID]struct{}
 	removedhexinfluences   map[uuid.UUID]struct{}
@@ -1330,7 +1330,7 @@ func newHexMutation(c config, op Op, opts ...hexOption) *HexMutation {
 }
 
 // withHexID sets the ID field of the mutation.
-func withHexID(id int64) hexOption {
+func withHexID(id string) hexOption {
 	return func(m *HexMutation) {
 		var (
 			err   error
@@ -1382,13 +1382,13 @@ func (m HexMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Hex entities.
-func (m *HexMutation) SetID(id int64) {
+func (m *HexMutation) SetID(id string) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *HexMutation) ID() (id int64, exists bool) {
+func (m *HexMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1399,12 +1399,12 @@ func (m *HexMutation) ID() (id int64, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *HexMutation) IDs(ctx context.Context) ([]int64, error) {
+func (m *HexMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int64{id}, nil
+			return []string{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1748,7 +1748,7 @@ type HexInfluenceMutation struct {
 	addscore      *float64
 	last_updated  *time.Time
 	clearedFields map[string]struct{}
-	hex           *int64
+	hex           *string
 	clearedhex    bool
 	users         *uuid.UUID
 	clearedusers  bool
@@ -1862,12 +1862,12 @@ func (m *HexInfluenceMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (m *HexInfluenceMutation) SetH3Index(i int64) {
-	m.hex = &i
+func (m *HexInfluenceMutation) SetH3Index(s string) {
+	m.hex = &s
 }
 
 // H3Index returns the value of the "h3_index" field in the mutation.
-func (m *HexInfluenceMutation) H3Index() (r int64, exists bool) {
+func (m *HexInfluenceMutation) H3Index() (r string, exists bool) {
 	v := m.hex
 	if v == nil {
 		return
@@ -1878,7 +1878,7 @@ func (m *HexInfluenceMutation) H3Index() (r int64, exists bool) {
 // OldH3Index returns the old "h3_index" field's value of the HexInfluence entity.
 // If the HexInfluence object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexInfluenceMutation) OldH3Index(ctx context.Context) (v int64, err error) {
+func (m *HexInfluenceMutation) OldH3Index(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldH3Index is only allowed on UpdateOne operations")
 	}
@@ -2026,7 +2026,7 @@ func (m *HexInfluenceMutation) ResetLastUpdated() {
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by id.
-func (m *HexInfluenceMutation) SetHexID(id int64) {
+func (m *HexInfluenceMutation) SetHexID(id string) {
 	m.hex = &id
 }
 
@@ -2042,7 +2042,7 @@ func (m *HexInfluenceMutation) HexCleared() bool {
 }
 
 // HexID returns the "hex" edge ID in the mutation.
-func (m *HexInfluenceMutation) HexID() (id int64, exists bool) {
+func (m *HexInfluenceMutation) HexID() (id string, exists bool) {
 	if m.hex != nil {
 		return *m.hex, true
 	}
@@ -2052,7 +2052,7 @@ func (m *HexInfluenceMutation) HexID() (id int64, exists bool) {
 // HexIDs returns the "hex" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // HexID instead. It exists only for internal usage by the builders.
-func (m *HexInfluenceMutation) HexIDs() (ids []int64) {
+func (m *HexInfluenceMutation) HexIDs() (ids []string) {
 	if id := m.hex; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2195,7 +2195,7 @@ func (m *HexInfluenceMutation) OldField(ctx context.Context, name string) (ent.V
 func (m *HexInfluenceMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case hexinfluence.FieldH3Index:
-		v, ok := value.(int64)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2403,7 +2403,7 @@ type HexLeaderboardMutation struct {
 	top_users       *[]model.TopUser
 	appendtop_users []model.TopUser
 	clearedFields   map[string]struct{}
-	hex             *int64
+	hex             *string
 	clearedhex      bool
 	done            bool
 	oldValue        func(context.Context) (*HexLeaderboard, error)
@@ -2515,12 +2515,12 @@ func (m *HexLeaderboardMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetH3Index sets the "h3_index" field.
-func (m *HexLeaderboardMutation) SetH3Index(i int64) {
-	m.hex = &i
+func (m *HexLeaderboardMutation) SetH3Index(s string) {
+	m.hex = &s
 }
 
 // H3Index returns the value of the "h3_index" field in the mutation.
-func (m *HexLeaderboardMutation) H3Index() (r int64, exists bool) {
+func (m *HexLeaderboardMutation) H3Index() (r string, exists bool) {
 	v := m.hex
 	if v == nil {
 		return
@@ -2531,7 +2531,7 @@ func (m *HexLeaderboardMutation) H3Index() (r int64, exists bool) {
 // OldH3Index returns the old "h3_index" field's value of the HexLeaderboard entity.
 // If the HexLeaderboard object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *HexLeaderboardMutation) OldH3Index(ctx context.Context) (v int64, err error) {
+func (m *HexLeaderboardMutation) OldH3Index(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldH3Index is only allowed on UpdateOne operations")
 	}
@@ -2602,7 +2602,7 @@ func (m *HexLeaderboardMutation) ResetTopUsers() {
 }
 
 // SetHexID sets the "hex" edge to the Hex entity by id.
-func (m *HexLeaderboardMutation) SetHexID(id int64) {
+func (m *HexLeaderboardMutation) SetHexID(id string) {
 	m.hex = &id
 }
 
@@ -2618,7 +2618,7 @@ func (m *HexLeaderboardMutation) HexCleared() bool {
 }
 
 // HexID returns the "hex" edge ID in the mutation.
-func (m *HexLeaderboardMutation) HexID() (id int64, exists bool) {
+func (m *HexLeaderboardMutation) HexID() (id string, exists bool) {
 	if m.hex != nil {
 		return *m.hex, true
 	}
@@ -2628,7 +2628,7 @@ func (m *HexLeaderboardMutation) HexID() (id int64, exists bool) {
 // HexIDs returns the "hex" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // HexID instead. It exists only for internal usage by the builders.
-func (m *HexLeaderboardMutation) HexIDs() (ids []int64) {
+func (m *HexLeaderboardMutation) HexIDs() (ids []string) {
 	if id := m.hex; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2717,7 +2717,7 @@ func (m *HexLeaderboardMutation) OldField(ctx context.Context, name string) (ent
 func (m *HexLeaderboardMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case hexleaderboard.FieldH3Index:
-		v, ok := value.(int64)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2737,16 +2737,13 @@ func (m *HexLeaderboardMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *HexLeaderboardMutation) AddedFields() []string {
-	var fields []string
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *HexLeaderboardMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	}
 	return nil, false
 }
 
