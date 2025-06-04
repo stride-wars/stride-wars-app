@@ -11,19 +11,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useGlobalLeaderboard } from '../../hooks/useGlobalLeaderboards';
 
-const leaderboardData = [
-  { name: 'StrideRunner42', score: 120 },
-  { name: 'HikerPro', score: 95 },
-  { name: 'WalkMaster', score: 85 },
-  { name: 'TrailBlazer99', score: 70 },
-  { name: 'SpeedWalker', score: 65 },
-  { name: 'UrbanStroller', score: 60 },
-  { name: 'FootFrenzy', score: 58 },
-  { name: 'JoggerX', score: 55 },
-  { name: 'ExplorerElle', score: 53 },
-  { name: 'MarathonMike', score: 50 },
-];
-
 export default function HomeScreen() {
   const { handleLogout } = useAuth();
   const { leaderboard, loading, error, refresh } = useGlobalLeaderboard();
@@ -57,8 +44,8 @@ export default function HomeScreen() {
               <View style={styles.leaderboardRow} key={entry.user_id}>
                 <Text style={styles.rank}>{index + 1}.</Text>
                 {index < 3 && getTrophyIcon(index)}
-                <Text style={styles.name}>{entry.name}</Text>
-                <Text style={styles.score}>{entry.score} pts</Text>
+                <Text style={styles.name}>{entry.username}</Text>
+                <Text style={styles.score}>{entry.top_count} pts</Text>
               </View>
             ))}
           </ScrollView>

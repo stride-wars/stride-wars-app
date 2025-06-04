@@ -5,9 +5,9 @@ import (
 )
 
 type TopUserResponse struct {
-	UserID uuid.UUID	`json:"user_id"`
-	UserName string 	`json:"user_name"`
-	Score  float64   	`json:"score"`
+	UserID   uuid.UUID `json:"user_id"`
+	UserName string    `json:"user_name"`
+	Score    float64   `json:"score"`
 }
 
 type HexLeaderboardResponse struct {

@@ -502,12 +502,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  timerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   statsContainer: {
+      color: '#fff',
+    fontSize: 16,
+  },
   timerText: {
     color: '#fff',
     fontSize: 16,
@@ -516,10 +514,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 20,
     alignItems: 'center',
-  },
-  timerText: {
-    color: '#fff',
-    fontSize: 16,
   },
   distanceText: {
     color: '#fff',
@@ -590,7 +584,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
   },
-});
   stopButton: {
     backgroundColor: '#ff5252',
     paddingHorizontal: 20,

@@ -152,7 +152,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx co
 			leaderboard := &model.HexLeaderboard{
 				H3Index: hexID,
 				TopUsers: []model.TopUser{
-					{UserID: userID, UserName: userName ,Score: hexInfluence.Score},
+					{UserID: userID, UserName: userName, Score: hexInfluence.Score},
 				},
 			}
 

@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"math/rand"
+	"strconv"
 	"stride-wars-app/ent"
 	"stride-wars-app/ent/model"
 	"stride-wars-app/internal/testutil"
@@ -32,14 +33,17 @@ func TestHexLeaderboardService_GlobalLeaderboard_ManyUsers(t *testing.T) {
 	}
 
 	for h := 0; h < 30; h++ {
-		topUser := users[rand.Intn(len(users))].ID
+		topUserID := users[rand.Intn(len(users))].ID
+		topUserUsername := users[rand.Intn(len(users))].Username
 
-		_, err := hexSvc.CreateHex(ctx, int64(1000+h))
+		// Now using string H3 index instead of int64
+		idxStr := strconv.Itoa(1000 + h)
+		_, err := hexSvc.CreateHex(ctx, idxStr)
 		require.NoError(t, err)
 
 		_, err = hexLeaderboardService.CreateHexLeaderboard(ctx, &model.HexLeaderboard{
-			H3Index:  int64(1000 + h),
-			TopUsers: []model.TopUser{{UserID: topUser, Score: float64(rand.Intn(100))}},
+			H3Index:  idxStr,
+			TopUsers: []model.TopUser{{UserID: topUserID, UserName: topUserUsername, Score: float64(rand.Intn(100))}},
 		})
 		require.NoError(t, err)
 	}

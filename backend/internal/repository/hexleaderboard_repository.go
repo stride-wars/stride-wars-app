@@ -72,7 +72,11 @@ func (r HexLeaderboardRepository) GetGlobalHexLeaderboard(ctx context.Context) (
 
 	var entries []dto.GlobalLeaderboardEntry
 	for userID, count := range userCounts {
-		entries = append(entries, dto.GlobalLeaderboardEntry{UserID: userID, TopCount: count})
+		username := ""
+		if user, err := r.client.User.Get(ctx, userID); err == nil {
+			username = user.Username
+		}
+		entries = append(entries, dto.GlobalLeaderboardEntry{UserID: userID, Username: username, TopCount: count})
 	}
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].TopCount > entries[j].TopCount

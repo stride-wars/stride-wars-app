@@ -10,7 +10,7 @@ import {
   GlobalLeaderboardEntry
 } from '../consts/types';
 //const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-const API_BASE = 'https://8c0e-195-128-172-5.ngrok-free.app/api/v1';
+const API_BASE = 'https://f17a-195-128-172-5.ngrok-free.app/api/v1';
 
 class ApiClient {
   private async refreshToken(): Promise<Session | null> {
