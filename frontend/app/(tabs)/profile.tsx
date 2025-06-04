@@ -13,6 +13,9 @@ import { useStats } from '../../hooks/useStats';
 
 const screenWidth = Dimensions.get('window').width;
 
+// Array of weekday abbreviations, indexed 0–6 by Sunday–Saturday
+const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 export default function ExploreTab() {
   const {
     username,
@@ -23,12 +26,21 @@ export default function ExploreTab() {
     error,
   } = useStats();
 
+  // Compute labels for the next 7 days, starting from tomorrow
+  const todayIndex = new Date().getDay(); // 0=Sunday, 1=Monday, ... 6=Saturday
+  const labels = Array.from({ length: 7 }, (_, i) => {
+    // (today + 1 + i) % 7 will wrap around correctly
+    const dayIndex = (todayIndex + 1 + i) % 7;
+    return WEEKDAY_NAMES[dayIndex];
+  });
+
   const chartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels, // dynamically generated
     datasets: [
       {
         data: weeklyActivities,
         strokeWidth: 2,
+        // Note: react-native-chart-kit’s `color` callback still works as before
         color: (opacity = 1) => `rgba(255, 214, 0, ${opacity})`,
       },
     ],

@@ -17,7 +17,7 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const res = 9; // the size of hexes
-const API_BASE = 'https://2b7d-188-146-191-28.ngrok-free.app/api/v1';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 type Coordinate = { latitude: number; longitude: number };
 type LeaderboardEntry = { name: string; points: number };
