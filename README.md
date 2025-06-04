@@ -1,6 +1,8 @@
 # Stride Wars - Territory Takeover Application
 
-![Stride Wars Logo](./assets/stride_wars.png)
+<p align="center">
+<img src="./assets/stride_wars.png" alt="Login Screen" width="300"/>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/React%20Native-20232A?logo=react&logoColor=61DAFB&style=flat-square" />
