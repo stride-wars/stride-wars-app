@@ -22,9 +22,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var krakowH3Indexes = []string{
-	"891e2e6b153ffff",
-	"891e2e6b103ffff",
+var krakowH3Indexes = []int64{
+	617524104371896319,
+	617524104366653439,
 }
 
 type HexLeaderboardAPIResponse struct {

@@ -27,10 +27,9 @@ func TestHexRepository(t *testing.T) {
 		resolution := 9
 		h3Index, err := h3.LatLngToCell(latLng, resolution)
 		require.NoError(t, err)
-		H3String := h3Index.String()
 
 		// 4) Insert a new Hex row:
-		created, err := hexRepo.CreateHex(ctx, H3String)
+		created, err := hexRepo.CreateHex(ctx, int64(h3Index))
 		require.NoError(t, err)
 		require.NotNil(t, created)
 

@@ -46,15 +46,15 @@ func TestActivityRepository(t *testing.T) {
 		userID := created_user.ID
 		duration := 782.5
 		distance := 1500.0
-		h3_indexes := []string{
-			"8928308280fffff",
-			"8928308280bffff",
-			"8928308280dffff",
-			"89283082807ffff",
-			"89283082863ffff",
-			"89283082867ffff",
-			"8928308286bffff",
-			"8928308286fffff",
+		h3_indexes := []int64{
+			617700169958293503,
+			617700169957507071,
+			617700169957769215,
+			617700169958031359,
+			617700169958162431,
+			617700169958096895,
+			617700169957375999,
+			617700169957441535,
 		}
 		created_at := time.Now()
 

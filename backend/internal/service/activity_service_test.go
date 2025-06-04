@@ -18,9 +18,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var validH3Indexes = []string{
-	"891e2e6b153ffff",
-	"891e2e6b103ffff",
+var validH3Indexes = []int64{
+	617420388352917503,
+	618094571271487487,
 }
 
 // setupTest initializes an in-memory SQLite ent client, applies schema,

@@ -21,7 +21,7 @@ type HexLeaderboard struct {
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// H3Index holds the value of the "h3_index" field.
-	H3Index string `json:"h3_index,omitempty"`
+	H3Index int64 `json:"h3_index,omitempty"`
 	// TopUsers holds the value of the "top_users" field.
 	TopUsers []model.TopUser `json:"top_users,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -58,7 +58,7 @@ func (*HexLeaderboard) scanValues(columns []string) ([]any, error) {
 		case hexleaderboard.FieldTopUsers:
 			values[i] = new([]byte)
 		case hexleaderboard.FieldH3Index:
-			values[i] = new(sql.NullString)
+			values[i] = new(sql.NullInt64)
 		case hexleaderboard.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -83,10 +83,10 @@ func (hl *HexLeaderboard) assignValues(columns []string, values []any) error {
 				hl.ID = *value
 			}
 		case hexleaderboard.FieldH3Index:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field h3_index", values[i])
 			} else if value.Valid {
-				hl.H3Index = value.String
+				hl.H3Index = value.Int64
 			}
 		case hexleaderboard.FieldTopUsers:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -138,7 +138,7 @@ func (hl *HexLeaderboard) String() string {
 	builder.WriteString("HexLeaderboard(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", hl.ID))
 	builder.WriteString("h3_index=")
-	builder.WriteString(hl.H3Index)
+	builder.WriteString(fmt.Sprintf("%v", hl.H3Index))
 	builder.WriteString(", ")
 	builder.WriteString("top_users=")
 	builder.WriteString(fmt.Sprintf("%v", hl.TopUsers))

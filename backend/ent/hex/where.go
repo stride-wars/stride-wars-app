@@ -10,58 +10,48 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id string) predicate.Hex {
+func ID(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id string) predicate.Hex {
+func IDEQ(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id string) predicate.Hex {
+func IDNEQ(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...string) predicate.Hex {
+func IDIn(ids ...int64) predicate.Hex {
 	return predicate.Hex(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...string) predicate.Hex {
+func IDNotIn(ids ...int64) predicate.Hex {
 	return predicate.Hex(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id string) predicate.Hex {
+func IDGT(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id string) predicate.Hex {
+func IDGTE(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id string) predicate.Hex {
+func IDLT(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id string) predicate.Hex {
+func IDLTE(id int64) predicate.Hex {
 	return predicate.Hex(sql.FieldLTE(FieldID, id))
-}
-
-// IDEqualFold applies the EqualFold predicate on the ID field.
-func IDEqualFold(id string) predicate.Hex {
-	return predicate.Hex(sql.FieldEqualFold(FieldID, id))
-}
-
-// IDContainsFold applies the ContainsFold predicate on the ID field.
-func IDContainsFold(id string) predicate.Hex {
-	return predicate.Hex(sql.FieldContainsFold(FieldID, id))
 }
 
 // HasHexinfluences applies the HasEdge predicate on the "hexinfluences" edge.
