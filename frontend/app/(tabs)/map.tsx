@@ -17,8 +17,7 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const res = 9; // the size of hexes
-const API_BASE = 'https://e39c-188-146-191-28.ngrok-free.app/api/v1';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+const API_BASE = 'https://2b7d-188-146-191-28.ngrok-free.app/api/v1';
 
 type Coordinate = { latitude: number; longitude: number };
 type LeaderboardEntry = { name: string; points: number };
@@ -409,13 +408,16 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
-      <View style={styles.activityControls}>
+      <View style={styles.bottomButtonContainer}>
         {!isRecording ? (
-          <TouchableOpacity onPress={() => setIsRecording(true)} style={styles.startButton}>
-            <Text style={styles.startButtonText}>Start activity</Text>
+          <TouchableOpacity 
+            onPress={() => setIsRecording(true)} 
+            style={styles.fullWidthButton}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Start striding!</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.timerContainer}>
+            {/* NEW: Translucent stats container */}
             <View style={styles.statsContainer}>
               <Text style={styles.timerText}>
                 {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
@@ -425,6 +427,7 @@ export default function MapScreen() {
                 {(distanceTraveled / 1000).toFixed(2)} km
               </Text>
             </View>
+            
             <TouchableOpacity onPress={handleStopRecording} style={styles.stopButton}>
               <Text style={styles.stopButtonText}>Stop</Text>
             </TouchableOpacity>
@@ -458,6 +461,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
+    height: '100%',
     flex: 1,
     margin: 0,
     padding: 0,
@@ -502,43 +506,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  timerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+  },
   statsContainer: {
-      color: '#fff',
-    fontSize: 16,
+    height: '80%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent black
+    borderRadius: 30, // Rounded corners
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
   },
   timerText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
-    alignItems: 'center',
+    width: '40%',
+    textAlign: 'center',
   },
   distanceText: {
     color: '#fff',
     fontSize: 12,
-    marginTop: 4,
+  },
+  stopButton: {
+    backgroundColor: '#ff5252',
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    height: '80%',
+    aspectRatio: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
     width: '25%',
     textAlign: 'center',
   },
-  bottomButtonContainer: {
+    fullWidthButton: {
     width: '100%',
-    backgroundColor: '#FFD600',
+    height: '100%',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
     padding: 0,
     margin: 0,
     borderRadius: 0,
-    borderTopWidth: 0,
-  },
-  timerContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    justifyContent: 'center',
   },
   stopButtonText: {
     color: '#fff',
@@ -580,30 +597,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
   },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  stopButton: {
-    backgroundColor: '#ff5252',
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    height: '80%',
-    aspectRatio: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 10,
-    width: '25%',
-    textAlign: 'center',
-  },
-  fullWidthButton: {
+    bottomButtonContainer: {
     width: '100%',
-    height: '100%',
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFD600',
     alignItems: 'center',
     justifyContent: 'center',
+    height: 56,
     padding: 0,
     margin: 0,
     borderRadius: 0,
+    borderTopWidth: 0,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });
