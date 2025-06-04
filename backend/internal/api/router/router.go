@@ -99,7 +99,6 @@ func (r *Router) Setup(
 	// Activity routes
 	activity := api.PathPrefix("/activity").Subrouter()
 	activity.HandleFunc(apiroute.CreateActivity.String(), activityHandler.CreateActivity).Methods("POST")
-	activity.HandleFunc("", activityHandler.GetUserActivityStats).Methods("GET")
 
 	// Leaderboard routes
 	leaderboard := api.PathPrefix("/leaderboard").Subrouter()

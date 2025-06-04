@@ -11,13 +11,13 @@ type Hex struct {
 }
 
 func (Hex) ID() ent.Field {
-	return field.String("id").
+	return field.Int64("id").
 		Immutable()
 }
 
 func (Hex) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").
+		field.Int64("id").
 			Immutable(),
 	}
 }

@@ -131,8 +131,8 @@ func (hq *HexQuery) FirstX(ctx context.Context) *Hex {
 
 // FirstID returns the first Hex ID from the query.
 // Returns a *NotFoundError when no Hex ID was found.
-func (hq *HexQuery) FirstID(ctx context.Context) (id string, err error) {
-	var ids []string
+func (hq *HexQuery) FirstID(ctx context.Context) (id int64, err error) {
+	var ids []int64
 	if ids, err = hq.Limit(1).IDs(setContextOp(ctx, hq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -144,7 +144,7 @@ func (hq *HexQuery) FirstID(ctx context.Context) (id string, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hq *HexQuery) FirstIDX(ctx context.Context) string {
+func (hq *HexQuery) FirstIDX(ctx context.Context) int64 {
 	id, err := hq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -182,8 +182,8 @@ func (hq *HexQuery) OnlyX(ctx context.Context) *Hex {
 // OnlyID is like Only, but returns the only Hex ID in the query.
 // Returns a *NotSingularError when more than one Hex ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hq *HexQuery) OnlyID(ctx context.Context) (id string, err error) {
-	var ids []string
+func (hq *HexQuery) OnlyID(ctx context.Context) (id int64, err error) {
+	var ids []int64
 	if ids, err = hq.Limit(2).IDs(setContextOp(ctx, hq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -199,7 +199,7 @@ func (hq *HexQuery) OnlyID(ctx context.Context) (id string, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hq *HexQuery) OnlyIDX(ctx context.Context) string {
+func (hq *HexQuery) OnlyIDX(ctx context.Context) int64 {
 	id, err := hq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -227,7 +227,7 @@ func (hq *HexQuery) AllX(ctx context.Context) []*Hex {
 }
 
 // IDs executes the query and returns a list of Hex IDs.
-func (hq *HexQuery) IDs(ctx context.Context) (ids []string, err error) {
+func (hq *HexQuery) IDs(ctx context.Context) (ids []int64, err error) {
 	if hq.ctx.Unique == nil && hq.path != nil {
 		hq.Unique(true)
 	}
@@ -239,7 +239,7 @@ func (hq *HexQuery) IDs(ctx context.Context) (ids []string, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hq *HexQuery) IDsX(ctx context.Context) []string {
+func (hq *HexQuery) IDsX(ctx context.Context) []int64 {
 	ids, err := hq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -427,7 +427,7 @@ func (hq *HexQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Hex, err
 
 func (hq *HexQuery) loadHexinfluences(ctx context.Context, query *HexInfluenceQuery, nodes []*Hex, init func(*Hex), assign func(*Hex, *HexInfluence)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Hex)
+	nodeids := make(map[int64]*Hex)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -457,7 +457,7 @@ func (hq *HexQuery) loadHexinfluences(ctx context.Context, query *HexInfluenceQu
 }
 func (hq *HexQuery) loadHexleaderboards(ctx context.Context, query *HexLeaderboardQuery, nodes []*Hex, init func(*Hex), assign func(*Hex, *HexLeaderboard)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Hex)
+	nodeids := make(map[int64]*Hex)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -496,7 +496,7 @@ func (hq *HexQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (hq *HexQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeString))
+	_spec := sqlgraph.NewQuerySpec(hex.Table, hex.Columns, sqlgraph.NewFieldSpec(hex.FieldID, field.TypeInt64))
 	_spec.From = hq.sql
 	if unique := hq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

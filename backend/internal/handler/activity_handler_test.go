@@ -29,15 +29,9 @@ type ActivityAPIResponse struct {
 	Error   string                     `json:"error,omitempty"`
 }
 
-type UserActivityStatsAPIResponse struct {
-	Success bool                             `json:"success"`
-	Data    dto.GetUserActivityStatsResponse `json:"data"`
-	Error   string                           `json:"error,omitempty"`
-}
-
-var validH3Indexes = []string{
-	"891e2e6b153ffff",
-	"891e2e6b103ffff",
+var validH3Indexes = []int64{
+	618094571073044479,
+	618094571271487487,
 }
 
 func setupTestActivityHandler(t *testing.T) (context.Context, *ent.Client, *handler.ActivityHandler) {
@@ -189,7 +183,7 @@ func TestCreateActivity(t *testing.T) {
 			UserID:    uuid.New(), // assume no user check here
 			Duration:  3600,
 			Distance:  10000,
-			H3Indexes: []string{"mlody napoleon", "tylko troche wieksze berlo"}, // invalid
+			H3Indexes: []int64{122}, // invalid
 		}
 		reqBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
@@ -210,181 +204,4 @@ func TestCreateActivity(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, resp.Error, "invalid H3 index")
 	})
-}
-
-func TestGetUserActivityStats(t *testing.T) {
-	t.Parallel()
-
-	// ------------------------
-	// Subtest: HappyPath (two activities created via the handler)
-	// ------------------------
-	t.Run("HappyPath", func(t *testing.T) {
-		t.Parallel()
-
-		ctx, client, activityHandler := setupTestActivityHandler(t)
-
-		// Seed a valid user
-		userRepo := repository.NewUserRepository(client)
-		username := "alice"
-		externalID := uuid.New()
-		newUser := &model.User{
-			Username:     username,
-			ExternalUser: externalID,
-		}
-		createdUser, err := userRepo.CreateUser(ctx, newUser)
-		require.NoError(t, err)
-
-		// Verify user exists
-		foundUser, findErr := userRepo.FindByUsername(ctx, username)
-		require.NoError(t, findErr)
-		require.Equal(t, createdUser.ID, foundUser.ID)
-
-		// Create two activities via the handler (so CreatedAt == now)
-		for i := 0; i < 2; i++ {
-			createReq := dto.CreateActivityRequest{
-				UserID:    foundUser.ID,
-				Duration:  1800, // 30 minutes
-				Distance:  5000, // 5 km
-				H3Indexes: validH3Indexes,
-			}
-			reqBody, err := json.Marshal(createReq)
-			require.NoError(t, err)
-
-			req := httptest.NewRequest("POST", "/activity/create", bytes.NewBuffer(reqBody))
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-
-			activityHandler.CreateActivity(w, req)
-			assert.Equal(t, http.StatusCreated, w.Code)
-
-			var createResp ActivityAPIResponse
-			err = util.DecodeJSONBody(bytes.NewBuffer(w.Body.Bytes()), &createResp)
-			require.NoError(t, err)
-			assert.True(t, createResp.Success)
-			assert.NotEqual(t, uuid.Nil, createResp.Data.ID)
-		}
-
-		// Now call GetUserActivityStats
-		statsReq := httptest.NewRequest("GET", "/activity?user_id="+createdUser.ID.String(), nil)
-		statsW := httptest.NewRecorder()
-		activityHandler.GetUserActivityStats(statsW, statsReq)
-
-		assert.Equal(t, http.StatusOK, statsW.Code)
-
-		var response UserActivityStatsAPIResponse
-		err = json.Unmarshal(statsW.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.True(t, response.Success)
-
-		// Expect exactly 2 activities recorded
-		assert.Equal(t, int64(2), response.Data.ActivitiesRecorded)
-
-		// Each activity used 2 H3 indexes → HexesVisited = 2 * 2 = 4
-		assert.Equal(t, int64(4), response.Data.HexesVisited)
-
-		// Distance: 5000 + 5000 = 10000
-		assert.Equal(t, 10000.0, response.Data.DistanceCovered)
-
-		// WeeklyActivities: both are “today”
-		week := response.Data.WeeklyActivities
-		require.Len(t, week, 7)
-
-		// “Today” index should be 2 (the other six indices must be 0).
-		// Our implementation maps “today” → index 6, so:
-		for i := 0; i < 6; i++ {
-			assert.Equal(t, int64(0), week[i], "expected no activities on day index %d", i)
-		}
-		assert.Equal(t, int64(2), week[6], "expected 2 activities on 'today' bucket")
-	})
-
-	// ------------------------
-	// Subtest: MissingUserIDParam
-	// ------------------------
-	t.Run("MissingUserIDParam", func(t *testing.T) {
-		t.Parallel()
-
-		_, _, activityHandler := setupTestActivityHandler(t)
-
-		// Call without any ?user_id=… at all
-		req := httptest.NewRequest("GET", "/activity", nil)
-		w := httptest.NewRecorder()
-		activityHandler.GetUserActivityStats(w, req)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		var resp UserActivityStatsAPIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &resp)
-		require.NoError(t, err)
-		assert.False(t, resp.Success)
-		assert.Contains(t, resp.Error, "User ID is required")
-	})
-
-	// ------------------------
-	// Subtest: InvalidUserIDParam
-	// ------------------------
-	t.Run("InvalidUserIDParam", func(t *testing.T) {
-		t.Parallel()
-
-		_, _, activityHandler := setupTestActivityHandler(t)
-
-		// user_id is not a valid UUID
-		req := httptest.NewRequest("GET", "/activity?user_id=not-a-uuid", nil)
-		w := httptest.NewRecorder()
-		activityHandler.GetUserActivityStats(w, req)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		var resp UserActivityStatsAPIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &resp)
-		require.NoError(t, err)
-		assert.False(t, resp.Success)
-		assert.Contains(t, resp.Error, "Invalid UUID format for 'user_id'")
-	})
-
-	// ------------------------
-	// Subtest: NoActivitiesExistingUser
-	// ------------------------
-	t.Run("NoActivitiesExistingUser", func(t *testing.T) {
-		t.Parallel()
-
-		ctx, client, activityHandler := setupTestActivityHandler(t)
-
-		// Create a user, but do NOT create any activities
-		userRepo := repository.NewUserRepository(client)
-		username := "bob"
-		externalID := uuid.New()
-		newUser := &model.User{
-			Username:     username,
-			ExternalUser: externalID,
-		}
-		createdUser, err := userRepo.CreateUser(ctx, newUser)
-		require.NoError(t, err)
-
-		// Sanity check: user exists
-		foundUser, findErr := userRepo.FindByUsername(ctx, username)
-		require.NoError(t, findErr)
-		require.Equal(t, createdUser.ID, foundUser.ID)
-
-		// Call stats
-		req := httptest.NewRequest("GET", "/activity?user_id="+createdUser.ID.String(), nil)
-		w := httptest.NewRecorder()
-		activityHandler.GetUserActivityStats(w, req)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var resp UserActivityStatsAPIResponse
-		err = json.Unmarshal(w.Body.Bytes(), &resp)
-		require.NoError(t, err)
-		assert.True(t, resp.Success)
-
-		// All counts should be zero
-		assert.Equal(t, int64(0), resp.Data.ActivitiesRecorded)
-		assert.Equal(t, int64(0), resp.Data.HexesVisited)
-		assert.Equal(t, 0.0, resp.Data.DistanceCovered)
-		require.Len(t, resp.Data.WeeklyActivities, 7)
-		for i := 0; i < 7; i++ {
-			assert.Equal(t, int64(0), resp.Data.WeeklyActivities[i], "expected zero at index %d", i)
-		}
-	})
-
 }

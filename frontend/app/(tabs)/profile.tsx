@@ -5,51 +5,29 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
-import { useStats } from '../../hooks/useStats';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function ExploreTab() {
-  const {
-    username,
-    hexesVisited,
-    activitiesRecorded,
-    weeklyActivities,
-    loading,
-    error,
-  } = useStats();
+  const stats = {
+    hexesVisited: 128,
+    activitiesRecorded: 37,
+  };
 
   const chartData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
-        data: weeklyActivities,
+        data: [2, 4, 3, 6, 4, 5, 7],
         strokeWidth: 2,
         color: (opacity = 1) => `rgba(255, 214, 0, ${opacity})`,
       },
     ],
     legend: ['Activities per Day'],
   };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#FFD600" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -58,17 +36,17 @@ export default function ExploreTab() {
         <View style={styles.avatarGlow}>
           <FontAwesome5 name="user-astronaut" size={48} color="#FFD600" />
         </View>
-        <Text style={styles.username}>@{username}</Text>
+        <Text style={styles.username}>@YourStride</Text>
       </View>
 
       {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{hexesVisited}</Text>
+          <Text style={styles.statNumber}>{stats.hexesVisited}</Text>
           <Text style={styles.statLabel}>Hexes Visited</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{activitiesRecorded}</Text>
+          <Text style={styles.statNumber}>{stats.activitiesRecorded}</Text>
           <Text style={styles.statLabel}>Activities</Text>
         </View>
       </View>
@@ -102,11 +80,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     alignItems: 'center',
@@ -169,11 +142,5 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
-  },
-  errorText: {
-    color: '#FF4444',
-    fontSize: 16,
-    textAlign: 'center',
-    paddingHorizontal: 20,
   },
 });

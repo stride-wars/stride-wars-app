@@ -41,8 +41,8 @@ func (ac *ActivityCreate) SetDistanceMeters(f float64) *ActivityCreate {
 }
 
 // SetH3Indexes sets the "h3_indexes" field.
-func (ac *ActivityCreate) SetH3Indexes(s []string) *ActivityCreate {
-	ac.mutation.SetH3Indexes(s)
+func (ac *ActivityCreate) SetH3Indexes(i []int64) *ActivityCreate {
+	ac.mutation.SetH3Indexes(i)
 	return ac
 }
 
