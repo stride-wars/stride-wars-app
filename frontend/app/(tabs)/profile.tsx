@@ -6,6 +6,7 @@ import {
   Dimensions,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
@@ -17,6 +18,7 @@ const screenWidth = Dimensions.get('window').width;
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function ExploreTab() {
+  // Destructure a `refresh` function from useStats in addition to the existing fields
   const {
     username,
     hexesVisited,
@@ -24,30 +26,30 @@ export default function ExploreTab() {
     weeklyActivities,
     loading,
     error,
+    refresh, // <-- assumed to exist
   } = useStats();
 
   // Compute labels for the next 7 days, starting from tomorrow
   const todayIndex = new Date().getDay(); // 0=Sunday, 1=Monday, ... 6=Saturday
   const labels = Array.from({ length: 7 }, (_, i) => {
-    // (today + 1 + i) % 7 will wrap around correctly
     const dayIndex = (todayIndex + 1 + i) % 7;
     return WEEKDAY_NAMES[dayIndex];
   });
 
   const chartData = {
-    labels, // dynamically generated
+    labels,
     datasets: [
       {
         data: weeklyActivities,
         strokeWidth: 2,
-        // Note: react-native-chart-kit’s `color` callback still works as before
         color: (opacity = 1) => `rgba(255, 214, 0, ${opacity})`,
       },
     ],
     legend: ['Activities per Day'],
   };
 
-  if (loading) {
+  // Show full‐screen spinner if still loading and no data yet
+  if (loading && !username) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#FFD600" />
@@ -64,7 +66,18 @@ export default function ExploreTab() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={refresh}
+          colors={['#FFD600']}    // Android spinner color
+          tintColor="#FFD600"     // iOS spinner color
+        />
+      }
+    >
       {/* User Avatar */}
       <View style={styles.avatarWrapper}>
         <View style={styles.avatarGlow}>

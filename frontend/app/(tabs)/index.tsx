@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -13,7 +14,12 @@ import { useGlobalLeaderboard } from '../../hooks/useGlobalLeaderboards';
 
 export default function HomeScreen() {
   const { handleLogout } = useAuth();
-  const { leaderboard, loading, error, refresh } = useGlobalLeaderboard();
+  const {
+    leaderboard,    // typed as Array<…> | null
+    loading,
+    error,
+    refresh,
+  } = useGlobalLeaderboard();
 
   const getTrophyIcon = (index: number) => {
     const colors = ['#FFD700', '#C0C0C0', '#CD7F32']; // gold, silver, bronze
@@ -27,8 +33,26 @@ export default function HomeScreen() {
     );
   };
 
-  if (loading) return <Text>Loading leaderboard...</Text>;
-  if (error) return <Text>Error: {error}</Text>;
+  // If still loading and there's no leaderboard data at all yet, show a placeholder
+  if (loading && !leaderboard) {
+    return (
+      <SafeAreaView style={styles.centeredContainer}>
+        <Text style={styles.loadingText}>Loading leaderboard...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // If an error occurred, show it (and let user retry)
+  if (error) {
+    return (
+      <SafeAreaView style={styles.centeredContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={refresh}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,18 +60,33 @@ export default function HomeScreen() {
         <Text style={styles.title}>Stride Wars</Text>
         <Text style={styles.subtitle}>Welcome to the game!</Text>
 
-        {/* Leaderboard */}
+        {/* Leaderboard Panel */}
         <View style={styles.leaderboardPanel}>
           <Text style={styles.leaderboardTitle}>🏆 Leaderboard</Text>
-          <ScrollView style={{ maxHeight: 240 }}>
-            {leaderboard && leaderboard.map((entry, index) => (
-              <View style={styles.leaderboardRow} key={entry.user_id}>
-                <Text style={styles.rank}>{index + 1}.</Text>
-                {index < 3 && getTrophyIcon(index)}
-                <Text style={styles.name}>{entry.username}</Text>
-                <Text style={styles.score}>{entry.top_count} pts</Text>
-              </View>
-            ))}
+          <ScrollView
+            style={styles.scrollArea}
+            refreshControl={
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={refresh}
+                colors={['#FFD600']}     // Android indicator color
+                tintColor="#FFD600"      // iOS indicator color
+              />
+            }
+          >
+            {/* Safely map over `leaderboard` only if non-null; else show “No entries yet.” */}
+            {leaderboard && leaderboard.length > 0 ? (
+              leaderboard.map((entry, index) => (
+                <View style={styles.leaderboardRow} key={entry.user_id}>
+                  <Text style={styles.rank}>{index + 1}.</Text>
+                  {index < 3 && getTrophyIcon(index)}
+                  <Text style={styles.name}>{entry.username}</Text>
+                  <Text style={styles.score}>{entry.top_count} pts</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No leaderboard entries yet.</Text>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -61,6 +100,34 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  centeredContainer: {
+    flex: 1,
+    backgroundColor: '#121212',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#FFD600',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#FF4444',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    alignSelf: 'center',
+    backgroundColor: '#FFD600',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#121212',
@@ -107,6 +174,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
   },
+  scrollArea: {
+    maxHeight: 240,
+  },
   leaderboardRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -129,6 +199,11 @@ const styles = StyleSheet.create({
   score: {
     color: '#FFD600',
     fontWeight: '600',
+  },
+  noDataText: {
+    color: '#aaa',
+    textAlign: 'center',
+    marginVertical: 20,
   },
   logoutButton: {
     backgroundColor: '#2C2C2C',
