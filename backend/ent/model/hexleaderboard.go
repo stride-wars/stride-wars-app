@@ -8,8 +8,9 @@ import (
 )
 
 type TopUser struct {
-	UserID uuid.UUID `json:"user_id"`
-	Score  float64   `json:"score"`
+	UserID uuid.UUID	`json:"user_id"`
+	UserName string		`json:"user_name"`
+	Score  float64   	`json:"score"`
 }
 
 type HexLeaderboard struct {

@@ -55,7 +55,7 @@ func (hls *HexLeaderboardService) FindByH3Indexes(ctx context.Context, h3Indexes
 
 // Ads a given user to the leaderboard of a hexagon with the given hexID - if the user has enough points to go into top 5.
 // Return users position in the leaderboard - nil otherwise
-func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexID string, userID uuid.UUID) (*int, error) {
+func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexID string, userID uuid.UUID, userName string) (*int, error) {
 	hexLeaderboard, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -135,7 +135,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboard(ctx context.Context, hexI
 }
 
 // func AddUserToLeaderboardOrCreate
-func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx context.Context, hexID string, userID uuid.UUID) (*int, error) {
+func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx context.Context, hexID string, userID uuid.UUID, userName string) (*int, error) {
 	// Try to find the leaderboard
 	_, err := hls.hexLeaderboardRepository.FindByH3Index(ctx, hexID)
 	if err != nil {
@@ -153,7 +153,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx co
 			leaderboard := &model.HexLeaderboard{
 				H3Index: hexID,
 				TopUsers: []model.TopUser{
-					{UserID: userID, Score: hexInfluence.Score},
+					{UserID: userID, UserName: userName ,Score: hexInfluence.Score},
 				},
 			}
 
@@ -169,7 +169,7 @@ func (hls *HexLeaderboardService) AddUserToLeaderboardOrCreateLeaderboard(ctx co
 	}
 
 	// If leaderboard exists, attempt to add user
-	position, err := hls.AddUserToLeaderboard(ctx, hexID, userID)
+	position, err := hls.AddUserToLeaderboard(ctx, hexID, userID, userName)
 	if err != nil {
 		return nil, err
 	}

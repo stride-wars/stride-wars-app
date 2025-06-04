@@ -145,6 +145,7 @@ export default function MapScreen() {
   ) => {
     try {
       const url = `${API_BASE}/leaderboard/bbox?min_lat=${minLat}&min_lng=${minLng}&max_lat=${maxLat}&max_lng=${maxLng}`;
+      console.log('request:', url)
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
 
@@ -172,7 +173,7 @@ export default function MapScreen() {
         });
 
         hexMap[hexId] = leaderboard.top_users.map((user: any) => ({
-          user: user.username ?? user.name ?? user.user_id,
+          user: user.user_name ?? user.user_id, 
           score: user.score,
         }));
       }

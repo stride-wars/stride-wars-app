@@ -15,8 +15,9 @@ func MapHexLeaderboardsToResponse(hexLeaderboards []*ent.HexLeaderboard) *dto.Ge
 		topUsers := make([]dto.TopUserResponse, 0, len(hexLeaderboard.TopUsers))
 		for _, user := range hexLeaderboard.TopUsers {
 			topUsers = append(topUsers, dto.TopUserResponse{
-				UserID: user.UserID,
-				Score:  user.Score,
+				UserID:   user.UserID,
+				UserName: user.UserName,
+				Score:    user.Score,
 			})
 		}
 
