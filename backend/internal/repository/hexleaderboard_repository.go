@@ -69,7 +69,7 @@ func (r HexLeaderboardRepository) GetGlobalHexLeaderboard(ctx context.Context) (
 			userCounts[lb.TopUsers[0].UserID]++
 		}
 	}
-
+	//ent
 	var entries []dto.GlobalLeaderboardEntry
 	for userID, count := range userCounts {
 		username := ""
