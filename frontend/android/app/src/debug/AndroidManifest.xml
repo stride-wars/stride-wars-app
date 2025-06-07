@@ -9,6 +9,6 @@
         tools:replace="android:usesCleartextTraffic">
   <meta-data
     android:name="com.google.android.geo.API_KEY"
-    android:value="AIzaSyD3MVimUge8AF8Z0GVOqG-1_qbiGZF-klw" />
+    android:value="YOUR_ANDROID_API_KEY" />
     </application>
 </manifest>
